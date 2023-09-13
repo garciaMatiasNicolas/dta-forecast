@@ -35,8 +35,7 @@ const LoginForm = () => {
             navigate("/dashboard/")
         })
         .catch(error => {
-            showErrorAlert("Email o contraseña incorrectos")
-            console.log(error)
+            error.response === undefined ? showErrorAlert("Error en el servidor, intente mas tarde") : showErrorAlert("Email o contraseña incorrectos")
         })
         .finally(() => {
             setLoading(false);

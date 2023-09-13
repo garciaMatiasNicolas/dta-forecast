@@ -20,12 +20,13 @@ const UserContainer = ({createProject}) => {
             'Content-Type': 'application/json', 
         };
 
-        axios.get(`http://localhost:8000/users/${user}/`, { headers })
+        axios.get(`http://localhost:8000/users/detail/${user}`, { headers })
         .then(response => {
             setFullname(`${response.data.first_name} ${response.data.last_name}`);
         })
         .catch(error => {
-            showErrorAlert("Su sesion ha expirado");
+            showErrorAlert("Su sesion ha expirado, debe iniciar sesion nuevamente");
+            localStorage.clear();
             navigate("/login/");
         });
     }, [])

@@ -30,7 +30,8 @@ const Dashboard = () => {
       setProjects(res.data);
     })
     .catch(err => {
-      showErrorAlert("Ocurrio un error, debe iniciar sesion nuevamente");
+      showErrorAlert("Su sesion expirado, debe iniciar sesion nuevamente");
+      localStorage.clear();
       navigate("/login/");
     });
 

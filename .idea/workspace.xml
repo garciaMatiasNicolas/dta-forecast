@@ -5,41 +5,11 @@
   </component>
   <component name="ChangeListManager">
     <list default="true" id="8686bf34-14c2-43ed-9462-f00c698e8357" name="Changes" comment="">
-      <change afterPath="$PROJECT_DIR$/api/files/migrations/0001_initial.py" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/api/files/router.py" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/api/files/serializer.py" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/api/projects/__init__.py" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/api/projects/admin.py" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/api/projects/apps.py" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/api/projects/migrations/0001_initial.py" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/api/projects/migrations/0002_projectsmodel_status.py" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/api/projects/migrations/__init__.py" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/api/projects/models.py" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/api/projects/router.py" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/api/projects/serializers.py" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/api/projects/tests.py" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/api/projects/views.py" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/api/users/authentication_urls.py" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/.idea/workspace.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/workspace.xml" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/api/db.sqlite3" beforeDir="false" afterPath="$PROJECT_DIR$/api/db.sqlite3" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/api/files/admin.py" beforeDir="false" afterPath="$PROJECT_DIR$/api/files/admin.py" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/api/files/models.py" beforeDir="false" afterPath="$PROJECT_DIR$/api/files/models.py" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/api/files/serializer.py" beforeDir="false" afterPath="$PROJECT_DIR$/api/files/serializer.py" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/api/files/views.py" beforeDir="false" afterPath="$PROJECT_DIR$/api/files/views.py" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/api/main/settings.py" beforeDir="false" afterPath="$PROJECT_DIR$/api/main/settings.py" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/api/main/urls.py" beforeDir="false" afterPath="$PROJECT_DIR$/api/main/urls.py" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/api/users/authentication.py" beforeDir="false" afterPath="$PROJECT_DIR$/api/users/authentication.py" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/api/users/migrations/0001_initial.py" beforeDir="false" afterPath="$PROJECT_DIR$/api/users/migrations/0001_initial.py" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/api/users/models.py" beforeDir="false" afterPath="$PROJECT_DIR$/api/users/models.py" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/api/users/router.py" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/api/users/urls.py" beforeDir="false" afterPath="$PROJECT_DIR$/api/users/urls.py" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/api/users/views.py" beforeDir="false" afterPath="$PROJECT_DIR$/api/users/views.py" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/client" beforeDir="false" afterPath="$PROJECT_DIR$/client" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/client/package-lock.json" beforeDir="false" afterPath="$PROJECT_DIR$/client/package-lock.json" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/client/package.json" beforeDir="false" afterPath="$PROJECT_DIR$/client/package.json" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/client/src/App.css" beforeDir="false" afterPath="$PROJECT_DIR$/client/src/App.css" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/client/src/App.js" beforeDir="false" afterPath="$PROJECT_DIR$/client/src/App.js" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/client/src/index.css" beforeDir="false" afterPath="$PROJECT_DIR$/client/src/index.css" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/client/src/index.js" beforeDir="false" afterPath="$PROJECT_DIR$/client/src/index.js" afterDir="false" />
     </list>
     <option name="SHOW_DIALOG" value="false" />
     <option name="HIGHLIGHT_CONFLICTS" value="true" />

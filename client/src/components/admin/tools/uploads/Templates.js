@@ -1,7 +1,13 @@
+import GropuButtonActions from "./GropuButtonActions"
 
-const Templates = () => {
+const Templates = ({props}) => {
   return (
-    <div>Templates</div>
+    <tr>
+      <th>{props.name}</th>
+      <td className='d-flex justify-content-end'>
+        <GropuButtonActions props={props.name}/>
+      </td>
+    </tr>
   )
 }
 

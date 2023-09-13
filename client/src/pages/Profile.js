@@ -11,14 +11,19 @@ const Profile = () => {
 
   const fetchDataProfile = () => {
     const userPk = localStorage.getItem("userPk");
+    const token = localStorage.getItem("userToken");
+    const headers = {
+      'Authorization': `Token ${token}`, 
+      'Content-Type': 'application/json', 
+    };
     
-    axios.get(`http://localhost:8000/users/${userPk}`)
+    axios.get(`http://localhost:8000/users/detail/${userPk}`, {headers})
     .then(res => {
       setUserData(res.data)
     })
     .catch(err =>{
       showErrorAlert("Sesion expirada. Debe iniciar sesion")
-      console.log(err);
+      localStorage.clear();
     })
   }
   

@@ -5,11 +5,16 @@ import {
     MDBCardText,
     MDBIcon
 } from 'mdb-react-ui-kit';
+import { useNavigate } from 'react-router-dom';
 
 
 const Tools = ({props}) => {
+  let navigate = useNavigate();
+  
+  const idProyecto = localStorage.getItem("projectName");
+  
   return (
-    <MDBCard style={{"width": "19rem", "cursor": "pointer"}} alignment='center' className='hover-shadow border'>
+    <MDBCard onClick={()=>{navigate(`/tools/${idProyecto}/${props.route}`)}} style={{"width": "19rem", "cursor": "pointer"}} alignment='center' className='hover-shadow border'>
       <MDBCardBody>
         <MDBCardTitle>{props.title}</MDBCardTitle>
         <MDBCardText>{props.text}</MDBCardText>

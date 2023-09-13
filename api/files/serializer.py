@@ -5,4 +5,4 @@ from .models import FileRefModel
 class FileSerializer(serializers.ModelSerializer):
     class Meta:
         model = FileRefModel
-        exclude = ('uploaded_at', )
+        fields = ('file_name', 'user_owner', 'project', 'file')

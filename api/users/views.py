@@ -35,7 +35,7 @@ class UserViews:
         else:
             return Response({'error': 'method_not_allowed'}, status=status.HTTP_405_METHOD_NOT_ALLOWED)
 
-    @api_view(['PUT', 'DELETE'])
+    @api_view(['PUT', 'DELETE', 'GET'])
     @authentication_classes([TokenAuthentication])
     @permission_classes([IsAuthenticated])
     def detail_user(request, pk):
@@ -43,6 +43,10 @@ class UserViews:
         user_serializer = UserSerializer(user, data=request.data)
 
         if user:
+
+            if request.method == 'GET':
+                user_data = UserSerializer(user)
+                return Response(user_data.data)
 
             if request.method == 'PUT':
                 if user_serializer.is_valid():
@@ -62,49 +66,3 @@ class UserViews:
 
         else:
             return Response({'error': 'user_not_exists'}, status=status.HTTP_400_BAD_REQUEST)
-
-
-
-
-
-class UserViewSet(ModelViewSet):
-    serializer_class = UserSerializer
-    queryset = User.objects.all()
-
-    def create(self, request, *args, **kwargs):
-        user = self.get_serializer(data=request.data)
-
-        if user.is_valid():
-            user.save()
-            return Response({'message': 'user_created', 'user': user.data},
-                            status=status.HTTP_201_CREATED)
-        else:
-            return Response({'error': 'bad_request', 'logs': user.errors})
-
-    def update(self, request, pk=None):
-        user_to_update = self.get_queryset().filter(id=pk).first()
-
-        if user_to_update:
-            data_updated = self.get_serializer(user_to_update, data=request.data)
-            if data_updated.is_valid():
-                data_updated.save()
-                return Response({'message': 'user_updated', 'user': data_updated.data},
-                                status=status.HTTP_200_OK)
-            else:
-                return Response({'error': 'bad_request', 'logs': data_updated.errors},
-                                status=status.HTTP_400_BAD_REQUEST)
-
-        else:
-            return Response({'error': 'user_not_found'},
-                            status=status.HTTP_400_BAD_REQUEST)
-
-    def destroy(self, request, pk=None):
-        user_to_delete = self.get_queryset().filter(id=pk).first()
-
-        if user_to_delete:
-            user_to_delete.delete()
-            return Response({'message': 'user_deleted'},
-                            status=status.HTTP_200_OK)
-        else:
-            return Response({'error': 'user_not_found'},
-                            status=status.HTTP_400_BAD_REQUEST)
