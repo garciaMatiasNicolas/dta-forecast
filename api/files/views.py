@@ -19,11 +19,17 @@ class ExcelFileUploadView(viewsets.ModelViewSet):
 
     def create(self, request, *args, **kwargs):
         file_serializer = self.get_serializer(data=request.data)
+        file = request.data.get('file_name', None)
+        user = request.data.get('user_owner', None)
+        project = request.data.get('project', None)
 
         if file_serializer.is_valid():
             file_serializer.save()
+            save_dataframe(file_name=file, user=user, project=project)
             return Response({'message': 'file_uploaded'},
                             status=status.HTTP_201_CREATED)
+
+
 
         else:
             return Response({'error': 'bad_request', 'logs': file_serializer.errors},
