@@ -24,7 +24,7 @@ const SignUpForm = () => {
     };
 
     const fetchData = () => {
-        axios.post('http://127.0.0.1:8000/users/', formData)
+        axios.post('http://127.0.0.1:8000/users/create', formData)
         .then((response) => {
             if (response.data.error) {
                 showErrorAlert("Email en uso, utilice otro o inicie sesion")

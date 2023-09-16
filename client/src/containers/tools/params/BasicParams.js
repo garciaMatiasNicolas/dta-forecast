@@ -6,15 +6,15 @@ import OptimizedMetrics from '../../../components/admin/tools/params/OptimizedMe
 
 const BasicParams = () => {
   return (
-    <MDBContainer className='border gap-2'>
+    <MDBContainer className='gap-1'>
       <MDBRow className='bg-primary d-flex justify-content-center align-items-center p-2'>
-        <h5 className='text-white w-auto fw-bold'>Parametros Basicos</h5>
+        <h5 className='text-white w-auto'>Parametros Basicos</h5>
       </MDBRow>
-      <MDBRow className='gap-2'>
+      <MDBRow className='gap-1'>
         <RunMode/>
         <ModelSelection/>
       </MDBRow>
-      <MDBRow className='gap-2'>
+      <MDBRow className='gap-1'>
         <TopDownDimensions/>
         <OptimizedMetrics/>
       </MDBRow>

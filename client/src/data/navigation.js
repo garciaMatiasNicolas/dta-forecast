@@ -22,7 +22,7 @@ const data = [
     },
     {
         id: 4,
-        title: "Volumen Base",
+        title: "Analisis de forecast",
         text: "analisis de series",
         icon: "user-check",
         route: "forecast"

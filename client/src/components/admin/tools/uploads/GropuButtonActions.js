@@ -1,5 +1,8 @@
-import { MDBBtn, MDBIcon } from 'mdb-react-ui-kit';
-import React, { useRef } from 'react';
+import axios from 'axios';
+import { MDBBtn, MDBIcon} from 'mdb-react-ui-kit';
+import React, { useRef, useState } from 'react';
+import { ClipLoader } from "react-spinners";
+import { showErrorAlert, showSuccessAlert } from '../../../other/Alerts';
 
 
 const GropuButtonActions = ({props}) => {
@@ -9,9 +12,45 @@ const GropuButtonActions = ({props}) => {
         fileInputRef.current.click();
     };
 
+    const uploadFile = (data, headers) => {
+        axios.post("http://localhost:8000/files/", data, {headers})
+        .then(res => {
+            showSuccessAlert("Archivo subido exitosamente!", "Data recibida")
+        })
+        .catch(err => {
+            if (err.response.data.error === "bad_request") {
+                showErrorAlert("El archivo no se subio correctamente, intente nuevamente");
+            } else {
+                showErrorAlert("Error en el servidor");
+            }
+        })
+    }
+
     const handleFileUpload = (event) => {
+        let token = localStorage.getItem("userToken");
+
+        const headers = {
+            'Authorization': `Token ${token}`, 
+            'Content-Type': 'multipart/form-data', 
+        };
+
         const file = event.target.files[0];
-        console.log('Archivo seleccionado:', file);
+
+        const user = localStorage.getItem("userPk");
+
+        const projectName = localStorage.getItem('projectName');
+
+        const projectId = localStorage.getItem("projectId");
+
+        const data = {
+            "user_owner": localStorage.getItem("userPk"),
+            "file_name": `Historical_Data_${projectName}_user${user}`,
+            "project": projectId,
+            "file": file,
+            "model_type": "historical_data"
+        };
+
+        uploadFile(data, headers);
     };
 
     return (

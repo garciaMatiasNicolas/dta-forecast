@@ -3,7 +3,7 @@ import { MDBCol, MDBRadio, MDBRow  } from 'mdb-react-ui-kit';
 const TopDownDimensions = () => {
   return (
     <MDBCol size='md' >
-      <MDBRow style={{"backgroundColor": "#E7E6EF"}} className='d-flex'>
+      <MDBRow style={{"backgroundColor": "#E7E6EF"}} className='d-flex mb-2'>
         <span className='fw-bold'>Dimensiones de arriba abajo</span>
       </MDBRow>
       <form>

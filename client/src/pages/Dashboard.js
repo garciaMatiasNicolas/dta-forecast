@@ -42,8 +42,13 @@ const Dashboard = () => {
       <Navbar/>
       <main style={{"minHeight": "100vh"}} className="d-flex flex-column justify-content-center gap-3 align-items-center p-3 bg-white">
         <UserContainer createProject={createProject}/>
-        <SearchProject/>
-        <ProjectsContainer projects={projects}/>
+        {
+          projects.length === 0 ? <div>No hay proyectos creados, cree uno para iniciar su forecast</div> : 
+          <>
+            <SearchProject/>
+            <ProjectsContainer projects={projects}/>
+          </>
+        }
       </main> 
     </>
   )

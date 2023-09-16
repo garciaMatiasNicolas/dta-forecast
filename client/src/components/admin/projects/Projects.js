@@ -35,6 +35,7 @@ const Projects = ({props}) => {
     navigate(`/tools/${props.project_name}`);
     localStorage.removeItem('projectName');
     localStorage.setItem('projectName', props.project_name);
+    localStorage.setItem('projectId', props.id)
   }
 
   return (

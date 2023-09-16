@@ -3,7 +3,7 @@ import { MDBCol, MDBRadio, MDBRow  } from 'mdb-react-ui-kit';
 const OptimizedMetrics = () => {
   return (
     <MDBCol size='md'>
-      <MDBRow style={{"backgroundColor": "#E7E6EF"}} className='d-flex'>
+      <MDBRow style={{"backgroundColor": "#E7E6EF"}} className='d-flex mb-2'>
         <span className='fw-bold'>Correr Modelo</span>
       </MDBRow>
       <form>

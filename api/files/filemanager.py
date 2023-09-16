@@ -1,30 +1,29 @@
-from .models import HistoricalData
 import pandas as pd
-import os
+from urllib.parse import urlparse
+from rest_framework import status
+from rest_framework.response import Response
+from database.db_engine import engine
 
 
-# Function for read xlsx file and create sql_table
-def save_dataframe(file_name: str, user: int, project: int):
-    media_directory = "media"
-    excel_directory = "excel_files"
-    route = os.path.join(media_directory, excel_directory, file_name)
-    dataframe = pd.read_excel(route)
-
-    for index, row in dataframe.iterrows():
-        historical_data = HistoricalData(
-            Family=row['Family'],
-            Region=row['Region'],
-            Salesman=row['Salesman'],
-            Client=row['Client'],
-            Category=row['Category'],
-            Subcategory=row['Subcategory'],
-            SKU=row['SKU'],
-            Description=row['Description'],
-            StartingYear=row['Starting Year'],
-            StartingPeriod=row['Starting Period'],
-            PeriodsPerYear=row['Periods Per Year'],
-            PeriodsPerCycle=row['Periods Per Cycle']
-        )
-        historical_data.save()
+def obtain_file_route(route):
+    parsed_url = urlparse(route)
+    split_route = parsed_url.path.split('/')
+    route_index = split_route.index('media')
+    new_route = '/'.join(split_route[route_index:])
+    return new_route
 
 
+def save_dataframe(route_file: str, file_name: str, model_type: str):
+    # Create dataframe with the Excel file
+    new_route = obtain_file_route(route=route_file)
+    dataframe = pd.read_excel(new_route)
+    dataframe.astype('str')
+    table_name = file_name
+
+    if model_type == "historical_data":
+        dataframe.to_sql(table_name, con=engine, if_exists='replace', index=False)
+
+    else:
+        raise ValueError("model_not_allowed")
+        return Response({'error': 'bad_request', 'logs': 'model_not_allowed'},
+                        status=status.HTTP_400_BAD_REQUEST)

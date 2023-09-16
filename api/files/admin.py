@@ -1,5 +1,5 @@
 from django.contrib import admin
-from .models import FileRefModel
+from .file_model import FileRefModel
 
 # Register your models here.
 admin.site.register(FileRefModel)
