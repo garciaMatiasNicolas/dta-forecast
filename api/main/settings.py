@@ -38,7 +38,12 @@ THIRD_APPS = [
     'rest_framework.authtoken',
     'corsheaders',
     'pandas',
-    'openpyxl'
+    'openpyxl',
+    'sqlalchemy',
+    'statsmodels',
+    'numpy',
+    'pmdarima',
+    'plotly',
 ]
 
 INSTALLED_APPS = BASE_APPS + LOCAL_APPS + THIRD_APPS

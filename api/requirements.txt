@@ -4,3 +4,8 @@ pandas
 openpyxl
 sqlalchemy
 mysqlclient
+statsmodels
+numpy
+pmdarima
+scikit-learn
+plotly
