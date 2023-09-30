@@ -4,7 +4,7 @@ const OptimizedMetrics = () => {
   return (
     <MDBCol size='md'>
       <MDBRow style={{"backgroundColor": "#E7E6EF"}} className='d-flex mb-2'>
-        <span className='fw-bold'>Correr Modelo</span>
+        <span>Correr Modelo</span>
       </MDBRow>
       <form>
         <MDBRadio name='optimizedmetric' id='mape' label='MAPE' />

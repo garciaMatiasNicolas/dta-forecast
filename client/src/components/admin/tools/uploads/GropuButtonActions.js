@@ -1,7 +1,6 @@
 import axios from 'axios';
 import { MDBBtn, MDBIcon} from 'mdb-react-ui-kit';
 import React, { useRef, useState } from 'react';
-import { ClipLoader } from "react-spinners";
 import { showErrorAlert, showSuccessAlert } from '../../../other/Alerts';
 
 

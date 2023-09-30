@@ -56,6 +56,7 @@ const SignUpForm = () => {
                     onChange={handleChange} 
                     type="text" name='first_name' id="name" className="form-control border" 
                     label= "Nombre"
+                    required
                 />
             </div>
 
@@ -65,6 +66,7 @@ const SignUpForm = () => {
                     onChange={handleChange} 
                     type="text" name='last_name' id="last_name" className="form-control border" 
                     label="Apellido"
+                    required
                 />
             </div>
         </div>
@@ -75,6 +77,7 @@ const SignUpForm = () => {
                 onChange={handleChange} 
                 name="email" type="email" id="email" className="form-control border" 
                 label="Email"
+                required
             />
         </div>
 
@@ -88,6 +91,7 @@ const SignUpForm = () => {
                 onChange={handleChange} 
                 name="password" type="password" id="password" className="form-control border" 
                 label="Repita contraseña"
+                required
             />
         </div>
 

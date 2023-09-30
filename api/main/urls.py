@@ -7,6 +7,6 @@ urlpatterns = {
     path('authentication/', include('users.authentication_urls')),
     path('files/', include('files.router')),
     path('projects/', include('projects.router')),
-    path('dtaselectors/', include('forecast.router')),
+    path('scenarios/', include('forecast.router')),
     path('', include('forecast.urls'))
 }

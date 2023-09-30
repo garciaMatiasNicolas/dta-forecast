@@ -4,7 +4,7 @@ const ModelSelection = () => {
   return (
     <MDBCol size='md' >
       <MDBRow style={{"backgroundColor": "#E7E6EF"}} className='d-flex mb-2'>
-        <span className='fw-bold'>Seleccion de Modelo</span>
+        <span>Seleccion de Modelo</span>
       </MDBRow>
       <form>
         <MDBRadio name='modelselection' id='manual' label='Manual' defaultChecked />

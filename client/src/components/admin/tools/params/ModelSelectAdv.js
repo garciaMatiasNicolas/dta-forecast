@@ -4,8 +4,11 @@ import { MDBCol, MDBCheckbox, MDBRow } from "mdb-react-ui-kit"
 const ModelSelectAdv = () => {
   return (
     <MDBCol sm='4'>
+        <MDBRow style={{"backgroundColor": "#E7E6EF"}} className='d-flex mb-2 pt-3 pb-3'>
+          <span>SELECCION DE MODELOS</span>
+        </MDBRow>
         <MDBRow style={{"backgroundColor": "#E7E6EF"}} className='d-flex mb-2'>
-            <span>Modelos</span>
+          <span>Modelos</span>
         </MDBRow>
         <MDBCheckbox name='modelSelection' value='' id='all' label='Todos'/>
         <MDBCheckbox name='modelSelection' value='' id='none' label='Ninguno'/>

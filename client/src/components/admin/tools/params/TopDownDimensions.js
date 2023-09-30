@@ -4,7 +4,7 @@ const TopDownDimensions = () => {
   return (
     <MDBCol size='md' >
       <MDBRow style={{"backgroundColor": "#E7E6EF"}} className='d-flex mb-2'>
-        <span className='fw-bold'>Dimensiones de arriba abajo</span>
+        <span>Dimensiones de arriba abajo</span>
       </MDBRow>
       <form>
         <MDBRadio name='topdowndimensions' id='family' label='Familia'  />

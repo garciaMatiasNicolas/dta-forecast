@@ -1,3 +1,8 @@
 .projects:hover {
     background-color: rgba(75, 75, 75, 0.267);
 }
+
+.disabled-div{
+    opacity: 0.5;
+    pointer-events: none;
+}
