@@ -4,7 +4,7 @@ from rest_framework.permissions import IsAuthenticated
 from rest_framework.viewsets import ModelViewSet
 from rest_framework.response import Response
 from rest_framework import status
-from ..serializer import ForecastScenarioSerializer, FilterScenarioByProject, FilterScenarioById, Scenario
+from ..serializer import ForecastScenarioSerializer
 from ..models import ForecastScenario
 
 
@@ -14,7 +14,19 @@ class ForecastScenarioViewSet(ModelViewSet):
     serializer_class = ForecastScenarioSerializer
     queryset = ForecastScenario.objects.all()
 
-    @action(detail=False, methods=['post'])
+    def create(self, request, *args, **kwargs):
+        scenario = self.get_serializer(data=request.data)
+
+        if scenario.is_valid():
+            scenario = scenario.save()
+
+            return Response({'message': 'scenario_saved', 'scenario_id': scenario.id}, status=status.HTTP_201_CREATED)
+
+        else:
+            return Response({'error': 'bad_request', 'logs': scenario.errors},
+                            status=status.HTTP_400_BAD_REQUEST)
+
+    """@action(detail=False, methods=['post'])
     def get_scenario_data(self, request):
         data = FilterScenarioById(data=request.data)
 
@@ -46,20 +58,4 @@ class ForecastScenarioViewSet(ModelViewSet):
                 return Response({'not_found': 'scenario_not_found'}, status=status.HTTP_200_OK)
 
         else:
-            return Response({'error': 'bad_request', 'logs': data.errors}, status=status.HTTP_400_BAD_REQUEST)
-
-    def create(self, request, *args, **kwargs):
-        scenario = self.get_serializer(data=request.data)
-        user = request.user.id
-
-        if scenario.is_valid():
-            scenario.user = user
-            scenario.save()
-
-            return Response({'message': 'data_selectors_uploaded', 'data_selectors': scenario.data},
-                            satus=status.HTTP_201_CREATED)
-
-        else:
-            return Response({'error': 'bad_request', 'logs': scenario.errors},
-                            status=status.HTTP_400_BAD_REQUEST)
-
+            return Response({'error': 'bad_request', 'logs': data.errors}, status=status.HTTP_400_BAD_REQUEST)"""

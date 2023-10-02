@@ -8,10 +8,10 @@ import Profile from '../pages/Profile.js';
 import ToolsPage from '../pages/Tools.js';
 import TemplatesPage from '../pages/tools/TemplatesPage.js';
 import ExplorationPage from '../pages/tools/ExplorationPage.js';
-import ParamsPage from '../pages/tools/ParamsPage.js';
 import VolumePage from '../pages/tools/VolumePage.js';
 import CollaborationPage from '../pages/tools/CollaborationPage.js';
 import KpisPage from '../pages/tools/KpisPage.js';
+import RunModelsPage from '../pages/RunModelsPage.js';
 
 const isUserAuthenticated = () => {
   const userToken = localStorage.getItem('userToken');
@@ -33,7 +33,7 @@ const AppRouter = () => {
         <Route path='/tools/:idProyecto' element={<PrivateRoute element={<ToolsPage />} />} >
           <Route path='uploads' element={<TemplatesPage />} />
           <Route path='exploration' element={<ExplorationPage />} />
-          <Route path='params' element={<ParamsPage />} />
+          <Route path='params' element={<RunModelsPage />} />
           <Route path='forecast' element={<VolumePage />} />
           <Route path='colaborations' element={<CollaborationPage />} />
           <Route path='kpis' element={<KpisPage />} />

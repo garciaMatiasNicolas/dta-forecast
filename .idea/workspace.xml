@@ -6,14 +6,24 @@
   <component name="ChangeListManager">
     <list default="true" id="8686bf34-14c2-43ed-9462-f00c698e8357" name="Changes" comment="">
       <change beforePath="$PROJECT_DIR$/.idea/workspace.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/workspace.xml" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/api/db.sqlite3" beforeDir="false" afterPath="$PROJECT_DIR$/api/db.sqlite3" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/api/db.sqlite3" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/api/files/migrations/0001_initial.py" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/api/files/migrations/__init__.py" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/api/forecast/migrations/0001_initial.py" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/api/forecast/migrations/0002_forecastscenario_delete_dataselectors.py" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/api/forecast/migrations/__init__.py" beforeDir="false" />
       <change beforePath="$PROJECT_DIR$/api/forecast/models.py" beforeDir="false" afterPath="$PROJECT_DIR$/api/forecast/models.py" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/api/forecast/router.py" beforeDir="false" afterPath="$PROJECT_DIR$/api/forecast/router.py" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/api/forecast/serializer.py" beforeDir="false" afterPath="$PROJECT_DIR$/api/forecast/serializer.py" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/api/forecast/urls.py" beforeDir="false" afterPath="$PROJECT_DIR$/api/forecast/urls.py" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/api/forecast/views.py" beforeDir="false" afterPath="$PROJECT_DIR$/api/forecast/views/forecast_views.py" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/api/main/urls.py" beforeDir="false" afterPath="$PROJECT_DIR$/api/main/urls.py" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/api/media/excel_files/predictions/Historical_Data_Proyecto_prueba_user1_prediction_results.xlsx" beforeDir="false" afterPath="$PROJECT_DIR$/api/media/excel_files/predictions/Historical_Data_Proyecto_prueba_user1_prediction_results.xlsx" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/api/forecast/views/forecast_views.py" beforeDir="false" afterPath="$PROJECT_DIR$/api/forecast/views/forecast_views.py" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/api/forecast/views/scenarios_views.py" beforeDir="false" afterPath="$PROJECT_DIR$/api/forecast/views/scenarios_views.py" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/api/media/excel_files/Historical_Data_2.xlsx" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/api/media/excel_files/Historical_Data_2_F7cSSSe.xlsx" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/api/media/excel_files/Historical_Data_2_kjxc4cN.xlsx" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/api/media/excel_files/predictions/Historical_Data_Proyecto_prueba_user1_prediction_results.xlsx" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/api/projects/migrations/0001_initial.py" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/api/projects/migrations/__init__.py" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/api/users/migrations/0001_initial.py" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/api/users/migrations/__init__.py" beforeDir="false" />
     </list>
     <option name="SHOW_DIALOG" value="false" />
     <option name="HIGHLIGHT_CONFLICTS" value="true" />
