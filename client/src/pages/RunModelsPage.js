@@ -1,17 +1,17 @@
-import { useState } from "react";
-import ToolsNav from "../components/navs/ToolsNav"
-import { MDBCheckbox, MDBCol, MDBContainer, MDBInput, MDBRow, MDBBtn, MDBIcon } from "mdb-react-ui-kit"
 import axios from "axios";
-//import { showSuccessAlert } from "../components/other/Alerts";
+import ToolsNav from "../components/navs/ToolsNav"
+import { useState } from "react";
+import { ClipLoader } from "react-spinners";
+import { showErrorAlert, showSuccessAlert } from "../components/other/Alerts";
+import { MDBCheckbox, MDBCol, MDBContainer, MDBInput, MDBRow, MDBBtn, MDBIcon,  MDBModal, MDBModalDialog, MDBModalContent, MDBModalBody,} from "mdb-react-ui-kit";
 
 const RunModelsPage = () => {
-
+    
     const token = localStorage.getItem("userToken");
     const headers = {
         'Authorization': `Token ${token}`, 
         'Content-Type': 'application/json', 
     };
-
     
     const initialFormData = {
         user: localStorage.getItem("userPk"),
@@ -22,8 +22,12 @@ const RunModelsPage = () => {
         test_p: '',
         pred_p: ''
     };
-
+    
     const [formData, setFormData] = useState(initialFormData);
+
+    const [basicModal, setBasicModal] = useState(false);
+
+    const showModal = () => setBasicModal(!basicModal);
     
     const handleCheckboxChange = (value) => {
         const updatedModels = [...formData.models];
@@ -48,15 +52,23 @@ const RunModelsPage = () => {
         axios.post("http://localhost:8000/scenarios/", formData, { headers })
         .then((res)=>{
             let id = res.data.scenario_id;
-            let data = {
-                scenario_id: id
-            }
+            let data = {scenario_id: id};
+
             axios.post("http://localhost:8000/test-model", data, {headers})
-            .then((res)=>{console.log(res.data)})
-            .catch((err)=>{console.log(err)}) 
+            .then((res)=>{
+                setBasicModal(!basicModal);
+                showSuccessAlert("Predicciones realizadas con exito", "Forecast finalizado");
+            })
+            .catch((err)=>{
+                console.log(err);
+                setBasicModal(!basicModal);
+                showErrorAlert("Ocurrio un error inesperado");
+            }) 
         })
-        .catch(err => console.log(err))
-        setFormData(initialFormData);
+        .catch(()=>{
+            showErrorAlert("Nombre de escenario ya utilizado");
+            setBasicModal(!basicModal);
+        });
     };
 
     const isFormValid = () => {
@@ -91,12 +103,31 @@ const RunModelsPage = () => {
                 </MDBContainer>
                 
                 <MDBRow className="mt-4">
-                    <MDBBtn type="submit" className="w-auto d-flex justify-content-center align-items-center gap-2 ms-3" color="primary" disabled={!isFormValid()}>
+                    <MDBBtn
+                        type="submit" 
+                        className="w-auto d-flex justify-content-center align-items-center gap-2 ms-3" 
+                        color="primary" 
+                        disabled={!isFormValid()}
+                        onClick={showModal}>
                         <MDBIcon fas icon="forward" color="white"/>
                         <span>Forecast</span>
                     </MDBBtn>
                 </MDBRow>
             </form>
+            
+            <MDBModal staticBackdrop tabIndex="-1" show={basicModal} setShow={setBasicModal}>
+                <MDBModalDialog>
+                <MDBModalContent>
+                    <MDBModalBody>
+                    <div className="d-flex justify-content-center align-items-center flex-column gap-2">
+                        <ClipLoader color="#2b9eb3" size={50} /> 
+                        <h5 >Corriendo modelos...</h5>
+                    </div>
+                    </MDBModalBody>
+                </MDBModalContent>
+                </MDBModalDialog>
+            </MDBModal>
+           
         </main>
     )
 }
