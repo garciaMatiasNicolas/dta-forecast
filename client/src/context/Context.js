@@ -4,12 +4,12 @@ const AppContext = createContext( [] );
 
 const AppContextProvider = ( {children} )=> {
     
-    const [tool, setTool] = useState("");
+    const [dataGraphic, setDataGraphic] = useState(null);
     
     // EXPORT DE ESTADOS Y FUNCIONES DEL CONTEXTO
     const context = {
-        tool,
-        setTool
+        dataGraphic,
+        setDataGraphic
     }
     
     return(

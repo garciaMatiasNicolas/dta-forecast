@@ -11,5 +11,8 @@ class ForecastScenario(models.Model):
     scenario_name = models.CharField(max_length=200, unique=True)
     pred_p = models.IntegerField()
     test_p = models.IntegerField()
+    graphic_data = models.JSONField(blank=True, null=True)
+    url_predictions = models.CharField(max_length=500, blank=True, null=True)
     models = models.JSONField(default=list)
+
 

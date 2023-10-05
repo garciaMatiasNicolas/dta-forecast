@@ -14,6 +14,11 @@ class ForecastScenarioViewSet(ModelViewSet):
     serializer_class = ForecastScenarioSerializer
     queryset = ForecastScenario.objects.all()
 
+    def list(self, request, *args, **kwargs):
+        queryset = self.get_queryset().filter(user_id=request.user.id)
+        serializer = self.get_serializer(queryset, many=True)
+        return Response(serializer.data)
+
     def create(self, request, *args, **kwargs):
         scenario = self.get_serializer(data=request.data)
 

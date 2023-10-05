@@ -9,13 +9,22 @@ from ..serializer import GetScenarioById
 from ..models import ForecastScenario
 from projects.models import ProjectsModel
 import pandas as pd
+import os
+from django.conf import settings
+from django.http import HttpResponse
 
 
 class RunModelsViews (APIView):
     @staticmethod
-    def graphic_predictions(df_pred):
-        actual_rows = df_pred[df_pred.index.get_level_values('model') == 'actual']
-        other_rows = df_pred[df_pred.index.get_level_values('model') != 'actual']
+    def graphic_predictions(file_path):
+        try:
+            df_pred = pd.read_excel(file_path)
+
+        except pd.errors.ParserError:
+            return {'error': 'file_not_exists'}
+
+        actual_rows = df_pred[df_pred['model'] == 'actual']
+        other_rows = df_pred[df_pred['model'] != 'actual']
 
         date_columns = df_pred.columns[9:]
 
@@ -32,7 +41,7 @@ class RunModelsViews (APIView):
     @permission_classes([IsAuthenticated])
     def post(self, request):
 
-        if request.method  == "POST":    
+        if request.method == "POST":
             # Get from request body scenario id
             data = GetScenarioById(data=request.data)
 
@@ -56,21 +65,30 @@ class RunModelsViews (APIView):
                             models = scenario.models
                             table_name = f'Historical_Data_{project.project_name}_user{user}'
 
-                            #Get dataframe run models
+                            # Get dataframe run models
                             dataframe = get_historical_data(table_name=table_name)
                             result = best_model(dataframe=dataframe, test_p=test_p, pred_p=pred_p)
+                            path = f'media/excel_files/predictions/{table_name}_prediction_results_scenario{scenario_name}.xlsx'
 
                             # Write excel with model run results
-                            with pd.ExcelWriter(f'media/excel_files/predictions/{table_name}_prediction_results_scenario{scenario_name}.xlsx',engine='xlsxwriter') as excel_writer:
+                            with pd.ExcelWriter(path, engine='xlsxwriter') as excel_writer:
                                 result.to_excel(excel_writer, sheet_name='result', index=True, merge_cells=False)
 
-                            return Response({'message': 'predictions_saved'}, status=status.HTTP_200_OK)
-                    
+                            graphic = self.graphic_predictions(os.path.join(settings.MEDIA_ROOT, 'excel_files\\predictions',
+                                                                            f'{table_name}_prediction_results_scenario{scenario_name}.xlsx'))
+
+                            # Save graphic_data and predictions excel url in the scenario
+                            scenario.graphic_data = graphic
+                            scenario.url_predictions = path
+                            scenario.save()
+
+                            return Response({'message': 'succeed'}, status=status.HTTP_200_OK)
+
                     else:
                         return Response({'error': 'scenario_not_found'}, status=status.HTTP_200_OK)
 
                 except ForecastScenario.DoesNotExist:
-                    return Response({'scenario': 'not_found'}, status=status.HTTP_200_OK)
+                    return Response({'error': 'not_found'}, status=status.HTTP_200_OK)
         
             else:
                 return Response({'error': 'bad_request', 'logs': data.errors}, status=status.HTTP_400_BAD_REQUEST)
