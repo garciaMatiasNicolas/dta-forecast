@@ -35,7 +35,7 @@ const Dashboard = () => {
       navigate("/login/");
     });
 
-  }, [])
+  }, [projects])
   
   return (
     <>

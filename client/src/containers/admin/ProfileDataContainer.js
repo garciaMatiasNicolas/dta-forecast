@@ -10,9 +10,11 @@ import {
 import ProfileUpdate from '../../components/admin/user/ProfileUpdate';
 import ProfileInfo from '../../components/admin/user/ProfileInfo';
   
-const ProfileDataContainer = () => {
+const ProfileDataContainer = ({dataProfile}) => {
     
     const [update, setUpdate] = useState(false);
+
+    console.log(dataProfile);
 
     return (
       <MDBCard className='text-center w-75' style={{"maxWidth": "900px"}}>
@@ -32,7 +34,7 @@ const ProfileDataContainer = () => {
         </MDBCardHeader>
         <MDBCardBody>
           {
-            update ? <ProfileUpdate/> : <ProfileInfo />
+            update ? <ProfileUpdate/> : <ProfileInfo data={dataProfile}/>
           }
         </MDBCardBody>
       </MDBCard>

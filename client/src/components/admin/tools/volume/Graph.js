@@ -35,9 +35,9 @@ const options = {
   },
 };
 
-const token = localStorage.getItem("userToken");
 
 const Graph = () => {
+  const token = localStorage.getItem("userToken");
   const headers = {
     'Authorization': `Token ${token}`, 
     'Content-Type': 'application/json', 
@@ -55,11 +55,12 @@ const Graph = () => {
     axios.get("http://localhost:8000/scenarios", { headers })
     .then(res => {
       setScenarios(res.data);
+      
     })
     .catch(err => {
       console.log(err);
     })
-  }, [])
+  }, []);
   
   const handleDownload = (scenarioName, urlPath) => {
     const link = document.createElement("a");
@@ -123,15 +124,26 @@ const Graph = () => {
                 </tr>
               </MDBTableHead>
               <MDBTableBody>
-              {scenarios.map(scenario => (
+
+              {
+                scenarios.length === 0 ? 
                 <tr>
-                  <th scope='row'>{scenario.id}</th>
-                  <td>{scenario.scenario_name}</td>
-                  <td style={{ cursor: "pointer" }} onClick={() => handleDownload(scenario.scenario_name, scenario.url_predictions)} >
-                    <MDBIcon fas icon='file-excel' /> Excel Predicciones
-                  </td>
-                  <td>Historical Data</td>
+                  <th scope='row'></th>
+                  <td>No hay escenarios</td>
+                  <td></td>
+                  <td></td>
                 </tr>
+                  :
+              
+                scenarios.map(scenario => (
+                  <tr>
+                    <th scope='row'>{scenario.id}</th>
+                    <td>{scenario.scenario_name}</td>
+                    <td style={{ cursor: "pointer" }} onClick={() => handleDownload(scenario.scenario_name, scenario.url_predictions)} >
+                      <MDBIcon fas icon='file-excel' /> Excel Predicciones
+                    </td>
+                    <td>Historical Data</td>
+                  </tr>
               ))}
               </MDBTableBody>
             </MDBTable>
@@ -140,11 +152,9 @@ const Graph = () => {
 
         <div>
           <select className="form-select" onChange={handleOnChange}>
+            <option defaultValue>Mostrar grafico de escenario..</option>
             {scenarios.map((scenario) => (
-              <>
-                <option defaultValue>Mostrar grafico de escenario..</option>
-                <option value={scenario.id}>{scenario.scenario_name}</option>
-              </>
+              <option value={scenario.id}>{scenario.scenario_name}</option>
             ))}
           </select>
         </div>

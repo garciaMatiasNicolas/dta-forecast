@@ -17,7 +17,6 @@ const Projects = ({props}) => {
     axios.delete(`http://localhost:8000/projects/${props.id}`, {headers})
     .then(res => {
       showSuccessAlert(`Proyecto "${props.project_name}" eliminado`, "Proyecto eliminado");
-      window.location.reload();
     })
     .catch(err => {
       if (err.response.data.detail) {
@@ -68,5 +67,7 @@ const Projects = ({props}) => {
     </>
   )
 }
+
+
 
 export default Projects

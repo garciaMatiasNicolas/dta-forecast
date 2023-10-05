@@ -9,7 +9,7 @@ import {
   MDBIcon
 } from 'mdb-react-ui-kit';
 
-const ProfileInfo = () => {
+const ProfileInfo = ({data}) => {
   return (
     <MDBCard className='w-100 p-4'>
       <MDBRow className='g-0'>
@@ -23,15 +23,15 @@ const ProfileInfo = () => {
               <MDBTableBody>
                 <tr>
                   <th className="fw-bold">Email: </th>
-                  <td></td>
+                  <td>{data.email}</td>
                 </tr>
                 <tr>
                   <th className="fw-bold">Nombre: </th>
-                  <td></td>
+                  <td>{data.first_name}</td>
                 </tr>
                 <tr>
                   <th className="fw-bold">Apellido: </th>
-                  <td></td>
+                  <td>{data.last_name}</td>
                 </tr>
               </MDBTableBody>
             </MDBTable>
