@@ -24,7 +24,7 @@ def get_historical_data(table_name: str):
 
 
 # Function to choose best model
-def best_model(dataframe, test_p, pred_p):
+def best_model(dataframe, test_p, pred_p, models: list):
     df = dataframe.copy()
     df_pred = pd.DataFrame()
 

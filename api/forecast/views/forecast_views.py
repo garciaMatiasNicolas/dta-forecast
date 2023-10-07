@@ -67,7 +67,7 @@ class RunModelsViews (APIView):
 
                             # Get dataframe run models
                             dataframe = get_historical_data(table_name=table_name)
-                            result = best_model(dataframe=dataframe, test_p=test_p, pred_p=pred_p)
+                            result = best_model(dataframe=dataframe, test_p=test_p, pred_p=pred_p, models=models)
                             path = f'media/excel_files/predictions/{table_name}_prediction_results_scenario{scenario_name}.xlsx'
 
                             # Write excel with model run results

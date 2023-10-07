@@ -60,7 +60,6 @@ const RunModelsPage = () => {
 
             axios.post("http://localhost:8000/test-model", data, {headers})
             .then((res)=>{
-                setBasicModal(!basicModal);
                 showSuccessAlert("Predicciones realizadas con exito", "Forecast finalizado");
                 let url = res.data.url;
                 let scenario = res.data.scenario;
@@ -72,13 +71,12 @@ const RunModelsPage = () => {
             })
             .catch((err)=>{
                 console.log(err);
-                setBasicModal(!basicModal);
                 showErrorAlert("Ocurrio un error inesperado");
             }) 
+            .finally(()=>{setBasicModal(!basicModal)});
         })
         .catch(()=>{
             showErrorAlert("Nombre de escenario ya utilizado");
-            setBasicModal(!basicModal);
         });
     };
 
@@ -121,7 +119,8 @@ const RunModelsPage = () => {
                                     className="w-auto d-flex justify-content-center align-items-center gap-2 ms-3" 
                                     color="primary" 
                                     disabled={!isFormValid()}
-                                    onClick={showModal}>
+                                    onClick={showModal}
+                                >
                                     <MDBIcon fas icon="forward" color="white"/>
                                     <span>Forecast</span>
                                 </MDBBtn>
