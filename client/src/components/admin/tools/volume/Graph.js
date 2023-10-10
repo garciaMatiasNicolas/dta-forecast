@@ -1,40 +1,10 @@
-import React, { useEffect, useState } from 'react';
-import {
-  Chart as ChartJS,
-  CategoryScale,
-  LinearScale,
-  PointElement,
-  LineElement,
-  Title,
-  Tooltip,
-  Legend,
-} from 'chart.js';
-import { Line } from 'react-chartjs-2';
 import { MDBTable, MDBTableHead, MDBTableBody, MDBIcon, MDBCollapse, MDBContainer, MDBRow, MDBCol } from 'mdb-react-ui-kit';
+import { useEffect, useState } from 'react';
+import { showErrorAlert } from '../../../other/Alerts';
 import axios from 'axios';
 import EmptyLineChart from './EmptyChartLine';
-import { showErrorAlert } from '../../../other/Alerts';
-
-
-ChartJS.register(
-  CategoryScale,
-  LinearScale,
-  PointElement,
-  LineElement,
-  Title,
-  Tooltip,
-  Legend
-);
-
-const options = {
-  responsive: true,
-  plugins: {
-    legend: {
-      position: 'top',
-    },
-  },
-};
-
+import YearBarGraph from './YearBarGraph';
+import LineBarGraph from './LineBarGraph';
 
 const Graph = () => {
   const token = localStorage.getItem("userToken");
@@ -48,6 +18,8 @@ const Graph = () => {
   const toggleShow = () => setShowShow(!showShow);
   
   const [data, setData] = useState(false);
+
+  const [dataYear, setDataYear] = useState(false);
 
   const [scenarios, setScenarios] = useState([]);
   
@@ -76,27 +48,45 @@ const Graph = () => {
     let scenarioId = e.target.value;
     axios.get(`http://localhost:8000/scenarios/${scenarioId}`, { headers })
     .then(res => {
-      let graphicData =  res.data.graphic_data;
-      
-      const data = {
-        labels: graphicData.actual_data.x,
+      let graphicLineData =  res.data.final_data_pred;
+      let graphicBarData = res.data.data_year_pred;
+
+      const dataLine = {
+        labels: graphicLineData.actual_data.x,
         datasets: [
           {
             label: 'Valor actual',
-            data: graphicData.actual_data.y,
+            data: graphicLineData.actual_data.y,
             borderColor: 'rgb(255, 99, 132)',
             backgroundColor: 'rgba(255, 99, 132, 0.5)',
           },
           {
             label: 'Valor predecido',
-            data: graphicData.other_data.y,
+            data: graphicLineData.other_data.y,
             borderColor: 'rgb(53, 162, 235)',
             backgroundColor: 'rgba(53, 162, 235, 0.5)',
           }
         ]
       }; 
 
-      setData(data);
+      const dataBar = {
+        labels: graphicBarData.actual_data.x,
+        datasets: [
+        {
+          label: 'Valor actual',
+          data: graphicBarData.actual_data.y,
+          backgroundColor: 'rgba(255, 99, 132, 0.5)',
+        },
+        {
+          label: 'Valor predecidos',
+          data: graphicBarData.other_data.y,
+          backgroundColor: 'rgba(53, 162, 235, 0.5)',
+        },
+        ],
+      };
+        
+      setData(dataLine);
+      setDataYear(dataBar);
     })
     .catch(err => {
       console.log(err)
@@ -164,18 +154,14 @@ const Graph = () => {
           <MDBCol size='3' className='border'>
             Filtros
           </MDBCol>
-          <MDBCol size='9'>
-            { !data ? <EmptyLineChart/> : <Line options={options}  data={data}/> }
+          <MDBCol size='9' className='d-flex justify-content-center align-items-center gap-5 flex-column'>
+            { !data ? <EmptyLineChart/> : <YearBarGraph dataGraph={dataYear} />}
+            { !data ? <EmptyLineChart/> : <LineBarGraph dataGraph={data}/> }
           </MDBCol>
         </MDBRow>
       </MDBContainer>
-      {console.log(data)}
     </div>
-    /*   */
   )
 }
 
 export default Graph;
-
-
-

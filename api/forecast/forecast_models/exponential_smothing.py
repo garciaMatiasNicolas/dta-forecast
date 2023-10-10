@@ -29,32 +29,33 @@ def exp_smoothing_predictions(fila, test_periods, prediction_periods):
         og_date = train_data.index[i]
 
         df_pred = df_pred._append(
-            {'family': fila.iloc[1], 'region': fila.iloc[2], 'salesman': fila.iloc[3], 'client': fila.iloc[4],
-             'category': fila.iloc[5], 'subcategory': fila.iloc[6],
-             'sku': fila.iloc[7], 'description': fila.iloc[8], 'model': 'actual',
+            {'family': fila.iloc[0], 'region': fila.iloc[1], 'salesman': fila.iloc[2],
+             'client': fila.iloc[3],
+             'category': fila.iloc[4], 'subcategory': fila.iloc[5],
+             'sku': fila.iloc[6], 'description': fila.iloc[7], 'model': 'actual',
              'date': og_date, 'value': fila[og_date]}, ignore_index=True)
 
         df_pred = df_pred._append(
-            {'family': fila.iloc[1], 'region': fila.iloc[2], 'salesman': fila.iloc[3],
-             'client': fila.iloc[4],
-             'category': fila.iloc[5], 'subcategory': fila.iloc[6],
-             'sku': fila.iloc[7], 'description': fila.iloc[8], 'model': 'exp_smooth',
+            {'family': fila.iloc[0], 'region': fila.iloc[1], 'salesman': fila.iloc[2],
+             'client': fila.iloc[3],
+             'category': fila.iloc[4], 'subcategory': fila.iloc[5],
+             'sku': fila.iloc[6], 'description': fila.iloc[7], 'model': 'exp_smooth',
              'date': og_date, 'value': og}, ignore_index=True)
 
     for i, test in enumerate(test_predictions):
         test_date = test_data.index[i]
         df_pred = df_pred._append(
-            {'family': fila.iloc[1], 'region': fila.iloc[2], 'salesman': fila.iloc[3],
-             'client': fila.iloc[4],
-             'category': fila.iloc[5], 'subcategory': fila.iloc[6],
-             'sku': fila.iloc[7], 'description': fila.iloc[8], 'model': 'actual',
+            {'family': fila.iloc[0], 'region': fila.iloc[1], 'salesman': fila.iloc[2],
+             'client': fila.iloc[3],
+             'category': fila.iloc[4], 'subcategory': fila.iloc[5],
+             'sku': fila.iloc[6], 'description': fila.iloc[7], 'model': 'actual',
              'date': test_date, 'value': fila[test_date]}, ignore_index=True)
 
         df_pred = df_pred._append(
-            {'family': fila.iloc[1], 'region': fila.iloc[2], 'salesman': fila.iloc[3],
-             'client': fila.iloc[4],
-             'category': fila.iloc[5], 'subcategory': fila.iloc[6],
-             'sku': fila.iloc[7], 'description': fila.iloc[8], 'model': 'exp_smooth',
+            {'family': fila.iloc[0], 'region': fila.iloc[1], 'salesman': fila.iloc[2],
+             'client': fila.iloc[3],
+             'category': fila.iloc[4], 'subcategory': fila.iloc[5],
+             'sku': fila.iloc[6], 'description': fila.iloc[7], 'model': 'exp_smooth',
              'date': test_date, 'value': test}, ignore_index=True)
 
     df_pred_pivot = df_pred.pivot(values='value', index=['family', 'region', 'salesman', 'client', 'category',
@@ -66,16 +67,17 @@ def exp_smoothing_predictions(fila, test_periods, prediction_periods):
     for i, future in enumerate(future_dates):
         fut_date = future_dates[i]
         df_pred_fc = df_pred_fc._append(
-            {'family': fila.iloc[1], 'region': fila.iloc[2], 'salesman': fila.iloc[3], 'client': fila.iloc[4],
-             'category': fila.iloc[5], 'subcategory': fila.iloc[6],
-             'sku': fila.iloc[7], 'description': fila.iloc[8], 'model': 'actual',
+            {'family': fila.iloc[0], 'region': fila.iloc[1], 'salesman': fila.iloc[2],
+             'client': fila.iloc[3],
+             'category': fila.iloc[4], 'subcategory': fila.iloc[5],
+             'sku': fila.iloc[6], 'description': fila.iloc[7], 'model': 'actual',
              'date': fut_date, 'value': None}, ignore_index=True)
 
         df_pred_fc = df_pred_fc._append(
-            {'family': fila.iloc[1], 'region': fila.iloc[2], 'salesman': fila.iloc[3],
-             'client': fila.iloc[4],
-             'category': fila.iloc[5], 'subcategory': fila.iloc[6],
-             'sku': fila.iloc[7], 'description': fila.iloc[8], 'model': 'exp_smooth',
+            {'family': fila.iloc[0], 'region': fila.iloc[1], 'salesman': fila.iloc[2],
+             'client': fila.iloc[3],
+             'category': fila.iloc[4], 'subcategory': fila.iloc[5],
+             'sku': fila.iloc[6], 'description': fila.iloc[7], 'model': 'exp_smooth',
              'date': fut_date, 'value': future_predictions[i]}, ignore_index=True)
 
     df_pred_fc_pivot = df_pred_fc.pivot(values='value', index=['family', 'region', 'salesman', 'client', 'category',

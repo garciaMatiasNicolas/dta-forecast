@@ -4,19 +4,52 @@ from rest_framework.permissions import IsAuthenticated
 from rest_framework.response import Response
 from rest_framework.views import APIView
 from rest_framework import status
+from django.conf import settings
+from collections import defaultdict
 from ..model_selection import best_model, get_historical_data
 from ..serializer import GetScenarioById
 from ..models import ForecastScenario
 from projects.models import ProjectsModel
 import pandas as pd
 import os
-from django.conf import settings
-from django.http import HttpResponse
 
 
-class RunModelsViews (APIView):
+class RunModelsViews(APIView):
     @staticmethod
-    def graphic_predictions(file_path):
+    def graphic_predictions_per_year(data):
+        actual_data = defaultdict(float)
+        other_data = defaultdict(float)
+
+        for key, value in data.items():
+            for date, item_value in zip(value['x'], value['y']):
+                year = date.split('-')[0]
+                if key == 'actual_data':
+                    actual_data[year] += item_value
+                elif key == 'other_data':
+                    other_data[year] += item_value
+
+        # Convert dict
+        actual_data = [{'x': year, 'y': value} for year, value in actual_data.items()]
+        other_data = [{'x': year, 'y': value} for year, value in other_data.items()]
+
+        # Order lists per year
+        actual_data.sort(key=lambda x: x['x'])
+        other_data.sort(key=lambda x: x['x'])
+
+        result = {
+            "actual_data": {
+                "x": [d['x'] for d in actual_data],
+                "y": [d['y'] for d in other_data]
+            },
+            "other_data": {
+                "x": [d['x'] for d in actual_data],
+                "y": [d['y'] for d in other_data]
+            }
+        }
+
+        return result
+
+    def graphic_predictions(self, file_path):
         try:
             df_pred = pd.read_excel(file_path)
 
@@ -28,14 +61,17 @@ class RunModelsViews (APIView):
 
         date_columns = df_pred.columns[9:]
 
-        actual_sum = actual_rows[date_columns].sum()
+        actual_sum = actual_rows[df_pred.columns[9:]].sum()
 
-        other_sum = other_rows[date_columns].sum()
+        other_sum = other_rows[df_pred.columns[9:]].sum()
 
         actual_data = {'x': date_columns.tolist(), 'y': actual_sum.tolist()}
         other_data = {'x': date_columns.tolist(), 'y': other_sum.tolist()}
 
-        return {'actual_data': actual_data, 'other_data': other_data}
+        final_data = {'actual_data': actual_data, 'other_data': other_data}
+        data_per_year = self.graphic_predictions_per_year(data=final_data)
+
+        return final_data, data_per_year
 
     @authentication_classes([TokenAuthentication])
     @permission_classes([IsAuthenticated])
@@ -51,7 +87,7 @@ class RunModelsViews (APIView):
                 try:
                     # Search scenario by id
                     scenario = ForecastScenario.objects.filter(pk=scenario_id).first()
-                    
+
                     # If scenario exists
                     if scenario:
                         project = ProjectsModel.objects.filter(pk=scenario.project.id).first()
@@ -73,12 +109,20 @@ class RunModelsViews (APIView):
                             # Write excel with model run results
                             with pd.ExcelWriter(path, engine='xlsxwriter') as excel_writer:
                                 result.to_excel(excel_writer, sheet_name='result', index=True, merge_cells=False)
+                                work_sheet = excel_writer.sheets['result']
 
-                            graphic = self.graphic_predictions(os.path.join(settings.MEDIA_ROOT, 'excel_files\\predictions',
-                                                                            f'{table_name}_prediction_results_scenario{scenario_name}.xlsx'))
+                                for i, column in enumerate(result.columns):
+                                    width_column = max(result[column].astype(str).apply(len).max(),
+                                                        len(column)) + 2
+                                    work_sheet.set_column(i, i, width_column)
+
+                            final_data, data_per_year = self.graphic_predictions(
+                                os.path.join(settings.MEDIA_ROOT, 'excel_files\\predictions',
+                                             f'{table_name}_prediction_results_scenario{scenario_name}.xlsx'))
 
                             # Save graphic_data and predictions excel url in the scenario
-                            scenario.graphic_data = graphic
+                            scenario.final_data_pred = final_data
+                            scenario.data_year_pred = data_per_year
                             scenario.url_predictions = path
                             scenario.save()
 
@@ -89,15 +133,9 @@ class RunModelsViews (APIView):
 
                 except ForecastScenario.DoesNotExist:
                     return Response({'error': 'not_found'}, status=status.HTTP_200_OK)
-        
+
             else:
                 return Response({'error': 'bad_request', 'logs': data.errors}, status=status.HTTP_400_BAD_REQUEST)
 
         else:
             return Response({'error': 'method_not_allowed'}, status=status.HTTP_405_METHOD_NOT_ALLOWED)
-
-
-
-
-
-
