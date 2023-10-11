@@ -5,57 +5,25 @@ from rest_framework.response import Response
 from rest_framework.views import APIView
 from rest_framework import status
 from django.conf import settings
-from collections import defaultdict
+from ..graphic_predictions_per_year import graphic_predictions_per_year
 from ..model_selection import best_model, get_historical_data
 from ..serializer import GetScenarioById
 from ..models import ForecastScenario
 from projects.models import ProjectsModel
+from files.filemanager import save_dataframe
 import pandas as pd
 import os
 
 
 class RunModelsViews(APIView):
     @staticmethod
-    def graphic_predictions_per_year(data):
-        actual_data = defaultdict(float)
-        other_data = defaultdict(float)
-
-        for key, value in data.items():
-            for date, item_value in zip(value['x'], value['y']):
-                year = date.split('-')[0]
-                if key == 'actual_data':
-                    actual_data[year] += item_value
-                elif key == 'other_data':
-                    other_data[year] += item_value
-
-        # Convert dict
-        actual_data = [{'x': year, 'y': value} for year, value in actual_data.items()]
-        other_data = [{'x': year, 'y': value} for year, value in other_data.items()]
-
-        # Order lists per year
-        actual_data.sort(key=lambda x: x['x'])
-        other_data.sort(key=lambda x: x['x'])
-
-        result = {
-            "actual_data": {
-                "x": [d['x'] for d in actual_data],
-                "y": [d['y'] for d in other_data]
-            },
-            "other_data": {
-                "x": [d['x'] for d in actual_data],
-                "y": [d['y'] for d in other_data]
-            }
-        }
-
-        return result
-
-    def graphic_predictions(self, file_path):
+    def graphic_predictions(file_path):
         try:
             df_pred = pd.read_excel(file_path)
-
         except pd.errors.ParserError:
             return {'error': 'file_not_exists'}
 
+        df_pred = df_pred.drop(columns=['MAPE'])
         actual_rows = df_pred[df_pred['model'] == 'actual']
         other_rows = df_pred[df_pred['model'] != 'actual']
 
@@ -69,7 +37,7 @@ class RunModelsViews(APIView):
         other_data = {'x': date_columns.tolist(), 'y': other_sum.tolist()}
 
         final_data = {'actual_data': actual_data, 'other_data': other_data}
-        data_per_year = self.graphic_predictions_per_year(data=final_data)
+        data_per_year = graphic_predictions_per_year(data=final_data)
 
         return final_data, data_per_year
 
@@ -104,7 +72,7 @@ class RunModelsViews(APIView):
                             # Get dataframe run models
                             dataframe = get_historical_data(table_name=table_name)
                             result = best_model(dataframe=dataframe, test_p=test_p, pred_p=pred_p, models=models)
-                            path = f'media/excel_files/predictions/{table_name}_prediction_results_scenario{scenario_name}.xlsx'
+                            path = f'media/excel_files/predictions/{table_name}_prediction_results_scenario_{scenario_name}.xlsx'
 
                             # Write excel with model run results
                             with pd.ExcelWriter(path, engine='xlsxwriter') as excel_writer:
@@ -118,13 +86,18 @@ class RunModelsViews(APIView):
 
                             final_data, data_per_year = self.graphic_predictions(
                                 os.path.join(settings.MEDIA_ROOT, 'excel_files\\predictions',
-                                             f'{table_name}_prediction_results_scenario{scenario_name}.xlsx'))
+                                             f'{table_name}_prediction_results_scenario_{scenario_name}.xlsx'))
 
                             # Save graphic_data and predictions excel url in the scenario
                             scenario.final_data_pred = final_data
                             scenario.data_year_pred = data_per_year
                             scenario.url_predictions = path
                             scenario.save()
+
+                            # Create table with predicted data
+                            save_dataframe(route_file=path,
+                                           file_name=f'{table_name}_prediction_results_scenario_{scenario_name}',
+                                           model_type="historical_data")
 
                             return Response({'message': 'succeed'}, status=status.HTTP_200_OK)
 

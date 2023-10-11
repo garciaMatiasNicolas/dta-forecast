@@ -9,16 +9,16 @@
       <change beforePath="$PROJECT_DIR$/api/db.sqlite3" beforeDir="false" />
       <change beforePath="$PROJECT_DIR$/api/files/migrations/0001_initial.py" beforeDir="false" />
       <change beforePath="$PROJECT_DIR$/api/files/migrations/__init__.py" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/api/forecast/forecast_models/arima_predictions.py" beforeDir="false" afterPath="$PROJECT_DIR$/api/forecast/forecast_models/arima_predictions.py" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/api/forecast/forecast_models/exponential_smothing.py" beforeDir="false" afterPath="$PROJECT_DIR$/api/forecast/forecast_models/exponential_smothing.py" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/api/forecast/forecast_models/holt_winters_predictions.py" beforeDir="false" afterPath="$PROJECT_DIR$/api/forecast/forecast_models/holt_winters_predictions.py" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/api/forecast/forecast_models/linear_regression.py" beforeDir="false" afterPath="$PROJECT_DIR$/api/forecast/forecast_models/linear_regression.py" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/api/forecast/migrations/0001_initial.py" beforeDir="false" />
       <change beforePath="$PROJECT_DIR$/api/forecast/migrations/__init__.py" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/api/forecast/models.py" beforeDir="false" afterPath="$PROJECT_DIR$/api/forecast/models.py" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/api/forecast/serializer.py" beforeDir="false" afterPath="$PROJECT_DIR$/api/forecast/serializer.py" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/api/forecast/urls.py" beforeDir="false" afterPath="$PROJECT_DIR$/api/forecast/urls.py" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/api/forecast/views/forecast_views.py" beforeDir="false" afterPath="$PROJECT_DIR$/api/forecast/views/forecast_views.py" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/api/media/excel_files/Historical_Data_2.xlsx" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/api/media/excel_files/predictions/Historical_Data_mi_proyecto_1_user1_prediction_results_scenarioescenario_prueba.xlsx" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/api/media/excel_files/Historical_Data_Donadio.xlsx" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/api/media/excel_files/Historical_Data_Donadio_1.xlsx" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/api/media/excel_files/predictions/Historical_Data_Donadio_user1_prediction_results_scenarioesc_donadio.xlsx" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/api/media/excel_files/predictions/Historical_Data_Prueba1_user1_prediction_results_scenarioescenario_prueba.xlsx" beforeDir="false" />
       <change beforePath="$PROJECT_DIR$/api/projects/migrations/0001_initial.py" beforeDir="false" />
       <change beforePath="$PROJECT_DIR$/api/projects/migrations/__init__.py" beforeDir="false" />
       <change beforePath="$PROJECT_DIR$/api/users/migrations/0001_initial.py" beforeDir="false" />
@@ -41,6 +41,9 @@
   </component>
   <component name="MarkdownSettingsMigration">
     <option name="stateVersion" value="1" />
+  </component>
+  <component name="ProblemsViewState">
+    <option name="selectedTabId" value="ProjectErrors" />
   </component>
   <component name="ProjectId" id="2UuMGljFRqnERLWr8daERoLYLXh" />
   <component name="ProjectLevelVcsManager">

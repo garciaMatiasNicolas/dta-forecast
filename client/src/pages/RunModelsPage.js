@@ -72,12 +72,14 @@ const RunModelsPage = () => {
             .catch((err)=>{
                 console.log(err);
                 showErrorAlert("Ocurrio un error inesperado");
-            }) 
-            .finally(()=>{setBasicModal(!basicModal)});
+            })
+            .finally(()=>{setBasicModal(!basicModal)}); 
         })
         .catch(()=>{
             showErrorAlert("Nombre de escenario ya utilizado");
-        });
+            setBasicModal(!basicModal);
+        })
+        
     };
 
     const isFormValid = () => {

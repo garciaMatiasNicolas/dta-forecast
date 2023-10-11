@@ -1,39 +1,76 @@
+import { Chart as ChartJS, CategoryScale, LinearScale, PointElement, LineElement, Title, Tooltip, Legend, BarElement } from 'chart.js';
 import { MDBTable, MDBTableHead, MDBTableBody, MDBIcon, MDBCollapse, MDBContainer, MDBRow, MDBCol } from 'mdb-react-ui-kit';
 import { useEffect, useState } from 'react';
+import { Line, Bar } from 'react-chartjs-2';
 import { showErrorAlert } from '../../../other/Alerts';
 import axios from 'axios';
 import EmptyLineChart from './EmptyChartLine';
-import YearBarGraph from './YearBarGraph';
-import LineBarGraph from './LineBarGraph';
+import { filters } from '../../../../data/filters';
+
+ChartJS.register(
+  CategoryScale,
+  LinearScale,
+  PointElement,
+  LineElement,
+  Title,
+  Tooltip,
+  Legend,
+  BarElement, 
+);
 
 const Graph = () => {
+
+  // AUTHORIZATION HEADERS //
   const token = localStorage.getItem("userToken");
   const headers = {
     'Authorization': `Token ${token}`, 
     'Content-Type': 'application/json', 
   };
   
+  // STATES //
   const [showShow, setShowShow] = useState(false);
 
+  // State for show scenarios history
   const toggleShow = () => setShowShow(!showShow);
   
+  // State for data graph all
   const [data, setData] = useState(false);
 
+  // State for data graph yearly
   const [dataYear, setDataYear] = useState(false);
 
+  // State for set scenarios
   const [scenarios, setScenarios] = useState([]);
+
+  // State for set id scenario
+  const [scenarioId, setScenarioId] = useState(0);
+
+  // State for get filters from server
+  const [optionsFilter, setOptionsFilter] = useState([]);
+
+  // Graph options
+  const options = {
+    responsive: true,
+    plugins: {
+      legend: {
+        position: 'top',
+      },
+    },
+  };
   
+  // USE EFFECT //
   useEffect(() => {
+    // Get all scenarios and set state on first render
     axios.get("http://localhost:8000/scenarios", { headers })
     .then(res => {
       setScenarios(res.data);
-      
     })
     .catch(err => {
       console.log(err);
     })
   }, []);
   
+  // Function for download excel
   const handleDownload = (scenarioName, urlPath) => {
     const link = document.createElement("a");
     link.href = `http://localhost:8000/${urlPath}`;
@@ -42,10 +79,79 @@ const Graph = () => {
     link.click();
     document.body.removeChild(link);
   };
+  
+  // Function for get filters from server
+  const handleClickFilter = (e) => {
+    const data = {
+      filter_name: e.target.name,
+      scenario_id: scenarioId,
+      project_id: localStorage.getItem("projectId"),
+      filter_value: "x"
+    };
 
+    axios.post("http://localhost:8000/get-filters", data, { headers })
+    .then(res => setOptionsFilter(res.data))
+    .catch(err => console.log(err));
+  };
+
+  // Function for graphic data using filters
+  const handleOnChangeFilter = (e) => {
+    const data = {
+      filter_name: e.target.name,
+      scenario_id: 5,
+      project_id: localStorage.getItem("projectId"),
+      filter_value: e.target.value
+    };
+
+    axios.post("http://localhost:8000/filter-data", data, { headers })
+    .then(res => {
+      let graphicLineData =  res.data.full_data;
+      let graphicBarData = res.data.year_data;
+
+      const dataLine = {
+        labels: graphicLineData.actual_data.x,
+        datasets: [
+          {
+            label: 'Valor actual',
+            data: graphicLineData.actual_data.y,
+            borderColor: 'rgb(255, 99, 132)',
+            backgroundColor: 'rgba(255, 99, 132, 0.5)',
+          },
+          {
+            label: 'Valor predecido',
+            data: graphicLineData.other_data.y,
+            borderColor: 'rgb(53, 162, 235)',
+            backgroundColor: 'rgba(53, 162, 235, 0.5)',
+          }
+        ]
+      }; 
+
+      const dataBar = {
+        labels: graphicBarData.actual_data.x,
+        datasets: [
+        {
+          label: 'Valor actual',
+          data: graphicBarData.actual_data.y,
+          backgroundColor: 'rgba(255, 99, 132, 0.5)',
+        },
+        {
+          label: 'Valor predecidos',
+          data: graphicBarData.other_data.y,
+          backgroundColor: 'rgba(53, 162, 235, 0.5)',
+        },
+        ],
+      };
+        
+      setData(dataLine);
+      setDataYear(dataBar);
+    })
+    .catch(err => console.log(err.response));
+  };
+
+  // Function for set graphic data by scenario on select 
   const handleOnChange = (e) => {
-
     let scenarioId = e.target.value;
+    setScenarioId(scenarioId);
     axios.get(`http://localhost:8000/scenarios/${scenarioId}`, { headers })
     .then(res => {
       let graphicLineData =  res.data.final_data_pred;
@@ -151,12 +257,25 @@ const Graph = () => {
       </div>
       <MDBContainer>
         <MDBRow>
-          <MDBCol size='3' className='border'>
-            Filtros
+          <MDBCol size='3' className="d-flex justify-content-start align-items-start gap-3 flex-column">
+            {filters.map(item => (
+              <div>
+                <div className="d-flex justify-content-start align-items-center gap-3">
+                    <MDBIcon icon={item.icon}/>
+                    <p className="mt-3">{item.label}</p>
+                </div>
+                <select onClick={handleClickFilter} onChange={handleOnChangeFilter} style={{"minWidth": "200px"}} className="form-select" name={item.name}>
+                    <option defaultValue>-----</option>
+                    {optionsFilter.map(item => (
+                      <option key={item} value={item} >{item}</option>
+                    ))}
+                </select>
+              </div>
+            ))}
           </MDBCol>
           <MDBCol size='9' className='d-flex justify-content-center align-items-center gap-5 flex-column'>
-            { !data ? <EmptyLineChart/> : <YearBarGraph dataGraph={dataYear} />}
-            { !data ? <EmptyLineChart/> : <LineBarGraph dataGraph={data}/> }
+            { !data ? <EmptyLineChart/> : <Bar options={options} data={dataYear} />}
+            { !data ? <EmptyLineChart/> : <Line options={options} data={data}/> }
           </MDBCol>
         </MDBRow>
       </MDBContainer>
