@@ -2,11 +2,14 @@ import { MDBIcon, MDBBadge, MDBBtn } from "mdb-react-ui-kit"
 import {  useNavigate } from 'react-router-dom';
 import axios from "axios";
 import { showErrorAlert, showSuccessAlert } from "../../other/Alerts";
+import { decryptData } from "../../../crypt/crypt";
+
+const apiUrl = process.env.REACT_APP_API_URL;
 
 const Projects = ({props}) => {
   let navigate = useNavigate();
 
-  let token = localStorage.getItem("userToken");
+  let token = decryptData(localStorage.getItem("userToken"));
 
   const headers = {
     'Authorization': `Token ${token}`, 
@@ -14,7 +17,7 @@ const Projects = ({props}) => {
   };
 
   const deleteProject = () => {
-    axios.delete(`http://localhost:8000/projects/${props.id}`, {headers})
+    axios.delete(`${apiUrl}/projects/${props.id}`, {headers})
     .then(res => {
       showSuccessAlert(`Proyecto "${props.project_name}" eliminado`, "Proyecto eliminado");
     })

@@ -6,6 +6,8 @@ import { showErrorAlert, showSuccessAlert } from "../components/other/Alerts";
 import { MDBCheckbox, MDBCol, MDBContainer, MDBInput, MDBRow, MDBBtn, MDBIcon,  MDBModal, MDBModalDialog, MDBModalContent, MDBModalBody,} from "mdb-react-ui-kit";
 import { AppContext } from "../context/Context";
 
+const apiUrl = process.env.REACT_APP_API_URL;
+
 const RunModelsPage = () => {
     const {setDataGraphic} = useContext(AppContext);
 
@@ -53,12 +55,12 @@ const RunModelsPage = () => {
 
     const handleSubmit = (event) => {
         event.preventDefault();
-        axios.post("http://localhost:8000/scenarios/", formData, { headers })
+        axios.post(`${apiUrl}/scenarios/`, formData, { headers })
         .then((res)=>{
             let id = res.data.scenario_id;
             let data = {scenario_id: id};
 
-            axios.post("http://localhost:8000/test-model", data, {headers})
+            axios.post(`${apiUrl}/test-model`, data, {headers})
             .then((res)=>{
                 showSuccessAlert("Predicciones realizadas con exito", "Forecast finalizado");
                 let url = res.data.url;
@@ -70,8 +72,10 @@ const RunModelsPage = () => {
                 console.log(scenario);
             })
             .catch((err)=>{
-                console.log(err);
                 showErrorAlert("Ocurrio un error inesperado");
+                axios.delete(`${apiUrl}/scenarios/${id}`, { headers })
+                .then(res => console.log(res.data))
+                .catch(err => console.log(err));
             })
             .finally(()=>{setBasicModal(!basicModal)}); 
         })
@@ -129,22 +133,6 @@ const RunModelsPage = () => {
                             </MDBRow>
                         </form>
                     </MDBCol>
-
-                    {/* <MDBCol size='3' className="border">
-                        <div className="mt-3">
-                            <h5 style={{"color": "#3b71ca"}} className="text-center">Resultados Excel</h5>
-                            { results.length === 0 ? <p className="text-center" style={{"marginTop": "80px"}}>No se corrieron modelos</p> : 
-                            <>
-                                <p>RESULTADOS</p>
-                                {results.map((item) =>(
-                                    <a href={item}>excel</a>
-                                ))}
-                                {console.log(results)}
-                            </>
-                             }
-                        </div>
-                    </MDBCol> */}
-
                 </MDBRow>
             </MDBContainer>
             

@@ -7,6 +7,8 @@ import axios from 'axios';
 import { showErrorAlert } from '../components/other/Alerts';
 import { useNavigate } from 'react-router-dom';
 
+const apiUrl = process.env.REACT_APP_API_URL;
+
 const Dashboard = () => {
   
   const [projects, setProjects] = useState([]);
@@ -25,7 +27,7 @@ const Dashboard = () => {
       'Content-Type': 'application/json', 
     };
 
-    axios.get("http://localhost:8000/projects", {headers})
+    axios.get(`${apiUrl}/projects`, {headers})
     .then(res => {
       setProjects(res.data);
     })

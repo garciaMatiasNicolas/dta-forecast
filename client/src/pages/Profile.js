@@ -4,6 +4,7 @@ import { showErrorAlert } from "../components/other/Alerts"
 import Navbar from "../components/navs/Navbar"
 import ProfileDataContainer from "../containers/admin/ProfileDataContainer";
 
+const apiUrl = process.env.REACT_APP_API_URL;
 
 const Profile = () => {
   
@@ -17,7 +18,7 @@ const Profile = () => {
       'Content-Type': 'application/json', 
     };
     
-    axios.get(`http://localhost:8000/users/detail/${userPk}`, {headers})
+    axios.get(`${apiUrl}/users/detail/${userPk}`, {headers})
     .then(res => {
       setUserData(res.data)
     })

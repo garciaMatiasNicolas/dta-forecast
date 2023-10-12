@@ -1,9 +1,17 @@
-import axios from "axios"
-import { MDBInput } from "mdb-react-ui-kit"
-import { useState } from "react"
-import { Link, useNavigate  } from "react-router-dom"
-import { showErrorAlert } from "../other/Alerts"
-import { ClipLoader } from "react-spinners"
+import axios from "axios";
+import { MDBInput } from "mdb-react-ui-kit";
+import { useState } from "react";
+import { Link, useNavigate  } from "react-router-dom";
+import { showErrorAlert } from "../other/Alerts";
+import { ClipLoader } from "react-spinners";
+import { encryptData } from './encryptionFunctions';
+
+
+const encryptedData = encryptData(data);
+localStorage.setItem('encryptedData', encryptedData);
+
+
+const apiUrl = process.env.REACT_APP_API_URL;
 
 const LoginForm = () => {
     const navigate = useNavigate();
@@ -26,11 +34,11 @@ const LoginForm = () => {
     const fetchData = () => {
         setLoading(true);
 
-        axios.post("http://localhost:8000/authentication/login", data)
+        axios.post(`${apiUrl}/authentication/login`, data)
         .then(response => {
             const {token, user_id} = response.data
-            localStorage.setItem("userToken", token);
-            localStorage.setItem("userPk", user_id);
+            localStorage.setItem("userToken", encryptData(token));
+            localStorage.setItem("userPk", encryptData(user_id));
             navigate("/dashboard/")
         })
         .catch(error => {

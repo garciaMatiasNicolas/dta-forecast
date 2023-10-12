@@ -3,6 +3,7 @@ import { MDBBtn, MDBIcon} from 'mdb-react-ui-kit';
 import React, { useRef, useState } from 'react';
 import { showErrorAlert, showSuccessAlert } from '../../../other/Alerts';
 
+const apiUrl = process.env.REACT_APP_API_URL;
 
 const GropuButtonActions = ({props}) => {
     const fileInputRef = useRef(null);
@@ -12,7 +13,7 @@ const GropuButtonActions = ({props}) => {
     };
 
     const uploadFile = (data, headers) => {
-        axios.post("http://localhost:8000/files/", data, {headers})
+        axios.post(`${apiUrl}/files/`, data, {headers})
         .then(res => {
             showSuccessAlert("Archivo subido exitosamente!", "Data recibida")
         })

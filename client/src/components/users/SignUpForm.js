@@ -1,12 +1,16 @@
-import { useState } from "react"
-import { Link, useNavigate } from "react-router-dom"
+import { useState } from "react";
+import { Link, useNavigate } from "react-router-dom";
 import { MDBInput,  } from 'mdb-react-ui-kit';
 import { showErrorAlert, showSuccessAlert } from "../other/Alerts";
 import axios from "axios";
+import { ClipLoader } from "react-spinners";
 
+const apiUrl = process.env.REACT_APP_API_URL;
 
 const SignUpForm = () => {
     const navigate = useNavigate();
+
+    const [loading, setLoading] = useState(false);
 
     const [formData, setFormData] = useState({
         first_name: '',
@@ -24,7 +28,7 @@ const SignUpForm = () => {
     };
 
     const fetchData = () => {
-        axios.post('http://127.0.0.1:8000/users/create', formData)
+        axios.post(`${apiUrl}/users/create`, formData)
         .then((response) => {
             if (response.data.error) {
                 showErrorAlert("Email en uso, utilice otro o inicie sesion")
@@ -32,13 +36,16 @@ const SignUpForm = () => {
             } else {
                 showSuccessAlert("Verifique su correo electrónico para validar su email y luego inicie sesión.", "Registro exitoso")
                 setTimeout(()=>{
-                    navigate("/login/")
-                }, 3000)
+                    navigate("/login/");
+                }, 2000)
             }
         })
         .catch((error)=>{
-            showErrorAlert("Algo fallo, intente mas tarde")
+            showErrorAlert("Algo fallo, intente mas tarde");
         })
+        .finally(() => {
+            setLoading(false);
+        });
     }
     
     const handleSubmit = (e) => {
@@ -95,7 +102,10 @@ const SignUpForm = () => {
             />
         </div>
 
-        <button type="submit" className="btn btn-primary btn-block mb-4">Registrarme</button>
+        <button type="submit" className="btn btn-primary btn-block mb-4 d-flex justify-content-center align-items-center gap-2">
+            <span>Inicia sesion</span>
+            { loading && <ClipLoader color="#ffffff" loading={loading} size={15} /> } 
+        </button>
 
         <div className="text-center">
             <p>¿Ya tienes cuenta? <Link to='/login/'>Inicia sesion</Link> </p>

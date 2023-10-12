@@ -15,6 +15,9 @@ import {
 } from 'mdb-react-ui-kit';
 import { showErrorAlert, showSuccessAlert } from '../../other/Alerts';
 import { useNavigate } from 'react-router-dom';
+import { decryptData } from '../../../crypt/crypt';
+
+const apiUrl = process.env.REACT_APP_API_URL;
 
 
 const CreateProjectBtn = ({createProject}) => {
@@ -24,7 +27,7 @@ const CreateProjectBtn = ({createProject}) => {
 
     const [projectData, setProjectData] = useState({
         'project_name': '',
-        'user_owner': localStorage.getItem('userPk')
+        'user_owner': decryptData(localStorage.getItem('userPk'))
     });
     
     const handleOnChange = (e) => {
@@ -44,7 +47,7 @@ const CreateProjectBtn = ({createProject}) => {
     };
 
     const headers = {
-        'Authorization': `Token ${localStorage.getItem('userToken')}`, 
+        'Authorization': `Token ${decryptData(localStorage.getItem('userToken'))}`, 
         'Content-Type': 'application/json', 
     };
     
@@ -52,8 +55,8 @@ const CreateProjectBtn = ({createProject}) => {
     
     const createNewProject =  () => {
         setLoading(true);
-
-        axios.post("http://localhost:8000/projects/", projectData, { headers })
+        
+        axios.post(`${apiUrl}/projects/`, projectData, { headers })
         .then((res) => {
             showSuccessAlert("Proyecto creado exitosamente", "Creado");
             createProject(res.data.project);
@@ -61,9 +64,14 @@ const CreateProjectBtn = ({createProject}) => {
         .catch(err => {
             if (err.response.data.error === "bad_request") {
                 showErrorAlert("Ya existe un proyecto con ese nombre, intente con otro");
-            } else {
+            } 
+            else if (err.status === 401) {
                 showErrorAlert("Su sesion ha expirado");
-                navigate("/login/")
+                navigate("/login/");
+                localStorage.clear();
+            }
+            else {
+                showErrorAlert("Ocurrio un error inesperado, intente mas tarde");
             }
         })
         .finally(() => {

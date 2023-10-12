@@ -9,6 +9,8 @@ import { showErrorAlert, showSuccessAlert } from "../../components/other/Alerts"
 import { MDBContainer, MDBRow, MDBCol, MDBBtn, MDBModal, MDBModalDialog, MDBModalContent, MDBModalBody, MDBModalFooter, MDBIcon} from 'mdb-react-ui-kit';
 import { ClipLoader } from "react-spinners";
 
+const apiUrl = process.env.REACT_APP_API_URL;
+
 const ParamsPage = () => {
   // Token and headers
   const token = localStorage.getItem("userToken");
@@ -37,7 +39,7 @@ const ParamsPage = () => {
       "project": project
     };
 
-    axios.post("http://localhost:8000/scenarios/get_scenario_names/", data, { headers })
+    axios.post(`${apiUrl}/scenarios/get_scenario_names/`, data, { headers })
     .then(res => {
       res.data.not_found ? setScenario("No hay escenarios") : setScenario(res.data)
     })
@@ -55,7 +57,7 @@ const ParamsPage = () => {
       "pk" : value
     }
 
-    axios.post("http://localhost:8000/scenarios/get_scenario_data/", data, { headers })
+    axios.post(`${apiUrl}/scenarios/get_scenario_data/`, data, { headers })
     .then(res => setScenarioData(res.data[0]));
 
     if (scenarioData === undefined ){
@@ -74,7 +76,7 @@ const ParamsPage = () => {
       "user_owner": localStorage.getItem("userPk")
     }
     
-    axios.post("http://localhost:8000/test-model", data, { headers })
+    axios.post(`${apiUrl}/test-model`, data, { headers })
     .then(()=>{
       setBasicModal(false);
       setIsLoading(false);

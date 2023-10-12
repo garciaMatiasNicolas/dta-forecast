@@ -4,23 +4,26 @@ import axios from "axios";
 import { showErrorAlert } from "../../components/other/Alerts";
 import { useNavigate } from "react-router-dom";
 import CreateProjectBtn from "../../components/admin/projects/CreateProjectBtn";
+import { decryptData } from './encryptionFunctions';
+
+const apiUrl = process.env.REACT_APP_API_URL;
 
 const UserContainer = ({createProject}) => {
     const [fullname, setFullname] = useState('');
     
-    let token = localStorage.getItem("userToken");
+    let token = decryptData(localStorage.getItem("userToken"));
        
     let navigate = useNavigate();
 
     useEffect(() => {
-        let user= localStorage.getItem("userPk");
+        let user= decryptData(localStorage.getItem("userPk"));
 
         const headers = {
             'Authorization': `Token ${token}`, 
             'Content-Type': 'application/json', 
         };
 
-        axios.get(`http://localhost:8000/users/detail/${user}`, { headers })
+        axios.get(`${apiUrl}/users/detail/${user}`, { headers })
         .then(response => {
             setFullname(`${response.data.first_name} ${response.data.last_name}`);
         })

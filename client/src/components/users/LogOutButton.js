@@ -2,11 +2,11 @@ import axios from 'axios';
 import { MDBBtn, MDBIcon } from 'mdb-react-ui-kit';
 import { showErrorAlert } from '../other/Alerts';
 
-const LogOutButton = () => {
+const apiUrl = process.env.REACT_APP_API_URL;
 
-   
+const LogOutButton = () => {
     const executeLogOut = (tokenUser) => {
-        axios.post( `http://localhost:8000/authentication/logout?token=${tokenUser}`)
+        axios.post( `${apiUrl}/authentication/logout?token=${tokenUser}`)
         .then(response => {
             console.log(response)
             localStorage.clear();

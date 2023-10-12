@@ -31,36 +31,16 @@ class ForecastScenarioViewSet(ModelViewSet):
             return Response({'error': 'bad_request', 'logs': scenario.errors},
                             status=status.HTTP_400_BAD_REQUEST)
 
-    """@action(detail=False, methods=['post'])
-    def get_scenario_data(self, request):
-        data = FilterScenarioById(data=request.data)
 
-        if data.is_valid():
-            pk = data.validated_data['pk']
-            scenario = self.get_queryset().filter(id=pk)
-            serializer = ForecastScenarioSerializer(scenario, many=True)
-            if scenario:
-                return Response(serializer.data)
-            else:
-                return Response({'not_found': 'scenario_not_found'}, status=status.HTTP_200_OK)
+    def destroy(self, request, pk=None):
+        scenario_to_destroy = self.get_queryset().filter(id=pk).first()
+
+        if scenario_to_destroy:
+            scenario_to_destroy.delete()
+            scenario_to_destroy.save()
+            return Response({'message': 'scenario_deleted'},
+                            status=status.HTTP_200_OK)
 
         else:
-            return Response({'error': 'bad_request', 'logs': data.errors}, status=status.HTTP_200_OK)
-
-    @action(detail=False, methods=['post'])
-    def get_scenario_names(self, request):
-        data = FilterScenarioByProject(data=request.data)
-
-        if data.is_valid():
-            project_id = data.validated_data["project"]
-            scenario = self.get_queryset().filter(project=project_id)
-
-            if scenario:
-                serializer = Scenario(scenario, many=True)
-                return Response(serializer.data, status=status.HTTP_200_OK)
-
-            else:
-                return Response({'not_found': 'scenario_not_found'}, status=status.HTTP_200_OK)
-
-        else:
-            return Response({'error': 'bad_request', 'logs': data.errors}, status=status.HTTP_400_BAD_REQUEST)"""
+            return Response({'error': 'scenario_not_found'},
+                            status=status.HTTP_400_BAD_REQUEST)
