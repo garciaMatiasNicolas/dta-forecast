@@ -3,24 +3,25 @@ import Projects from '../../components/admin/projects/Projects';
 
 
 const ProjectsContainer = ({projects}) => {
-  
 
   return (
-    <MDBTable align='middle' className='container'>
-      <MDBTableHead>
-        <tr>
-          <th scope='col' className='fw-bold'>Nombre del proyecto y creador</th>
-          <th scope='col' className='fw-bold'>Estado</th>
-          <th scope='col' className='fw-bold'>Fecha de creacion</th>
-          <th scope='col' className='fw-bold'>Acciones</th>
-        </tr>
-      </MDBTableHead>
-      <MDBTableBody>
-        {projects.map(item => (
-          <Projects key={item.id} props={item} />
-        ))}
-      </MDBTableBody>
-    </MDBTable>
+    <div style={{ maxHeight: '300px', overflowY: 'auto', width: '100%' }}>
+      <MDBTable align='middle' className='container' style={{ width: '100%' }}>
+        <MDBTableHead>
+          <tr>
+            <th scope='col' className='fw-bold'>Nombre del proyecto y creador</th>
+            <th scope='col' className='fw-bold'>Estado</th>
+            <th scope='col' className='fw-bold'>Fecha de creacion</th>
+            <th scope='col' className='fw-bold'>Acciones</th>
+          </tr>
+        </MDBTableHead>
+        <MDBTableBody>
+          {projects.map(item => (
+            <Projects key={item.id} props={item} />
+          ))}
+        </MDBTableBody>
+      </MDBTable>
+    </div>
   );
 }
 

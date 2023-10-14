@@ -8,6 +8,7 @@ import EmptyLineChart from './EmptyChartLine';
 import { filters } from '../../../../data/filters';
 
 const apiUrl = process.env.API_URL;
+console.log(apiUrl)
 
 ChartJS.register(
   CategoryScale,
@@ -63,9 +64,12 @@ const Graph = () => {
   // USE EFFECT //
   useEffect(() => {
     // Get all scenarios and set state on first render
-    axios.get(`${apiUrl}/scenarios`, { headers })
+    axios.get(`http://localhost:8000/scenarios/`, {
+      headers: headers
+    })
     .then(res => {
       setScenarios(res.data);
+      console.log(res)
     })
     .catch(err => {
       console.log(err);
@@ -91,7 +95,7 @@ const Graph = () => {
       filter_value: "x"
     };
 
-    axios.post(`${apiUrl}/get-filters`, data, { headers })
+    axios.post(`http://localhost:8000/get-filters`, data, { headers })
     .then(res => setOptionsFilter(res.data))
     .catch(err => console.log(err));
   };
@@ -105,7 +109,7 @@ const Graph = () => {
       filter_value: e.target.value
     };
 
-    axios.post(`${apiUrl}/filter-data`, data, { headers })
+    axios.post(`http://localhost:8000/filter-data`, data, { headers })
     .then(res => {
       let graphicLineData =  res.data.full_data;
       let graphicBarData = res.data.year_data;
@@ -154,7 +158,7 @@ const Graph = () => {
   const handleOnChange = (e) => {
     let scenarioId = e.target.value;
     setScenarioId(scenarioId);
-    axios.get(`${apiUrl}/${scenarioId}`, { headers })
+    axios.get(`http://localhost:8000/scenarios/${scenarioId}`, { headers })
     .then(res => {
       let graphicLineData =  res.data.final_data_pred;
       let graphicBarData = res.data.data_year_pred;

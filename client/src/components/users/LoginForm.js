@@ -4,12 +4,7 @@ import { useState } from "react";
 import { Link, useNavigate  } from "react-router-dom";
 import { showErrorAlert } from "../other/Alerts";
 import { ClipLoader } from "react-spinners";
-import { encryptData } from './encryptionFunctions';
-
-
-const encryptedData = encryptData(data);
-localStorage.setItem('encryptedData', encryptedData);
-
+import logo from "../../assets/logowhite.png"
 
 const apiUrl = process.env.REACT_APP_API_URL;
 
@@ -37,8 +32,8 @@ const LoginForm = () => {
         axios.post(`${apiUrl}/authentication/login`, data)
         .then(response => {
             const {token, user_id} = response.data
-            localStorage.setItem("userToken", encryptData(token));
-            localStorage.setItem("userPk", encryptData(user_id));
+            localStorage.setItem("userToken", token);
+            localStorage.setItem("userPk", user_id);
             navigate("/dashboard/")
         })
         .catch(error => {
@@ -57,8 +52,8 @@ const LoginForm = () => {
     
 
   return (
-    <div>
-        <form onSubmit={handleSubmit} className="border rounded p-5 bg-white">
+    <div className="d-flex justify-content-between align-items-center w-auto bg-white rounded">
+        <form onSubmit={handleSubmit} className="p-5 bg-white">
 
             <div className="form-outline mb-4">
                 <MDBInput 
@@ -96,6 +91,9 @@ const LoginForm = () => {
             </div>
             
         </form>
+        <div className="w-50 d-flex justify-content-center align-items-center">
+            <img style={{"maxWidth": "300px"}} className="w-auto" src={logo} />
+        </div>
     </div>
   )
 }

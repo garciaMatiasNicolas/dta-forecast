@@ -13,10 +13,22 @@ const Dashboard = () => {
   
   const [projects, setProjects] = useState([]);
   
-  const createProject = (nuevoProyecto) => {
-    setProjects([...projects, nuevoProyecto]);
+  const createProject = (newProject) => {
+    setProjects([...projects, newProject]);
   }
-  
+
+  const updateProjectById = (id, updatedProject) => {
+    setProjects(prevProjects => {
+      const updatedProjects = [...prevProjects];
+      const projectIndex = updatedProjects.findIndex(project => project.id === id);
+      if (projectIndex !== -1) {
+        updatedProjects.splice(projectIndex, 1, updatedProject);
+      } else {
+        updatedProjects.push(updatedProject);
+      }
+    });
+  };
+
   let navigate = useNavigate();
 
   useEffect(() => {
@@ -37,7 +49,7 @@ const Dashboard = () => {
       navigate("/login/");
     });
 
-  }, [])
+  }, []);
   
   return (
     <>
@@ -48,7 +60,7 @@ const Dashboard = () => {
           projects.length === 0 ? <div>No hay proyectos creados, cree uno para iniciar su forecast</div> : 
           <>
             <SearchProject/>
-            <ProjectsContainer projects={projects}/>
+            <ProjectsContainer projects={projects} />
           </>
         }
       </main> 

@@ -2,7 +2,6 @@ from rest_framework.authentication import TokenAuthentication
 from rest_framework.permissions import IsAuthenticated
 from rest_framework.response import Response
 from rest_framework.viewsets import ModelViewSet
-from rest_framework import generics
 from rest_framework import status
 from .serializers import ProjectSerializer
 from .models import ProjectsModel
@@ -52,12 +51,22 @@ class ProjectsViewSet(ModelViewSet):
                             status=status.HTTP_400_BAD_REQUEST)
 
     def destroy(self, request, pk=None):
+        type_of_delete = request.data.get('type')
         project_to_delete = self.get_queryset().filter(id=pk).first()
 
         if project_to_delete:
-            project_to_delete.delete()
-            return Response({'message': 'project_deleted'},
-                            status=status.HTTP_200_OK)
+
+            if type_of_delete == 'status':
+                project_to_delete.status = False
+                project_to_delete.save()
+                return Response({'message': 'status_project_changed'},
+                                status=status.HTTP_200_OK)
+
+            else:
+                project_to_delete.delete()
+                return Response({'message': 'project_deleted'},
+                                status=status.HTTP_200_OK)
+
         else:
             return Response({'error': 'project_not_found'},
                             status=status.HTTP_400_BAD_REQUEST)

@@ -15,7 +15,7 @@ import {
 } from 'mdb-react-ui-kit';
 import { showErrorAlert, showSuccessAlert } from '../../other/Alerts';
 import { useNavigate } from 'react-router-dom';
-import { decryptData } from '../../../crypt/crypt';
+
 
 const apiUrl = process.env.REACT_APP_API_URL;
 
@@ -27,7 +27,7 @@ const CreateProjectBtn = ({createProject}) => {
 
     const [projectData, setProjectData] = useState({
         'project_name': '',
-        'user_owner': decryptData(localStorage.getItem('userPk'))
+        'user_owner': localStorage.getItem('userPk')
     });
     
     const handleOnChange = (e) => {
@@ -47,7 +47,7 @@ const CreateProjectBtn = ({createProject}) => {
     };
 
     const headers = {
-        'Authorization': `Token ${decryptData(localStorage.getItem('userToken'))}`, 
+        'Authorization': `Token ${localStorage.getItem('userToken')}`, 
         'Content-Type': 'application/json', 
     };
     

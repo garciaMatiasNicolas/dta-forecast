@@ -17,7 +17,7 @@ class ForecastScenarioViewSet(ModelViewSet):
     def list(self, request, *args, **kwargs):
         queryset = self.get_queryset().filter(user_id=request.user.id)
         serializer = self.get_serializer(queryset, many=True)
-        return Response(serializer.data)
+        return Response(serializer.data, status=status.HTTP_200_OK)
 
     def create(self, request, *args, **kwargs):
         scenario = self.get_serializer(data=request.data)
@@ -31,13 +31,11 @@ class ForecastScenarioViewSet(ModelViewSet):
             return Response({'error': 'bad_request', 'logs': scenario.errors},
                             status=status.HTTP_400_BAD_REQUEST)
 
-
     def destroy(self, request, pk=None):
         scenario_to_destroy = self.get_queryset().filter(id=pk).first()
 
         if scenario_to_destroy:
             scenario_to_destroy.delete()
-            scenario_to_destroy.save()
             return Response({'message': 'scenario_deleted'},
                             status=status.HTTP_200_OK)
 

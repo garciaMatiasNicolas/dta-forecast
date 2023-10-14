@@ -72,10 +72,9 @@ const RunModelsPage = () => {
                 console.log(scenario);
             })
             .catch((err)=>{
-                showErrorAlert("Ocurrio un error inesperado");
+                err.response.data.error === 'data_failed' && showErrorAlert("No se subio plantilla con datos");
+                console.log(err)
                 axios.delete(`${apiUrl}/scenarios/${id}`, { headers })
-                .then(res => console.log(res.data))
-                .catch(err => console.log(err));
             })
             .finally(()=>{setBasicModal(!basicModal)}); 
         })

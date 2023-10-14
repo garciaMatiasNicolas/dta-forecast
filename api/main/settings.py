@@ -98,6 +98,17 @@ DATABASES = {
     }
 }
 
+"""DATABASES = {
+    'default': {
+        'ENGINE': 'django.db.backends.mysql',
+        'NAME': 'dtaforecast',
+        'USER': 'root',
+        'PASSWORD': 'Riverplate09.',
+        'HOST': 'localhost', 
+        'PORT': '3306',    
+    }
+}"""
+
 CORS_ALLOW_ALL_ORIGINS = True
 
 CORS_ALLOWED_ORIGINS = [

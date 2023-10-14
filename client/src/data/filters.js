@@ -6,7 +6,7 @@ export const filters = [
     },
     {
         icon: "handshake",
-        label: "Proveedor",
+        label: "Vendedor",
         name: "salesman"
     },
     {

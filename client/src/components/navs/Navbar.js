@@ -6,6 +6,7 @@ import {
     MDBNavbar,
     MDBNavbarBrand
 } from 'mdb-react-ui-kit';
+import logo from "../../assets/logonav.png";
 
 const Navbar = () => {
   return (
@@ -14,12 +15,7 @@ const Navbar = () => {
         <MDBContainer className="w-100 justify-content-between align-items-center">
             <Link to='/dashboard/'> 
                 <MDBNavbarBrand  className="w-auto">
-                    <img
-                    src='https://mdbootstrap.com/img/logo/mdb-transaprent-noshadows.webp'
-                    height='30'
-                    alt=''
-                    loading='lazy'
-                    />
+                    <h5 className="text-white fw-bold">DTA-FORECAST</h5>
                 </MDBNavbarBrand>
             </Link>
 
