@@ -7,6 +7,10 @@ def mape_calc(dataframe, model_name):
     for col in predicted_dataframe.columns:
         predicted_col = predicted_dataframe[col]
         actual_col = actual_df[col]
+
+        if not (predicted_col.dtype == float and actual_col.dtype == float):
+            raise ValueError("Column type must e numeric")
+
         n = len(actual_col)
         col_errors = []
         for i in range(n):
@@ -17,6 +21,7 @@ def mape_calc(dataframe, model_name):
                     col_errors.append(0)
                 else:
                     col_errors.append(abs(predicted_col[i] - actual_col[i]) / actual_col[i])
+
         col_mape = sum(col_errors) / n * 100
         absolute_errors.append(col_mape)
 

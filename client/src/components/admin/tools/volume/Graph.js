@@ -6,6 +6,7 @@ import { showErrorAlert } from '../../../other/Alerts';
 import axios from 'axios';
 import EmptyLineChart from './EmptyChartLine';
 import { filters } from '../../../../data/filters';
+import Mape from './Mape';
 
 const apiUrl = process.env.API_URL;
 console.log(apiUrl)
@@ -51,6 +52,9 @@ const Graph = () => {
   // State for get filters from server
   const [optionsFilter, setOptionsFilter] = useState([]);
 
+  // State for MAPE
+  const [mape, setMape] = useState(0);
+
   // Graph options
   const options = {
     responsive: true,
@@ -79,7 +83,7 @@ const Graph = () => {
   // Function for download excel
   const handleDownload = (scenarioName, urlPath) => {
     const link = document.createElement("a");
-    link.href = `${apiUrl}/${urlPath}`;
+    link.href = `http://localhost:8000/${urlPath}`;
     link.download = `predicciones_${scenarioName}.xlsx`;
     document.body.appendChild(link);
     link.click();
@@ -102,14 +106,15 @@ const Graph = () => {
 
   // Function for graphic data using filters
   const handleOnChangeFilter = (e) => {
-    const data = {
+    const dataFilter = {
       filter_name: e.target.name,
-      scenario_id: 5,
+      scenario_id: scenarioId,
       project_id: localStorage.getItem("projectId"),
       filter_value: e.target.value
     };
+    console.log(dataFilter)
 
-    axios.post(`http://localhost:8000/filter-data`, data, { headers })
+    axios.post(`http://localhost:8000/filter-data`, dataFilter,{ headers })
     .then(res => {
       let graphicLineData =  res.data.full_data;
       let graphicBarData = res.data.year_data;
@@ -162,7 +167,7 @@ const Graph = () => {
     .then(res => {
       let graphicLineData =  res.data.final_data_pred;
       let graphicBarData = res.data.data_year_pred;
-
+      
       const dataLine = {
         labels: graphicLineData.actual_data.x,
         datasets: [
@@ -199,6 +204,7 @@ const Graph = () => {
         
       setData(dataLine);
       setDataYear(dataBar);
+      setMape(res.data.mape_scenario);
     })
     .catch(err => {
       console.log(err)
@@ -264,13 +270,14 @@ const Graph = () => {
       <MDBContainer>
         <MDBRow>
           <MDBCol size='3' className="d-flex justify-content-start align-items-start gap-3 flex-column">
+            <Mape mape={mape}/>
             {filters.map(item => (
-              <div>
+              <div className='w-100'>
                 <div className="d-flex justify-content-start align-items-center gap-3">
                     <MDBIcon icon={item.icon}/>
                     <p className="mt-3">{item.label}</p>
                 </div>
-                <select onClick={handleClickFilter} onChange={handleOnChangeFilter} style={{"minWidth": "200px"}} className="form-select" name={item.name}>
+                <select onClick={handleClickFilter} onChange={handleOnChangeFilter} style={{"minWidth": "200px"}} className="form-select w-100" name={item.name}>
                     <option defaultValue>-----</option>
                     {optionsFilter.map(item => (
                       <option key={item} value={item} >{item}</option>

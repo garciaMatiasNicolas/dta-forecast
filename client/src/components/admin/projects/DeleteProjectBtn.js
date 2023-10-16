@@ -87,7 +87,7 @@ const DeleteProjectBtn = ({projectData}) => {
     return (
         <>
             <MDBBtn onClick={toggleShow} color='danger' outline floating rounded size='sm'>
-                <MDBIcon fas icon="times" color="danger"/>
+                <MDBIcon fas icon="trash" color="danger"/>
             </MDBBtn>
 
             <MDBModal staticBackdrop  show={basicModal} setShow={setBasicModal} tabIndex='-1'>

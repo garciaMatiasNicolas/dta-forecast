@@ -69,7 +69,6 @@ const RunModelsPage = () => {
                 let excelFile = `http://localhost:8000/${url}`;
                 setResults([...results, excelFile]);
                 setDataGraphic(graphicData);
-                console.log(scenario);
             })
             .catch((err)=>{
                 err.response.data.error === 'data_failed' && showErrorAlert("No se subio plantilla con datos");

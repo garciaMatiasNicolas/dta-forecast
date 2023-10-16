@@ -7,7 +7,7 @@ def holt_winters_predictions(fila, test_periods, prediction_periods):
     df_pred = pd.DataFrame(columns=['family', 'region', 'salesman', 'client', 'category', 'subcategory',
                                     'sku', 'description', 'model', 'date', 'value'])
     df_pred_fc = df_pred.copy()
-    time_series = pd.Series(fila.iloc[13:]).astype(dtype='float')
+    time_series = pd.Series(fila.iloc[12:]).astype(dtype='float')
     train_data = time_series[:-test_periods]
 
     test_data = time_series.iloc[-test_periods:]

@@ -13,6 +13,7 @@ class ForecastScenario(models.Model):
     test_p = models.IntegerField()
     final_data_pred = models.JSONField(blank=True, null=True)
     data_year_pred = models.JSONField(blank=True, null=True)
+    mape_scenario = models.FloatField(blank=True, null=True)
     url_predictions = models.CharField(max_length=500, blank=True, null=True)
     models = models.JSONField(default=list)
 

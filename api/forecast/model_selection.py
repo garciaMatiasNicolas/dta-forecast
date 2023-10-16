@@ -27,31 +27,28 @@ def get_historical_data(table_name: str):
 def best_model(dataframe, test_p, pred_p, models: list):
     df = dataframe.copy()
     df_pred = pd.DataFrame()
+    model_data = {}
 
     for product, row in df.iterrows():
-        arima_df, arima_mape = arima_predictions.arima_predictions(row, test_p, pred_p)
-        linear_df, linear_mape = linear_regression.linear_regression_predictions(row, test_p, pred_p)
-        exp_df, exp_mape = exponential_smothing.exp_smoothing_predictions(row, test_p, pred_p)
-        holt_df, holt_mape = holt_winters_predictions.holt_winters_predictions(row, test_p, pred_p)
+        if 'arima' in models:
+            arima_df, arima_mape = arima_predictions.arima_predictions(row, test_p, pred_p)
+            model_data['arima'] = {'mape': arima_mape, 'df': arima_df}
 
-        mape_list = [arima_mape, linear_mape, exp_mape, holt_mape]
-        best_model_idx = mape_list.index(min(mape_list))
+        if 'holtsWintersExponentialSmoothing' in models:
+            holt_df, holt_mape = holt_winters_predictions.holt_winters_predictions(row, test_p, pred_p)
+            model_data['holtsWintersExponentialSmoothing'] = {'mape': holt_mape, 'df': holt_df}
 
-        if best_model_idx == 0:
-            best_df = arima_df
-            best_df['MAPE'] = arima_mape
+        if 'simpleExponentialSmoothing' in models:
+            exp_df, exp_mape = exponential_smothing.exp_smoothing_predictions(row, test_p, pred_p)
+            model_data['simpleExponentialSmoothing'] = {'mape': exp_mape, 'df': exp_df}
 
-        elif best_model_idx == 1:
-            best_df = linear_df
-            best_df['MAPE'] = linear_mape
+        if 'linearRegression' in models:
+            linear_df, linear_mape = linear_regression.linear_regression_predictions(row, test_p, pred_p)
+            model_data['linearRegression'] = {'mape': linear_mape, 'df': linear_df}
 
-        elif best_model_idx == 2:
-            best_df = exp_df
-            best_df['MAPE'] = exp_mape
-
-        else:
-            best_df = holt_df
-            best_df['MAPE'] = holt_mape
+        best_model_name = min(model_data, key=lambda k: model_data[k]['mape'])
+        best_df = model_data[best_model_name]['df']
+        best_df['MAPE'] = model_data[best_model_name]['mape']
 
         df_pred = df_pred._append(best_df, ignore_index=False)
 
