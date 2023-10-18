@@ -5,7 +5,7 @@ import { showErrorAlert } from "../../other/Alerts";
 
 const apiUrl = process.env.REACT_APP_API_URL;
 
-const Projects = ({props}) => {
+const Projects = ({props, deleteProject, updateProject}) => {
   let navigate = useNavigate();
 
   let token = localStorage.getItem("userToken");
@@ -16,12 +16,12 @@ const Projects = ({props}) => {
   };
 
   const handleClick = () => {
-    if (props.status == false){
+    if (props.status === false){
       showErrorAlert("El proyecto se encuentra inactivo, para poder visualizarlo debe activarlo nuevamente");
     }
     else
     {
-      navigate(`/tools/${props.project_name}`);
+      navigate(`/tools/project/${props.id}`);
       localStorage.removeItem('projectName');
       localStorage.setItem('projectName', props.project_name);
       localStorage.setItem('projectId', props.id)
@@ -50,7 +50,7 @@ const Projects = ({props}) => {
           <MDBBtn color='success' outline floating rounded size='sm' className="me-2" data-bs-toggle="modal" data-bs-target="#modalUpdate">
             <MDBIcon fas icon="pen" color="succes"/>
           </MDBBtn>
-          <DeleteProjectBtn projectData={props}/>
+          <DeleteProjectBtn projectData={props} deleteProject={deleteProject} updateProject={updateProject}/>
         </td>
       </tr>
     </>

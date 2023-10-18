@@ -20,7 +20,11 @@ const GropuButtonActions = ({props}) => {
         .catch(err => {
             if (err.response.data.error === "bad_request") {
                 showErrorAlert("El archivo no se subio correctamente, intente nuevamente");
-            } else {
+            } 
+            else if(err.response.data.error === "columns_not_in_date_type"){
+                showErrorAlert("El archivo debe contener sus columnas en formato fecha");
+            }
+            else {
                 showErrorAlert("Error en el servidor");
             }
         })

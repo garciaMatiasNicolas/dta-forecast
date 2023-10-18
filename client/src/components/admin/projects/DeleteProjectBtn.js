@@ -14,7 +14,7 @@ import { showErrorAlert, showSuccessAlert } from '../../other/Alerts';
 
 const apiUrl = process.env.REACT_APP_API_URL;
 
-const DeleteProjectBtn = ({projectData}) => {
+const DeleteProjectBtn = ({projectData, deleteProject, updateProject}) => {
 
     const [basicModal, setBasicModal] = useState(false);
 
@@ -31,14 +31,17 @@ const DeleteProjectBtn = ({projectData}) => {
             Authorization: `Token ${localStorage.getItem("userToken")}`,
             "Content-Type": "application/json"
         };
-    
+        
+        let projectId = projectData.id
+
         axios
-            .delete(`${apiUrl}/projects/${projectData.id}/`, {
+            .delete(`${apiUrl}/projects/${projectId}/`, {
                 headers: headers,
                 data: data 
             })
             .then(() => {
                 showSuccessAlert("Proyecto desactivado satisfactoriamente", "Proyecto desactivado");
+                updateProject(projectId, projectData);
             })
             .catch(err => {
                 if (err.status === 401) {
@@ -57,7 +60,7 @@ const DeleteProjectBtn = ({projectData}) => {
     };
     
 
-    const deleteProject = () => {
+    const deleteProjectServer = () => {
         const data = {
             type: "delete"
         };
@@ -66,14 +69,18 @@ const DeleteProjectBtn = ({projectData}) => {
             Authorization: `Token ${localStorage.getItem("userToken")}`,
             "Content-Type": "application/json"
         };
+
+        let projectId = projectData.id
     
         axios
-            .delete(`${apiUrl}/projects/${projectData.id}/`, {
+            .delete(`${apiUrl}/projects/${projectId}/`, {
                 headers: headers,
                 data: data 
             })
             .then(() => {
                 showSuccessAlert("Proyecto eliminado permanentemente", "Proyecto eliminado");
+                deleteProject(projectId);
+                
             })
             .catch(err => {
                 console.log(err);
@@ -107,7 +114,7 @@ const DeleteProjectBtn = ({projectData}) => {
                         <MDBBtn color='secondary' onClick={toggleShow}>
                             Cancelar
                         </MDBBtn>
-                        <MDBBtn onClick={deleteProject} color='danger'>
+                        <MDBBtn onClick={deleteProjectServer} color='danger'>
                             <MDBIcon fas icon='trash' style={{"marginRight": "10px"}}/>
                             Eliminar permanentemente
                         </MDBBtn>

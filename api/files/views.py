@@ -8,6 +8,8 @@ from rest_framework.permissions import IsAuthenticated
 from rest_framework.decorators import authentication_classes, permission_classes
 from rest_framework import viewsets
 from rest_framework.parsers import FormParser, MultiPartParser
+from .filemanager import obtain_file_route
+import os
 
 
 @authentication_classes([TokenAuthentication])
@@ -32,11 +34,18 @@ class ExcelFileUploadView(viewsets.ModelViewSet):
             route = file_serializer.data['file']
 
             # Save dataframe
-            save_dataframe(route_file=route, model_type=model_type, file_name=file_name)
+            try:
+                save_dataframe(route_file=route, model_type=model_type, file_name=file_name)
+                return Response({'message': 'file_uploaded'},
+                                status=status.HTTP_201_CREATED)
 
-            # Return success response
-            return Response({'message': 'file_uploaded'},
-                            status=status.HTTP_201_CREATED)
+            except ValueError:
+                route = obtain_file_route(route)
+
+                if os.path.exists(route):
+                    os.remove(route)
+
+                return Response({'error': 'columns_not_in_date_type'}, status=status.HTTP_400_BAD_REQUEST)
 
         else:
             return Response({'error': 'bad_request', 'logs': file_serializer.errors},

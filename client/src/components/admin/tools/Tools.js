@@ -11,10 +11,14 @@ import { useNavigate } from 'react-router-dom';
 const Tools = ({props}) => {
   let navigate = useNavigate();
   
-  const idProyecto = localStorage.getItem("projectName");
+  const idProyecto = localStorage.getItem("projectId");
+
+  const handleClick = () => {
+    navigate(`/tools/project/${idProyecto}/${props.route}`);
+  };
   
   return (
-    <MDBCard onClick={()=>{navigate(`/tools/${idProyecto}/${props.route}`)}} style={{"width": "19rem", "cursor": "pointer"}} alignment='center' className='hover-shadow border'>
+    <MDBCard onClick={handleClick} style={{"width": "19rem", "cursor": "pointer"}} alignment='center' className='hover-shadow border'>
       <MDBCardBody>
         <MDBCardTitle>{props.title}</MDBCardTitle>
         <MDBCardText>{props.text}</MDBCardText>

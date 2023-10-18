@@ -3,7 +3,7 @@ import os
 
 # Build paths inside the project like this: BASE_DIR / 'subdir'.
 BASE_DIR = Path(__file__).resolve().parent.parent
-
+BASE_URL = os.getenv('BASE_URL', 'http://localhost:8000')
 
 # Quick-start development settings - unsuitable for production
 # See https://docs.djangoproject.com/en/4.2/howto/deployment/checklist/
@@ -108,6 +108,12 @@ DATABASES = {
         'PORT': '3306',    
     }
 }"""
+
+EMAIL_BACKEND = 'django.core.mail.backends.smtp.EmailBackend'
+EMAIL_HOST = 'localhost'
+EMAIL_PORT = 1025
+EMAIL_USE_TLS = False
+DEFAULT_FROM_EMAIL = 'garciamatias159@gmail.com'
 
 CORS_ALLOW_ALL_ORIGINS = True
 

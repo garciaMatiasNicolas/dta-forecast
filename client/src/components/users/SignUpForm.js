@@ -30,19 +30,15 @@ const SignUpForm = () => {
 
     const fetchData = () => {
         axios.post(`${apiUrl}/users/create`, formData)
-        .then((response) => {
-            if (response.data.error) {
-                showErrorAlert("Email en uso, utilice otro o inicie sesion")
-                console.error(response.data);
-            } else {
-                showSuccessAlert("Verifique su correo electrónico para validar su email y luego inicie sesión.", "Registro exitoso")
-                setTimeout(()=>{
-                    navigate("/login/");
-                }, 2000)
-            }
+        .then(() => {
+            showSuccessAlert("Verifique su correo electrónico para validar su email y luego inicie sesión.", "Registro exitoso")
+            setTimeout(()=>{
+                navigate("/login/");
+            }, 2000)
         })
         .catch((error)=>{
-            showErrorAlert("Algo fallo, intente mas tarde");
+            error.response.data.logs.email && showErrorAlert("Email en uso, intente con otro o inicie sesión");  
+            error.status === 500 && showErrorAlert("Algo fallo, intente mas tarde");
         })
         .finally(() => {
             setLoading(false);

@@ -9,6 +9,8 @@ from rest_framework.permissions import IsAuthenticated
 from rest_framework.decorators import authentication_classes, permission_classes
 
 
+
+
 class UserViews:
     @api_view(['GET'])
     @authentication_classes([TokenAuthentication])
@@ -25,6 +27,7 @@ class UserViews:
         if request.method == 'POST':
             if user_serializer.is_valid():
                 user_serializer.save()
+
                 return Response({'message': 'user_saved', 'user': user_serializer.data},
                                 status=status.HTTP_201_CREATED)
 

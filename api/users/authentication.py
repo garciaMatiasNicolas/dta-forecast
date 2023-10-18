@@ -1,3 +1,4 @@
+from rest_framework.decorators import api_view
 from datetime import datetime
 from rest_framework.views import APIView
 from rest_framework.response import Response
@@ -5,14 +6,16 @@ from rest_framework import status
 from rest_framework.authtoken.models import Token
 from rest_framework.authtoken.views import ObtainAuthToken
 from django.contrib.sessions.models import Session
+from .models import User
 
 
 class UserAuthenticationViews:
-    class LogInView(ObtainAuthToken):
 
+    class LogInView(ObtainAuthToken):
         def post(self, request, *args, **kwargs):
             credentials = self.get_serializer(data=request.data,
                                               context={'request': request})
+
             if credentials.is_valid():
                 user = credentials.validated_data['user']
                 if user.is_active:

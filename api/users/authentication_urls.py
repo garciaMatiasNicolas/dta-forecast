@@ -6,5 +6,5 @@ logout = UserAuthenticationViews.LogOutView.as_view()
 
 urlpatterns = [
     path('login', login, name='login_view'),
-    path('logout', logout, name='logout_view')
+    path('logout', logout, name='logout_view'),
 ]

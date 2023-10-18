@@ -287,7 +287,9 @@ const Graph = () => {
             ))}
           </MDBCol>
           <MDBCol size='9' className='d-flex justify-content-center align-items-center gap-5 flex-column'>
-            { !data ? <EmptyLineChart/> : <Bar options={options} data={dataYear} />}
+            <div className='w-75 '>
+              { !data ? <EmptyLineChart/> : <Bar options={options} data={dataYear} />}
+            </div>
             { !data ? <EmptyLineChart/> : <Line options={options} data={data}/> }
           </MDBCol>
         </MDBRow>

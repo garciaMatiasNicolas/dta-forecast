@@ -17,17 +17,33 @@ const Dashboard = () => {
     setProjects([...projects, newProject]);
   }
 
-  const updateProjectById = (id, updatedProject) => {
-    setProjects(prevProjects => {
-      const updatedProjects = [...prevProjects];
-      const projectIndex = updatedProjects.findIndex(project => project.id === id);
-      if (projectIndex !== -1) {
-        updatedProjects.splice(projectIndex, 1, updatedProject);
-      } else {
-        updatedProjects.push(updatedProject);
-      }
+  const updateProjectById = () => {
+    let token = localStorage.getItem("userToken");
+  
+    const headers = {
+      'Authorization': `Token ${token}`, 
+      'Content-Type': 'application/json', 
+    };
+
+    axios.get(`${apiUrl}/projects`, {headers})
+    .then(res => {
+      setProjects(res.data);
+    })
+    .catch(err => {
+      showErrorAlert("Su sesion expirado, debe iniciar sesion nuevamente");
+      localStorage.clear();
+      navigate("/login/");
     });
   };
+
+  const deleteProjectById = (projectId) => {
+    setProjects(prevProjects => prevProjects.filter(project => project.id !== projectId));
+  };
+
+  const setSearchedProject = (data) => {
+    setProjects(data);
+  }
+  
 
   let navigate = useNavigate();
 
@@ -59,8 +75,8 @@ const Dashboard = () => {
         {
           projects.length === 0 ? <div>No hay proyectos creados, cree uno para iniciar su forecast</div> : 
           <>
-            <SearchProject/>
-            <ProjectsContainer projects={projects} />
+            <SearchProject setSearchedProject={setSearchedProject} updateProject={updateProjectById}/>
+            <ProjectsContainer projects={projects} deleteProject={deleteProjectById} updateProject={updateProjectById} />
           </>
         }
       </main> 

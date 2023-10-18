@@ -2,7 +2,7 @@ import { MDBTable, MDBTableHead, MDBTableBody } from 'mdb-react-ui-kit';
 import Projects from '../../components/admin/projects/Projects';
 
 
-const ProjectsContainer = ({projects}) => {
+const ProjectsContainer = ({projects, deleteProject, updateProject}) => {
 
   return (
     <div style={{ maxHeight: '300px', overflowY: 'auto', width: '100%' }}>
@@ -17,7 +17,7 @@ const ProjectsContainer = ({projects}) => {
         </MDBTableHead>
         <MDBTableBody>
           {projects.map(item => (
-            <Projects key={item.id} props={item} />
+            <Projects key={item.id} props={item} deleteProject={deleteProject} updateProject={updateProject}/>
           ))}
         </MDBTableBody>
       </MDBTable>

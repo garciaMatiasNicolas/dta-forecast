@@ -10,9 +10,21 @@ from ..models import ForecastScenario
 from django.db import connection
 import pandas as pd
 from ..graphic_predictions_per_year import graphic_predictions_per_year
+from datetime import datetime
 
 
 class FilterDataViews(APIView):
+    @staticmethod
+    def convert_to_yyyymmdd(date_str):
+        try:
+            date_datetime = datetime.strptime(date_str, '%Y-%m-%d %H:%M:%S')
+        except ValueError:
+            try:
+                date_datetime = datetime.strptime(date_str, '%Y-%m-%d')
+            except ValueError:
+                return None
+
+        return date_datetime.strftime('%Y-%m-%d')
 
     @staticmethod
     def obtain_columns(columns: list) -> list:

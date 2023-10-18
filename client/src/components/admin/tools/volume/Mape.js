@@ -1,5 +1,3 @@
-
-
 const Mape = ({mape}) => {
   return (
     <div className="w-100 border rounded">

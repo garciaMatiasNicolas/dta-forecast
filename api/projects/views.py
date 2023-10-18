@@ -2,9 +2,11 @@ from rest_framework.authentication import TokenAuthentication
 from rest_framework.permissions import IsAuthenticated
 from rest_framework.response import Response
 from rest_framework.viewsets import ModelViewSet
+from rest_framework.decorators import api_view, authentication_classes, permission_classes
 from rest_framework import status
 from .serializers import ProjectSerializer
 from .models import ProjectsModel
+
 
 
 class ProjectsViewSet(ModelViewSet):
@@ -70,3 +72,24 @@ class ProjectsViewSet(ModelViewSet):
         else:
             return Response({'error': 'project_not_found'},
                             status=status.HTTP_400_BAD_REQUEST)
+
+
+class SearchProject:
+    @staticmethod
+    @api_view(['POST'])
+    @authentication_classes([TokenAuthentication])
+    @permission_classes([IsAuthenticated])
+    def search_by_name(request):
+        if request.method == 'POST':
+            project = request.data.get('project_name')
+            project_found = ProjectsModel.objects.filter(project_name=project)
+
+            if project_found:
+                project_serialized = ProjectSerializer(project_found, many=True)
+                return Response(project_serialized.data, status=status.HTTP_200_OK)
+            else:
+                return Response({'message': 'project_not_found'}, status=status.HTTP_200_OK)
+
+        else:
+            return Response({'error': 'method_not_allowed'}, status=status.HTTP_405_METHOD_NOT_ALLOWED)
+
