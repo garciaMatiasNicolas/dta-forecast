@@ -1,4 +1,3 @@
-from rest_framework.viewsets import ModelViewSet
 from rest_framework.response import Response
 from rest_framework import status
 from .models import User
@@ -7,11 +6,11 @@ from rest_framework.decorators import api_view
 from rest_framework.authentication import TokenAuthentication
 from rest_framework.permissions import IsAuthenticated
 from rest_framework.decorators import authentication_classes, permission_classes
-
-
+from .authentication import send_confirmation_email
 
 
 class UserViews:
+
     @api_view(['GET'])
     @authentication_classes([TokenAuthentication])
     @permission_classes([IsAuthenticated])
@@ -26,7 +25,8 @@ class UserViews:
 
         if request.method == 'POST':
             if user_serializer.is_valid():
-                user_serializer.save()
+                user = user_serializer.save()
+                send_confirmation_email(user_email=user.email, user_id=user.id)
 
                 return Response({'message': 'user_saved', 'user': user_serializer.data},
                                 status=status.HTTP_201_CREATED)

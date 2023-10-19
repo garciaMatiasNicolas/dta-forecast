@@ -36,7 +36,7 @@ class User(AbstractBaseUser):
     first_name = models.CharField(max_length=100)
     last_name = models.CharField(max_length=100)
     created_at = models.DateTimeField(auto_now_add=True)
-    is_active = models.BooleanField(default=True)
+    is_active = models.BooleanField(default=False)
     is_admin = models.BooleanField(default=False)
     objects = UserManager()
 
