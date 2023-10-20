@@ -6,14 +6,10 @@ from rest_framework.decorators import api_view
 from rest_framework.authentication import TokenAuthentication
 from rest_framework.permissions import IsAuthenticated
 from rest_framework.decorators import authentication_classes, permission_classes
-<<<<<<< HEAD
-from .authentication import send_confirmation_email
-=======
 from django.core.mail import send_mail
 from django.urls import reverse
 from django.conf import settings
 import threading
->>>>>>> 713c14d (error files)
 
 
 class UserViews:
