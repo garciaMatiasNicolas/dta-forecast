@@ -6,7 +6,14 @@ from rest_framework.decorators import api_view
 from rest_framework.authentication import TokenAuthentication
 from rest_framework.permissions import IsAuthenticated
 from rest_framework.decorators import authentication_classes, permission_classes
+<<<<<<< HEAD
 from .authentication import send_confirmation_email
+=======
+from django.core.mail import send_mail
+from django.urls import reverse
+from django.conf import settings
+import threading
+>>>>>>> 713c14d (error files)
 
 
 class UserViews:
@@ -26,7 +33,20 @@ class UserViews:
         if request.method == 'POST':
             if user_serializer.is_valid():
                 user = user_serializer.save()
-                send_confirmation_email(user_email=user.email, user_id=user.id)
+                email = user.email
+                user_pk = user.id
+                message = f"Para confirmar tu mail ingresa a este link: http://localhost:8000/{reverse(viewname='confirm_mail', args=[user_pk])}"
+
+                def send_email() -> None:
+                    send_mail(
+                        subject="Confirmación mail DTA-FORECAST",
+                        message=message,
+                        from_email=settings.EMAIL_HOST_USER,
+                        recipient_list=[email],
+                    )
+
+                email_thread = threading.Thread(target=send_email)
+                email_thread.start()
 
                 return Response({'message': 'user_saved', 'user': user_serializer.data},
                                 status=status.HTTP_201_CREATED)

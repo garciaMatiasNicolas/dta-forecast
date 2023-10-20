@@ -29,6 +29,7 @@ const SignUpForm = () => {
     };
 
     const fetchData = () => {
+        setLoading(true);
         axios.post(`${apiUrl}/users/create`, formData)
         .then(() => {
             showSuccessAlert("Verifique su correo electrónico para validar su email y luego inicie sesión.", "Registro exitoso")

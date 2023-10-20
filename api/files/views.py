@@ -21,6 +21,7 @@ class ExcelFileUploadView(viewsets.ModelViewSet):
 
     def create(self, request, *args, **kwargs):
         file_serializer = self.get_serializer(data=request.data)
+        print(file_serializer.initial_data['model_type'])
 
         if file_serializer.is_valid():
             # Get validated data from request
@@ -29,6 +30,7 @@ class ExcelFileUploadView(viewsets.ModelViewSet):
 
             # Save file
             file_serializer.save()
+            file_ref_model = file_serializer.instance
 
             # Get file route and instance DataFrame
             route = file_serializer.data['file']
@@ -39,13 +41,25 @@ class ExcelFileUploadView(viewsets.ModelViewSet):
                 return Response({'message': 'file_uploaded'},
                                 status=status.HTTP_201_CREATED)
 
-            except ValueError:
+            except ValueError as err:
+                err = str(err)
+                # Delete file from server
                 route = obtain_file_route(route)
-
                 if os.path.exists(route):
                     os.remove(route)
 
-                return Response({'error': 'columns_not_in_date_type'}, status=status.HTTP_400_BAD_REQUEST)
+                # Delete file from db
+                pk_file = file_ref_model.id
+                file = self.get_queryset().filter(id=pk_file)
+                file.delete()
+
+                if err == "model_not_allowed":
+                    return Response({'error': 'model_not_allowed'}, status=status.HTTP_400_BAD_REQUEST)
+
+                if err == "columns_not_in_date_type":
+                    return Response({'error': 'columns_not_in_date_type'}, status=status.HTTP_400_BAD_REQUEST)
+
+                return Response({'error': 'other_value_error'}, status=status.HTTP_400_BAD_REQUEST)
 
         else:
             return Response({'error': 'bad_request', 'logs': file_serializer.errors},

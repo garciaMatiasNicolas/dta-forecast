@@ -3,10 +3,10 @@ from .authentication import UserAuthenticationViews
 
 login = UserAuthenticationViews.LogInView.as_view()
 logout = UserAuthenticationViews.LogOutView.as_view()
-confirm = UserAuthenticationViews.confirm_email
+confirm_email = UserAuthenticationViews.get_confirmation_email
 
 urlpatterns = [
     path('login', login, name='login_view'),
     path('logout', logout, name='logout_view'),
-    path('user-confirm/<int:pk>', confirm, name='confirmation_endpoint')
+    path('confirm-email/<int:pk>', confirm_email, name='confirm_mail')
 ]

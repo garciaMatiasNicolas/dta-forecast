@@ -12,6 +12,7 @@ import VolumePage from '../pages/tools/VolumePage.js';
 import CollaborationPage from '../pages/tools/CollaborationPage.js';
 import KpisPage from '../pages/tools/KpisPage.js';
 import RunModelsPage from '../pages/RunModelsPage.js';
+import ConfirmationUser from '../pages/ConfirmationUser.js';
 
 const isUserAuthenticated = () => {
   const userToken = localStorage.getItem('userToken');
@@ -30,6 +31,7 @@ const AppRouter = () => {
         <Route path="/login" element={<LogIn/>} />
         <Route path="/signup" element={<SignUp/>} />
         <Route path='/dashboard' element={<PrivateRoute element={<Dashboard />} />}/>
+        <Route path='/confirmation' element={<ConfirmationUser/>}/>
         <Route path='/tools/project/:idProyecto' element={<PrivateRoute element={<ToolsPage />} />} >
           <Route path='uploads' element={<TemplatesPage />} />
           <Route path='exploration' element={<ExplorationPage />} />

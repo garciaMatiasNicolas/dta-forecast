@@ -110,11 +110,19 @@ DATABASES = {
 }"""
 
 EMAIL_BACKEND = 'django.core.mail.backends.smtp.EmailBackend'
+<<<<<<< HEAD
 EMAIL_HOST = 'localhost'
 EMAIL_PORT = 1025
 EMAIL_USE_TLS = True
 DEFAULT_FROM_EMAIL = 'garciamatias159@gmail.com'
 PASSWORD_EMAIL = 'RIVERPLATE09'
+=======
+EMAIL_HOST = 'smtp.gmail.com'
+EMAIL_PORT = 587
+EMAIL_USE_TLS = True
+EMAIL_HOST_USER = 'matiasngarcia2002@gmail.com'
+EMAIL_HOST_PASSWORD = 'bcpn dezp ycqw ubsg'
+>>>>>>> 713c14d (error files)
 
 CORS_ALLOW_ALL_ORIGINS = True
 
