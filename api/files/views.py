@@ -19,6 +19,14 @@ class ExcelFileUploadView(viewsets.ModelViewSet):
     serializer_class = FileSerializer
     parser_classes = (MultiPartParser, FormParser)
 
+    def list(self, request, *args, **kwargs):
+        user_id = request.user.id
+        model_type = request.GET.get("model_type");
+        print(model_type)
+        files = self.get_queryset().filter(user_owner_id=user_id, model_type=model_type)
+        serializer = self.get_serializer(files, many=True)
+        return Response(serializer.data, status=status.HTTP_200_OK)
+
     def create(self, request, *args, **kwargs):
         file_serializer = self.get_serializer(data=request.data)
         print(file_serializer.initial_data['model_type'])
@@ -37,7 +45,7 @@ class ExcelFileUploadView(viewsets.ModelViewSet):
 
             # Save dataframe
             try:
-                save_dataframe(route_file=route, model_type=model_type, file_name=file_name)
+                save_dataframe(route_file=route, model_type=model_type, file_name=file_name, wasSaved=False)
                 return Response({'message': 'file_uploaded'},
                                 status=status.HTTP_201_CREATED)
 

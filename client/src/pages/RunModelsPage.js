@@ -21,7 +21,7 @@ const RunModelsPage = () => {
         user: localStorage.getItem("userPk"),
         scenario_name: '',
         project: localStorage.getItem("projectId"),
-        file_id: 1,
+        file_id: 0,
         models: [],
         test_p: '',
         pred_p: ''
@@ -53,6 +53,19 @@ const RunModelsPage = () => {
         setFormData({ ...formData, [name]: value });
     };
 
+    const handleSelectChange = (event) => {
+        const selectedValue = event.target.value;
+
+        axios.get(`http://127.0.0.1:8000/files/?model_type=${selectedValue}`, { headers })
+          .then(res => {
+            let id = res.data[0].id
+            id != undefined && setFormData({...formData, file_id: id});
+          })
+          .catch(error => {
+            setFormData({...formData, file_id: 0});
+          });
+      };
+
     const handleSubmit = (event) => {
         event.preventDefault();
         axios.post(`${apiUrl}/scenarios/`, formData, { headers })
@@ -77,16 +90,16 @@ const RunModelsPage = () => {
             })
             .finally(()=>{setBasicModal(!basicModal)}); 
         })
-        .catch(()=>{
+        .catch((err)=>{
             showErrorAlert("Nombre de escenario ya utilizado");
             setBasicModal(!basicModal);
-        })
+        }) 
         
     };
 
     const isFormValid = () => {
-        const { scenario_name, models, test_p, pred_p } = formData;
-        return scenario_name && models.length > 0 && test_p && pred_p;
+        const { scenario_name, models, test_p, pred_p, file_id } = formData;
+        return scenario_name && models.length > 0 && test_p && pred_p && file_id != 0;
     };
 
     return (
@@ -113,6 +126,10 @@ const RunModelsPage = () => {
                                         <MDBInput label="Nombre de escenario" type="text" name="scenario_name" onChange={handleInputChange}/>
                                         <MDBInput label="Periodos de entrenamiento de modelo" name="test_p" type="number" onChange={handleInputChange}/>
                                         <MDBInput label="Periodos de forecast" name="pred_p" type="number" onChange={handleInputChange}/>
+                                        <select onChange={handleSelectChange} class="form-select" aria-label="Default select example">
+                                            <option selected>Selecciona tipo de archivo</option>
+                                            <option value="historical_data">Historical Data</option>
+                                        </select>
                                     </MDBCol>
                                 </MDBRow>
                             </MDBContainer>

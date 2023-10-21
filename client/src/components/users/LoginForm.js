@@ -65,6 +65,7 @@ const LoginForm = () => {
                     name="username" type="email" id="username" className="form-control border" 
                     label = "Email"
                     required
+                    autoComplete="off"
                 />
             </div>
 
@@ -75,6 +76,7 @@ const LoginForm = () => {
                     name="password" type="password" id="password" className="form-control border" 
                     label = "Contraseña"
                     required
+                    autoComplete="off"
                 />
             </div>
 

@@ -63,6 +63,7 @@ const SignUpForm = () => {
                         type="text" name='first_name' id="name" className="form-control border" 
                         label= "Nombre"
                         required
+                        autoComplete="off"
                     />
                 </div>
 
@@ -73,6 +74,7 @@ const SignUpForm = () => {
                         type="text" name='last_name' id="last_name" className="form-control border" 
                         label="Apellido"
                         required
+                        autoComplete="off"
                     />
                 </div>
             </div>
@@ -84,11 +86,12 @@ const SignUpForm = () => {
                     name="email" type="email" id="email" className="form-control border" 
                     label="Email"
                     required
+                    autoComplete="off"
                 />
             </div>
 
             <div className="form-outline mb-4">
-                <MDBInput name="first_pass" type="password" id="first_pass" className="form-control border" label="Contraseña"/>
+                <MDBInput name="first_pass" type="password" id="first_pass" className="form-control border" label="Contraseña" autoComplete="off"/>
             </div>
 
             <div className="form-outline mb-4">
@@ -98,6 +101,7 @@ const SignUpForm = () => {
                     name="password" type="password" id="password" className="form-control border" 
                     label="Repita contraseña"
                     required
+                    autoComplete="off"
                 />
             </div>
 

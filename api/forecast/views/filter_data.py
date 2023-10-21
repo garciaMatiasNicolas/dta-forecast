@@ -113,6 +113,7 @@ class GetFiltersView(APIView):
             project = ProjectsModel.objects.filter(pk=project_id).first()
             scenario = ForecastScenario.objects.filter(pk=scenario_id).first()
             table_name = f'Historical_Data_{project.project_name}_user{project.user_owner_id}_prediction_results_scenario_{scenario.scenario_name}'
+            
 
             with connection.cursor() as cursor:
                 cursor.execute(f'SELECT DISTINCT({filter_name}) FROM {table_name}')
