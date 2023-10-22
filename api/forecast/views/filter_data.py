@@ -4,7 +4,7 @@ from rest_framework.permissions import IsAuthenticated
 from rest_framework.response import Response
 from rest_framework import status
 from rest_framework.views import APIView
-from ..serializer import FilterData
+from ..serializer import FilterData, GetScenarioById
 from projects.models import ProjectsModel
 from ..models import ForecastScenario
 from django.db import connection
@@ -114,16 +114,29 @@ class GetFiltersView(APIView):
             scenario = ForecastScenario.objects.filter(pk=scenario_id).first()
             table_name = f'Historical_Data_{project.project_name}_user{project.user_owner_id}_prediction_results_scenario_{scenario.scenario_name}'
             
+            if filter_name == 'date':
+                with connection.cursor() as cursor:
+                    cursor.execute(f'SELECT name FROM pragma_table_info("{table_name}")')
+                    columns = cursor.fetchall()
 
-            with connection.cursor() as cursor:
-                cursor.execute(f'SELECT DISTINCT({filter_name}) FROM {table_name}')
-                rows = cursor.fetchall()
-                filter_names = []
+                date_columns = [x[0] for x in columns if len(x) == 1 and x[0].count('-') == 2]
+                date_columns_str = [str(x).split()[0] if date_columns.index(x) == 0 else str(x) for x in date_columns]
+                
+                return Response(date_columns_str, status=status.HTTP_200_OK)
 
-                for row in rows:
-                    filter_names.append(row[0])
+            
+            else:
+                with connection.cursor() as cursor:
+                    cursor.execute(f'SELECT DISTINCT({filter_name}) FROM {table_name}')
+                    rows = cursor.fetchall()
+                    filter_names = []
 
-                return Response(filter_names, status=status.HTTP_200_OK)
+                    for row in rows:
+                        filter_names.append(row[0])
+
+                    return Response(filter_names, status=status.HTTP_200_OK)
 
         else:
             return Response({'error': 'bad_request', 'logs': filters.errors}, status=status.HTTP_400_BAD_REQUEST)
+
+

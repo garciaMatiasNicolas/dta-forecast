@@ -59,7 +59,7 @@ const RunModelsPage = () => {
         axios.get(`http://127.0.0.1:8000/files/?model_type=${selectedValue}`, { headers })
           .then(res => {
             let id = res.data[0].id
-            id != undefined && setFormData({...formData, file_id: id});
+            id !== undefined && setFormData({...formData, file_id: id});
           })
           .catch(error => {
             setFormData({...formData, file_id: 0});
