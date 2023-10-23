@@ -50,3 +50,4 @@ class FilterData(serializers.Serializer):
             raise serializers.ValidationError({'error': 'filter_value_not_provided'})
 
         return data
+

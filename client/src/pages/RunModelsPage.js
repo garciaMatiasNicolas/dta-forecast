@@ -120,6 +120,8 @@ const RunModelsPage = () => {
                                         onChange={() => handleCheckboxChange('simpleExponentialSmoothing')}/>
                                         <MDBCheckbox name='modelSelection' value='linearRegression' id='linearRegression' label='Regresión lineal' onChange={() => handleCheckboxChange('linearRegression')}/>
                                         <MDBCheckbox name='modelSelection' value='arima' id='arima' label='ARIMA ' onChange={() => handleCheckboxChange('arima')}/>
+                                        <MDBCheckbox name='modelSelection' value='bayesian' id='bayesian' label='Regresion Bayesiana ' onChange={() => handleCheckboxChange('bayesian')}/>
+                                        <MDBCheckbox name='modelSelection' value='lasso' id='lasso' label='Lasso' onChange={() => handleCheckboxChange('lasso')}/>
                                     </MDBCol>
 
                                     <MDBCol size='lg' className="d-flex justify-content-center align-items-center flex-column gap-3">

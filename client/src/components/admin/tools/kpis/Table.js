@@ -1,32 +1,46 @@
 import React from 'react';
 import { MDBTable, MDBTableHead, MDBTableBody } from 'mdb-react-ui-kit';
 
-const TableReport = ({props}) => {
+const TableReport = ({props, data}) => {
   return (
     <MDBTable>
+      {console.log(data)}
       <MDBTableHead light>
         <tr>
-          <th scope='col'>Agrupacion: {props}</th>
-          <th scope='col'>Actual</th>
-          <th scope='col'>Forecast</th>
+          <th scope='col'>{props}</th>
+          {
+            data.length === 0 ? 
+              <>
+                <th scope='col'></th>
+                <th scope='col'></th>
+                <th scope='col'></th>
+                <th scope='col'></th>
+              </>
+            :
+              data.years.map(year => (<th scope='col'>{year}</th>))
+          }
         </tr>
       </MDBTableHead>
       <MDBTableBody>
-        <tr>
-          <th scope='row'>1</th>
-          <td>Mark</td>
-          <td>Otto</td>
-        </tr>
-        <tr>
-          <th scope='row'>2</th>
-          <td>Jacob</td>
-          <td>Thornton</td>
-        </tr>
-        <tr>
-          <th scope='row'>3</th>
-          <td>Larry</td>
-          <td>the Bird</td>
-        </tr>
+      {
+          data.length === 0 ?  
+            <tr>
+              <th scope='row'></th>
+              <td></td>
+              <td></td>
+              <td></td>
+            </tr>
+          :
+            data.data.map((rowData, index) => (
+              <tr key={index}>
+                <th scope='row'>{rowData[0]}</th>
+                {rowData.slice(1).map((value, yearIndex) => (
+                  <td key={yearIndex}>{value}</td>
+                ))}
+              </tr>
+            ))
+        }
+       
       </MDBTableBody>
     </MDBTable>
   );

@@ -15,11 +15,16 @@ const DetailReportPage = () => {
     };
 
     const [scenarios, setScenarios] = useState([]);
+    
     const [scenarioId, setScenarioId] = useState(0);
 
     const [dates, setDates] = useState([]);
 
+    const [dateFilter, setDateFilter] = useState("")
+
     const [group, setGroup] = useState("");
+
+    const [tableData, setTableData] = useState([]);
 
     const handleOnChangeScenario = (e) => {
         let id = e.target.value;
@@ -40,10 +45,36 @@ const DetailReportPage = () => {
     const handleOnChangeGroup = (e) => {
         let value = e.target.value;
         setGroup(value);
+
+        const data = {
+            filter_name: value,
+            scenario_id: scenarioId,
+            project_id: localStorage.getItem("projectId"),
+            filter_value: e.target.value
+        };
+
+        console.log(dateFilter)
+
+        if (dateFilter !== "-----") {
+            axios.post(`${apiUrl}/get-report`, data, { headers })
+            .then(res => setTableData(res.data))
+            .catch(err => console.error(err.response.data));
+        } 
     }
 
-    const handleOnChangeDates = () => {
-  
+    const handleOnChangeDates = (e) => {
+        setDateFilter(e.target.value);
+
+        const data = {
+            filter_name: group,
+            scenario_id: scenarioId,
+            project_id: localStorage.getItem("projectId"),
+            filter_value: e.target.value
+        };
+
+        axios.post(`${apiUrl}/get-report`, data, {headers})
+        .then(res => setTableData(res.data))
+        .catch(err => console.error(err.response.data));
     }
     
     useEffect(() => {
@@ -82,7 +113,8 @@ const DetailReportPage = () => {
                             Agrupar por
                         </div>
                         <select onChange={handleOnChangeGroup} className="form-select w-auto" style={{"minWidth": "190px"}}>
-                            <option defaultChecked id="Familia" value='family'>Familia</option>
+                            <option defaultChecked>-----</option>
+                            <option name="Familia" value='family'>Familia</option>
                             <option name="Region" value='region'>Region</option>
                             <option name='Categoria' value='category'>Categoria</option>
                             <option name="Subcategoria" value='subcategory'>Subcategoria</option>
@@ -95,11 +127,8 @@ const DetailReportPage = () => {
                         <div className='py-1 px-2 bg-primary text-white' style={{"minWidth": "190px"}}>
                             Fecha seleccionada
                         </div>
-                        <select className="form-select w-auto" style={{"minWidth": "190px"}}>
-                            {
-                                dates.length === 0 && <option defaultChecked>-------</option>
-                            }
-                            
+                        <select onChange={handleOnChangeDates} className="form-select w-auto" style={{"minWidth": "190px"}}>
+                            <option defaultChecked >-----</option>
                             {dates.map(date=>(
                                 <option value={date}>{date}</option>
                             ))}
@@ -108,7 +137,7 @@ const DetailReportPage = () => {
                 </div>
                 
                 <div className='px-5 w-100'>
-                    <TableReport props={group}/>
+                    <TableReport props={group} data={tableData} />
                 </div>
         </main>
         </div>

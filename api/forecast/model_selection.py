@@ -1,4 +1,5 @@
-from .forecast_models import arima_predictions, linear_regression, exponential_smothing, holt_winters_predictions
+from .forecast_models import arima_predictions, linear_regression, exponential_smothing, \
+    holt_winters_predictions, lasso, bayesian_regression
 from database.db_engine import engine
 import pandas as pd
 import numpy as np
@@ -45,6 +46,14 @@ def best_model(dataframe, test_p, pred_p, models: list):
         if 'linearRegression' in models:
             linear_df, linear_mape = linear_regression.linear_regression_predictions(row, test_p, pred_p)
             model_data['linearRegression'] = {'mape': linear_mape, 'df': linear_df}
+
+        if 'lasso' in models:
+            lasso_df, lasso_mape = lasso.lasso_regression_predictions(row, test_p, pred_p)
+            model_data['lasso'] = {'mape': lasso_mape, 'df': lasso_df}
+
+        if 'bayesian' in models:
+            bayesian_df, bayesian_mape = bayesian_regression.bayesian_regression_predictions(row, test_p, pred_p)
+            model_data['bayesian'] = {'mape': bayesian_mape, 'df': bayesian_df}
 
         best_model_name = min(model_data, key=lambda k: model_data[k]['mape'])
         best_df = model_data[best_model_name]['df']
