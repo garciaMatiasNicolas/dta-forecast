@@ -3,6 +3,8 @@ import Navbar from '../../components/navs/Navbar'
 import ToolsNav from '../../components/navs/ToolsNav'
 import axios from 'axios';
 import TableReport from '../../components/admin/tools/kpis/Table';
+import { showErrorAlert } from '../../components/other/Alerts';
+import { useNavigate } from 'react-router-dom';
 
 const apiUrl = process.env.REACT_APP_API_URL;
 
@@ -14,15 +16,17 @@ const DetailReportPage = () => {
         'Content-Type': 'application/json', 
     };
 
+    const navigate = useNavigate();
+
     const [scenarios, setScenarios] = useState([]);
     
     const [scenarioId, setScenarioId] = useState(0);
 
     const [dates, setDates] = useState([]);
 
-    const [dateFilter, setDateFilter] = useState("")
+    const [dateFilter, setDateFilter] = useState(0);
 
-    const [group, setGroup] = useState("");
+    const [group, setGroup] = useState(0);
 
     const [tableData, setTableData] = useState([]);
 
@@ -44,22 +48,23 @@ const DetailReportPage = () => {
 
     const handleOnChangeGroup = (e) => {
         let value = e.target.value;
-        setGroup(value);
-
-        const data = {
-            filter_name: value,
-            scenario_id: scenarioId,
-            project_id: localStorage.getItem("projectId"),
-            filter_value: e.target.value
-        };
-
-        console.log(dateFilter)
-
-        if (dateFilter !== "-----") {
-            axios.post(`${apiUrl}/get-report`, data, { headers })
+        if (dateFilter === 0) {
+            setGroup(value); 
+        } else {
+            let value = e.target.value;
+            setGroup(value); 
+            
+            const data = {
+                filter_name: value,
+                scenario_id: scenarioId,
+                project_id: localStorage.getItem("projectId"),
+                filter_value: dateFilter
+            };
+            
+            axios.post(`${apiUrl}/get-report`, data, {headers})
             .then(res => setTableData(res.data))
-            .catch(err => console.error(err.response.data));
-        } 
+            .catch(err => showErrorAlert(`Ocurrio un error: ${err.response.data}`))
+        }
     }
 
     const handleOnChangeDates = (e) => {
@@ -74,7 +79,11 @@ const DetailReportPage = () => {
 
         axios.post(`${apiUrl}/get-report`, data, {headers})
         .then(res => setTableData(res.data))
-        .catch(err => console.error(err.response.data));
+        .catch(err => {
+            if (err.response.status === 400) showErrorAlert("Debe seleccionar una agrupación");
+            if (err.response.status === 401) {showErrorAlert("Su sesion expiró"); navigate("'/login");}
+            if (err.response.status === 500) showErrorAlert("Error en el servidor");
+        });
     }
     
     useEffect(() => {
@@ -83,6 +92,18 @@ const DetailReportPage = () => {
         })
         .then(res => {
             setScenarios(res.data);
+            setScenarioId(res.data[0].id);
+
+            const data = {
+                filter_name: 'date',
+                scenario_id: res.data[0].id,
+                project_id: localStorage.getItem("projectId"),
+                filter_value: "x"
+            };
+    
+            axios.post(`${apiUrl}/get-filters`, data, {headers})
+            .then(res => setDates(res.data))
+            .catch(() => {setDates([])});
         })
         .catch(err => {
             console.log(err);
@@ -102,7 +123,6 @@ const DetailReportPage = () => {
                             Escenario seleccionado
                         </div>
                         <select className="form-select w-auto" style={{"minWidth": "190px"}} onChange={handleOnChangeScenario}>
-                            <option value={0}>-----</option>
                             {scenarios.map((scenario) => (
                             <option value={scenario.id}>{scenario.scenario_name}</option>
                             ))}
@@ -113,7 +133,7 @@ const DetailReportPage = () => {
                             Agrupar por
                         </div>
                         <select onChange={handleOnChangeGroup} className="form-select w-auto" style={{"minWidth": "190px"}}>
-                            <option defaultChecked>-----</option>
+                            {group === 0 && <option defaultChecked value={0}>-----</option>}
                             <option name="Familia" value='family'>Familia</option>
                             <option name="Region" value='region'>Region</option>
                             <option name='Categoria' value='category'>Categoria</option>
@@ -128,7 +148,7 @@ const DetailReportPage = () => {
                             Fecha seleccionada
                         </div>
                         <select onChange={handleOnChangeDates} className="form-select w-auto" style={{"minWidth": "190px"}}>
-                            <option defaultChecked >-----</option>
+                            { dateFilter === 0 && <option defaultChecked value={0}>-----</option> }
                             {dates.map(date=>(
                                 <option value={date}>{date}</option>
                             ))}

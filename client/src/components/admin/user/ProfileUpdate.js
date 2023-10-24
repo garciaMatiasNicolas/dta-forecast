@@ -4,7 +4,7 @@ import { MDBInput } from "mdb-react-ui-kit";
 const ProfileUpdate = () => {
   return (
     <div className="d-flex justify-content-between align-items-start flex-column">
-        <h2 className="mb-2">Eliga que campos desea actualizar</h2>
+        <h2 className="mb-2">Elija que campos desea actualizar</h2>
         <form className="p-4 bg-white w-100 d-">
 
             <div className="form-outline mb-4 w-50">

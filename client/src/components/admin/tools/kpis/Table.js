@@ -2,9 +2,12 @@ import React from 'react';
 import { MDBTable, MDBTableHead, MDBTableBody } from 'mdb-react-ui-kit';
 
 const TableReport = ({props, data}) => {
+  if (!data || !data.data) {
+    return <div>No hay datos disponibles.</div>;
+  }
+  
   return (
     <MDBTable>
-      {console.log(data)}
       <MDBTableHead light>
         <tr>
           <th scope='col'>{props}</th>
