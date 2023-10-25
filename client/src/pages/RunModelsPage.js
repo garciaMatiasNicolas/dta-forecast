@@ -5,6 +5,7 @@ import { ClipLoader } from "react-spinners";
 import { showErrorAlert, showSuccessAlert } from "../components/other/Alerts";
 import { MDBCheckbox, MDBCol, MDBContainer, MDBInput, MDBRow, MDBBtn, MDBIcon,  MDBModal, MDBModalDialog, MDBModalContent, MDBModalBody,} from "mdb-react-ui-kit";
 import { AppContext } from "../context/Context";
+import convertData from "../functions/stringFormat";
 
 const apiUrl = process.env.REACT_APP_API_URL;
 
@@ -55,7 +56,7 @@ const RunModelsPage = () => {
 
     const handleSelectChange = (event) => {
         const selectedValue = event.target.value;
-
+        
         axios.get(`http://127.0.0.1:8000/files/?model_type=${selectedValue}`, { headers })
           .then(res => {
             let id = res.data[0].id
@@ -68,7 +69,12 @@ const RunModelsPage = () => {
 
     const handleSubmit = (event) => {
         event.preventDefault();
-        axios.post(`${apiUrl}/scenarios/`, formData, { headers })
+        const convertedScenarioName = convertData(formData.scenario_name, false);
+        const dataToSend = {
+            ...formData,
+            scenario_name: convertedScenarioName
+        };
+        axios.post(`${apiUrl}/scenarios/`, dataToSend, { headers })
         .then((res)=>{
             let id = res.data.scenario_id;
             let data = {scenario_id: id};

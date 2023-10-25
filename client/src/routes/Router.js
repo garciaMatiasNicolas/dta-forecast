@@ -14,6 +14,7 @@ import KpisPage from '../pages/tools/KpisPage.js';
 import RunModelsPage from '../pages/RunModelsPage.js';
 import ConfirmationUser from '../pages/ConfirmationUser.js';
 import DetailReportPage from '../pages/tools/DetailReportPage.js';
+import MetricsAnalysisPage from '../pages/tools/MetricsAnalysisPage.js';
 
 const isUserAuthenticated = () => {
   const userToken = localStorage.getItem('userToken');
@@ -43,6 +44,7 @@ const AppRouter = () => {
         </Route>
         <Route path='/profile' element={<PrivateRoute element={<Profile />} />}/>
         <Route path='/detail-report' element={<PrivateRoute element={<DetailReportPage />} />}/>
+        <Route path='/metrics-analysis' element={<PrivateRoute element={<MetricsAnalysisPage/>} />}/>
       </Routes>
     </Router>
   );

@@ -2,12 +2,13 @@ import { MDBIcon, MDBBadge, MDBBtn } from "mdb-react-ui-kit"
 import {  useNavigate } from 'react-router-dom';
 import DeleteProjectBtn from "./DeleteProjectBtn";
 import { showErrorAlert } from "../../other/Alerts";
+import convertData from "../../../functions/stringFormat";
 
 const apiUrl = process.env.REACT_APP_API_URL;
 
 const Projects = ({props, deleteProject, updateProject}) => {
   let navigate = useNavigate();
-
+  let projectName = convertData(props.project_name, true);
   let token = localStorage.getItem("userToken");
 
   const headers = {
@@ -35,7 +36,7 @@ const Projects = ({props, deleteProject, updateProject}) => {
           <div className='d-flex align-items-center'>
           <MDBIcon fas icon="home" size="3x" color={!props.status ? 'danger' : 'success'}/>
             <div className='ms-3'>
-              <p className='fw-bold mb-1'>{props.project_name}</p>
+              <p className='fw-bold mb-1'>{projectName}</p>
               <p className='text-muted mb-0'>{props.user_owner}</p>
             </div>
           </div>

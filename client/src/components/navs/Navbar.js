@@ -19,8 +19,9 @@ const Navbar = () => {
                 </MDBNavbarBrand>
             </Link>
 
-            <MDBContainer className='w-auto m-0'>
-                <Link to="/profile/" className="text-decoration-none">
+            <MDBContainer className='w-auto m-0 d-flex justify-content-center align-items-center gap-2'>
+                <Link to="/profile/" className="d-flex justify-content-center align-items-center gap-2 text-decoration-none">
+                    <p className="text-white mt-3">Matias Garcia</p>
                     <UserProfileBtn/>
                 </Link>
                 <LogOutButton/>

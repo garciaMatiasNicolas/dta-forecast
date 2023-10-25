@@ -3,7 +3,12 @@ import { MDBTable, MDBTableHead, MDBTableBody } from 'mdb-react-ui-kit';
 
 const TableReport = ({props, data}) => {
   if (!data || !data.data) {
-    return <div>No hay datos disponibles.</div>;
+    return( 
+    <div>
+      <p>Selecciona todos los filtros para visualizar los datos... </p>
+      <p>(Nota: Los escenarios mostrados son para el proyecto seleccionado)</p>
+    </div>
+    )
   }
   
   return (

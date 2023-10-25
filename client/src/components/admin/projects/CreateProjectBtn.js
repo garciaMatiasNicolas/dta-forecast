@@ -15,6 +15,7 @@ import {
 } from 'mdb-react-ui-kit';
 import { showErrorAlert, showSuccessAlert } from '../../other/Alerts';
 import { useNavigate } from 'react-router-dom';
+import convertData from '../../../functions/stringFormat';
 
 
 const apiUrl = process.env.REACT_APP_API_URL;
@@ -32,7 +33,6 @@ const CreateProjectBtn = ({createProject}) => {
     
     const handleOnChange = (e) => {
         const {name, value} = e.target;
-        
         setProjectData({
             ...projectData,
             [name]: value
@@ -55,8 +55,13 @@ const CreateProjectBtn = ({createProject}) => {
     
     const createNewProject =  () => {
         setLoading(true);
+        const convertedProjectName = convertData(projectData.project_name, false);
+        const dataToSend = {
+            ...projectData,
+            project_name: convertedProjectName
+        };
         
-        axios.post(`${apiUrl}/projects/`, projectData, { headers })
+        axios.post(`${apiUrl}/projects/`, dataToSend, { headers })
         .then((res) => {
             showSuccessAlert("Proyecto creado exitosamente", "Creado");
             createProject(res.data.project);
