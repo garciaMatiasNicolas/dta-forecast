@@ -79,7 +79,7 @@ const DetailReportPage = () => {
         };
 
         axios.post(`${apiUrl}/get-report`, data, {headers})
-        .then(res => setTableData(res.data))
+        .then(res => {setTableData(res.data); console.log(res.data)})
         .catch(err => {
             if (err.response.status === 400) showErrorAlert("Debe seleccionar una agrupación");
             if (err.response.status === 401) {showErrorAlert("Su sesion expiró"); navigate("'/login");}

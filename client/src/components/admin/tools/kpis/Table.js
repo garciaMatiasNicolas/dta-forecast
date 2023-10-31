@@ -1,7 +1,26 @@
-import React from 'react';
-import { MDBTable, MDBTableHead, MDBTableBody } from 'mdb-react-ui-kit';
+import { useEffect, useState } from 'react';
+import ReactPaginate from 'react-paginate';
+import { MDBTable, MDBTableHead, MDBTableBody, MDBIcon } from 'mdb-react-ui-kit';
 
-const TableReport = ({props, data}) => {
+const TableReport = ({ props, data }) => {
+  const [currentPage, setCurrentPage] = useState(0);
+  const itemsPerPage = 7; // Cambia esto al número de elementos que desees mostrar por página.
+
+  const pageCount = data.data !== undefined && Math.ceil(data.data.length / itemsPerPage);
+  const offset = currentPage * itemsPerPage;
+  const currentPageData = data.data !== undefined && data.data.slice(offset, offset + itemsPerPage);
+
+  const handlePageClick = ({ selected }) => {
+    setCurrentPage(selected);
+  };
+
+  useEffect(()=>{
+    if (data.data !== undefined && data.data.length < 7){
+      setCurrentPage(0);
+    }
+  }, [props])
+  
+
   if (!data || !data.data) {
     return( 
     <div>
@@ -10,48 +29,53 @@ const TableReport = ({props, data}) => {
     </div>
     )
   }
-  
+
   return (
-    <MDBTable>
-      <MDBTableHead light>
-        <tr>
-          <th scope='col'>{props}</th>
-          {
-            data.length === 0 ? 
+    <div>
+      <MDBTable>
+        <MDBTableHead light>
+          <tr>
+            <th scope='col'>{props}</th>
+            {data.length === 0 ? (
               <>
                 <th scope='col'></th>
                 <th scope='col'></th>
                 <th scope='col'></th>
                 <th scope='col'></th>
               </>
-            :
-              data.years.map(year => (<th scope='col'>{year}</th>))
-          }
-        </tr>
-      </MDBTableHead>
-      <MDBTableBody>
-      {
-          data.length === 0 ?  
-            <tr>
-              <th scope='row'></th>
-              <td></td>
-              <td></td>
-              <td></td>
+            ) : (
+              data.years.map((year) => <th scope='col'>{year}</th>)
+            )}
+          </tr>
+        </MDBTableHead>
+        <MDBTableBody>
+          {currentPageData.map((rowData, index) => (
+            <tr key={index}>
+              <th scope='row'>{rowData[0]}</th>
+              {rowData.slice(1).map((value, yearIndex) => (
+                <td key={yearIndex}>{value}</td>
+              ))}
             </tr>
-          :
-            data.data.map((rowData, index) => (
-              <tr key={index}>
-                <th scope='row'>{rowData[0]}</th>
-                {rowData.slice(1).map((value, yearIndex) => (
-                  <td key={yearIndex}>{value}</td>
-                ))}
-              </tr>
-            ))
-        }
-       
-      </MDBTableBody>
-    </MDBTable>
+          ))}
+        </MDBTableBody>
+      </MDBTable>
+      {
+        data.data.length >= 7 && 
+        <ReactPaginate
+          previousLabel={<MDBIcon fas icon="angle-double-left" />}
+          nextLabel={<MDBIcon fas icon="angle-double-right" />}
+          breakLabel={'...'}
+          pageCount={pageCount}
+          marginPagesDisplayed={2}
+          pageRangeDisplayed={5}
+          onPageChange={handlePageClick}
+          containerClassName={'pagination'}
+          subContainerClassName={'pages pagination'}
+          activeClassName={'active'}
+        />
+      }
+    </div>
   );
-}
+};
 
-export default TableReport
+export default TableReport;

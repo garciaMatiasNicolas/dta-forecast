@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import { useState } from 'react';
 import { MDBTable, MDBTableHead, MDBTableBody, MDBIcon } from 'mdb-react-ui-kit';
 import ReactPaginate from 'react-paginate';
 
@@ -38,7 +38,7 @@ const TableMape = ({ data }) => {
           ))}
         </MDBTableBody>
       </MDBTable>
-
+            
       <ReactPaginate
         pageCount={pageCount}
         pageRangeDisplayed={5}
