@@ -20,12 +20,10 @@ class FilterDataViews(APIView):
 
         if filters.is_valid():
             scenario_id = filters.validated_data['scenario_id']
-            project_id = filters.validated_data['project_id']
             filter_name = filters.validated_data['filter_name']
             filter_value = filters.validated_data['filter_value']
-            project = ProjectsModel.objects.filter(pk=project_id).first()
             scenario = ForecastScenario.objects.filter(pk=scenario_id).first()
-            table_name = f'Historical_Data_{project.project_name}_user{project.user_owner_id}_prediction_results_scenario_{scenario.scenario_name}'
+            table_name = scenario.predictions_table_name
 
             with connection.cursor() as cursor:
                 cursor.execute(f'SELECT * FROM {table_name} WHERE {filter_name} = %s', [filter_value])
@@ -74,12 +72,10 @@ class GetFiltersView(APIView):
 
         if filters.is_valid():
             scenario_id = filters.validated_data['scenario_id']
-            project_id = filters.validated_data['project_id']
             filter_name = filters.validated_data['filter_name']
-            project = ProjectsModel.objects.filter(pk=project_id).first()
             scenario = ForecastScenario.objects.filter(pk=scenario_id).first()
-            table_name = f'Historical_Data_{project.project_name}_user{project.user_owner_id}_prediction_results_scenario_{scenario.scenario_name}'
-            
+            table_name = scenario.predictions_table_name
+
             if filter_name == 'date':
                 with connection.cursor() as cursor:
                     cursor.execute(f'SELECT name FROM pragma_table_info("{table_name}")')
@@ -90,7 +86,6 @@ class GetFiltersView(APIView):
                 
                 return Response(date_columns_str, status=status.HTTP_200_OK)
 
-            
             else:
                 with connection.cursor() as cursor:
                     cursor.execute(f'SELECT DISTINCT({filter_name}) FROM {table_name}')

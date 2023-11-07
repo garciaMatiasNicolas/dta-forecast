@@ -14,6 +14,7 @@ class ForecastScenario(models.Model):
     final_data_pred = models.JSONField(blank=True, null=True)
     data_year_pred = models.JSONField(blank=True, null=True)
     mape_scenario = models.FloatField(blank=True, null=True)
+    predictions_table_name = models.CharField(max_length=250, blank=True, null=True)
     url_predictions = models.CharField(max_length=500, blank=True, null=True)
     models = models.JSONField(default=list)
 

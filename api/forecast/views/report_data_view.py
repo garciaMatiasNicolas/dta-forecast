@@ -42,12 +42,10 @@ class ReportDataViews(APIView):
 
         if filters.is_valid():
             scenario_id = filters.validated_data['scenario_id']
-            project_id = filters.validated_data['project_id']
             filter_name = filters.validated_data['filter_name']
             filter_value = filters.validated_data['filter_value']
-            project = ProjectsModel.objects.filter(pk=project_id).first()
             scenario = ForecastScenario.objects.filter(pk=scenario_id).first()
-            table_name = f'Historical_Data_{project.project_name}_user{project.user_owner_id}_prediction_results_scenario_{scenario.scenario_name}'
+            table_name = scenario.predictions_table_name
 
             with connection.cursor() as cursor:
                 month = filter_value.split('-')[1]

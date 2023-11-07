@@ -99,6 +99,7 @@ class RunModelsViews(APIView):
                             # Save graphic_data and predictions excel url in the scenario
                             scenario.final_data_pred = final_data
                             scenario.data_year_pred = data_per_year
+                            scenario.predictions_table_name = f'{table_name}_prediction_results_scenario_{scenario_name}'
                             scenario.mape_scenario = mape
                             scenario.url_predictions = path
                             scenario.save()

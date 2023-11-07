@@ -1,7 +1,6 @@
-import React from 'react'
-import ToolsNav from '../../components/navs/ToolsNav'
-import Navbar from '../../components/navs/Navbar'
-import MetricsByDateContainer from '../../containers/tools/reports/MetricsByDateContainer'
+import ToolsNav from '../../components/navs/ToolsNav';
+import Navbar from '../../components/navs/Navbar';
+import MetricsByDateContainer from '../../containers/tools/reports/MetricsByDateContainer';
 
 const MetricsAnalysisPage = () => {
   return (

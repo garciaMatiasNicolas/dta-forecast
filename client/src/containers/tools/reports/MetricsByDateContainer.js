@@ -2,6 +2,7 @@ import { MDBRow } from "mdb-react-ui-kit";
 import TableMape from "../../../components/admin/tools/reports/TableMape";
 import { useEffect, useState } from "react";
 import axios from "axios";
+import GraphMape from "./GraphMape";
 
 const apiUrl = process.env.REACT_APP_API_URL;
 
@@ -18,6 +19,7 @@ const MetricsByDateContainer = () => {
   const [dates, setDates] = useState([]);
   const [scenarioId, setScenarioId] = useState(0);
   const [data, setData] = useState([]);
+  const [dataGraph, setDataGraph] = useState({"x": 0, "y": 0});
 
   const handleOnChangeScenario = (e) =>{
     let id = e.target.value;
@@ -32,7 +34,22 @@ const MetricsByDateContainer = () => {
     axios.post(`${apiUrl}/get-filters`, data, {headers})
     .then(res => {setDates(res.data);})
     .catch((err) => {setDates([]); console.log(err)} );
-  }
+
+    handleGraphicData(id);
+  };
+
+  const handleGraphicData = (scId) => { 
+    const data = {
+      "filter_name": "date",
+      "scenario_id": scId,
+      "project_id": localStorage.getItem("projectId"),
+      "filter_value": "x"
+    }
+
+    axios.post(`${apiUrl}/graphic-mape`, data, {headers})
+    .then(res => setDataGraph(res.data))
+    .catch(err => console.log(err));
+  };
 
   const handleOnChangeDates = (e) => {
     let date = e.target.value;
@@ -46,7 +63,7 @@ const MetricsByDateContainer = () => {
     axios.post(`${apiUrl}/report-mape-date`, data,{headers})
     .then(res => {setData(res.data)})
     .catch(res => {console.log(res)})
-  }
+  };
 
   useEffect(() => {
     axios.get(`${apiUrl}/scenarios/`, {
@@ -72,16 +89,25 @@ const MetricsByDateContainer = () => {
             ))}
           </select>
         </div>
-        <div className="w-50 d-flex flex-column justify-content-center align-items-end gap-1">
-          <p className="text-primary w-auto m-0 ms-1 p-0">Seleccionar Fecha</p>
-          <select onChange={handleOnChangeDates} className="form-select w-100 mt-2" style={{"maxWidth": "250px"}}>
-            <option value={0}>-----</option>
-            {dates.map(date=>(<option value={date}>{date}</option>))}
-          </select>
-        </div>
       </MDBRow>
+
+      <MDBRow>
+        <GraphMape scenario={scenarioId} graphicData={dataGraph}/>
+      </MDBRow>
+
       <MDBRow className="mt-5">
-        <p className="text-primary w-auto m-0 p-0">Reporte de metricas por fecha seleccionada</p>
+        <div className="d-flex w-100 justify-content-between align-items-center mb-5">
+          <p className="text-primary w-auto m-0 p-0">Reporte de metricas por fecha seleccionada</p>
+
+          <div className="w-50 d-flex flex-column justify-content-center align-items-end gap-1">
+            <p className="text-primary w-auto m-0 ms-1 p-0">Seleccionar Fecha</p>
+            <select onChange={handleOnChangeDates} className="form-select w-100 mt-2" style={{"maxWidth": "250px"}}>
+              <option value={0}>-----</option>
+              {dates.map(date=>(<option value={date}>{date}</option>))}
+            </select>
+          </div>
+        </div>
+
         <TableMape data={data}/>
       </MDBRow>
     </div>

@@ -28,3 +28,25 @@ def mape_calc(dataframe, model_name):
     mape = sum(absolute_errors) / len(absolute_errors)
 
     return mape
+
+
+def mape_calc_by_month(data: list) -> list:
+    mape_values = []
+
+    for row in data:
+        actual = []
+        predicted = []
+
+        for i, valor in enumerate(row):
+            if i % 2 == 0:
+                actual.append(valor)
+            else:
+                predicted.append(valor)
+
+        mape = [abs((actual_val - predicted_val) / actual_val) * 100 if actual_val != 0 else 0 for
+                actual_val, predicted_val in zip(actual, predicted)]
+
+        mape_avg = sum(mape) / len(mape)
+        mape_values.append(mape_avg)
+
+    return mape_values
