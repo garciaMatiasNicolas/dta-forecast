@@ -8,7 +8,6 @@ from .serializers import ProjectSerializer
 from .models import ProjectsModel
 
 
-
 class ProjectsViewSet(ModelViewSet):
     serializer_class = ProjectSerializer
     queryset = ProjectsModel.objects.all()
@@ -37,20 +36,15 @@ class ProjectsViewSet(ModelViewSet):
 
     def update(self, request, pk=None):
         project_to_update = self.get_queryset().filter(id=pk).first()
+        project_name = request.data.get('project_name')
 
         if project_to_update:
-            project_serializer = self.get_serializer(data=request.data)
-            if project_serializer.is_valid():
-                project_serializer.save()
-                return Response({'message': 'project_updated', 'project': project_serializer.data},
-                                status=status.HTTP_200_OK)
-            else:
-                return Response({'error': 'bad_request', 'logs': project_serializer.errors},
-                                status=status.HTTP_400_BAD_REQUEST)
+            project_to_update.project_name = project_name
+            project_to_update.save()
+            return Response({'message': 'project_updated'}, status=status.HTTP_200_OK)
 
         else:
-            return Response({'error': 'project_not_found'},
-                            status=status.HTTP_400_BAD_REQUEST)
+            return Response({'error': 'project_not_found'}, status=status.HTTP_400_BAD_REQUEST)
 
     def destroy(self, request, pk=None):
         type_of_delete = request.data.get('type')

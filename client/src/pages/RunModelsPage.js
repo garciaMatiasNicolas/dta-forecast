@@ -1,9 +1,9 @@
 import axios from "axios";
 import ToolsNav from "../components/navs/ToolsNav"
-import { useState, useContext } from "react";
+import { useState, useContext, useEffect } from "react";
 import { ClipLoader } from "react-spinners";
-import { showErrorAlert, showSuccessAlert } from "../components/other/Alerts";
-import { MDBCheckbox, MDBCol, MDBContainer, MDBInput, MDBRow, MDBBtn, MDBIcon,  MDBModal, MDBModalDialog, MDBModalContent, MDBModalBody,} from "mdb-react-ui-kit";
+import { showConifmationAlert, showErrorAlert, showSuccessAlert } from "../components/other/Alerts";
+import { MDBCheckbox, MDBCol, MDBContainer, MDBInput, MDBRow, MDBBtn, MDBIcon,  MDBModal, MDBModalDialog, MDBModalContent, MDBModalBody, MDBCollapse, MDBTable, MDBTableBody, MDBTableHead} from "mdb-react-ui-kit";
 import { AppContext } from "../context/Context";
 import convertData from "../functions/stringFormat";
 
@@ -28,13 +28,34 @@ const RunModelsPage = () => {
         pred_p: ''
     };
     
+    // STATES //
+    const [showShow, setShowShow] = useState(false);
+
+    const [fileTypes, setFileTypes] = useState([]);
+
     const [formData, setFormData] = useState(initialFormData);
 
     const [basicModal, setBasicModal] = useState(false);
 
     const [results, setResults] = useState([]);
 
+    // State for show scenarios history
+    const toggleShow = () => setShowShow(!showShow);
+
+    // State for set scenarios
+    const [scenarios, setScenarios] = useState([]);
+
     const showModal = () => setBasicModal(!basicModal);
+
+    // Function for download excel
+    const handleDownload = (scenarioName, urlPath) => {
+        const link = document.createElement("a");
+        link.href = `http://localhost:8000/${urlPath}`;
+        link.download = `predicciones_${scenarioName}.xlsx`;
+        document.body.appendChild(link);
+        link.click();
+        document.body.removeChild(link);
+    };
     
     const handleCheckboxChange = (value) => {
         const updatedModels = [...formData.models];
@@ -57,15 +78,22 @@ const RunModelsPage = () => {
     const handleSelectChange = (event) => {
         const selectedValue = event.target.value;
         
-        axios.get(`http://127.0.0.1:8000/files/?model_type=${selectedValue}`, { headers })
-          .then(res => {
-            let id = res.data[0].id
-            id !== undefined && setFormData({...formData, file_id: id});
-          })
-          .catch(error => {
-            setFormData({...formData, file_id: 0});
-          });
-      };
+        axios.get(`http://127.0.0.1:8000/files`, { headers })
+        .then(res => {
+            let files = res.data;
+            let projectId = parseInt(localStorage.getItem("projectId"))
+            files.filter(file => file.model_type === selectedValue && file.project === projectId)
+            let id = files[0].id
+            setFormData({...formData, file_id: id});
+        })
+        .catch(error => {
+            console.log(error);
+        });
+    };
+
+    const handleDeleteScenario = (objectId) => {
+        showConifmationAlert("scenario", objectId);
+    }
 
     const handleSubmit = (event) => {
         event.preventDefault();
@@ -83,7 +111,7 @@ const RunModelsPage = () => {
             .then((res)=>{
                 showSuccessAlert("Predicciones realizadas con exito", "Forecast finalizado");
                 let url = res.data.url;
-                let scenario = res.data.scenario;
+                //let scenario = res.data.scenario;
                 let graphicData = res.data.graphic_data;
                 let excelFile = `http://localhost:8000/${url}`;
                 setResults([...results, excelFile]);
@@ -105,12 +133,80 @@ const RunModelsPage = () => {
 
     const isFormValid = () => {
         const { scenario_name, models, test_p, pred_p, file_id } = formData;
-        return scenario_name && models.length > 0 && test_p && pred_p && file_id != 0;
+        return scenario_name && models.length > 0 && test_p && pred_p && file_id !== 0;
     };
+
+    // USE EFFECT //
+    useEffect(() => {
+        // Get file types
+        axios.get(`http://localhost:8000/file-types`, {headers})
+        .then(res => setFileTypes(res.data))
+        .catch(err => console.log(err));
+
+        // Get all scenarios and set state on first render
+        axios.get(`http://localhost:8000/scenarios/`, {
+            headers: headers
+        })
+        .then(res => {
+            let projectId = parseInt(localStorage.getItem("projectId"))
+            let scenarios = res.data.filter(item => item.project === projectId);
+            setScenarios(scenarios);
+        })
+        .catch(err => {
+            console.log(err);
+        })
+    }, []);
 
     return (
         <main style={{"minHeight": "100vh"}} className="bg-white pt-5 pb-5">
             <ToolsNav/>
+
+            <div className="w-100 ms-5 mb-5" style={{"maxWidth": "650px"}}>
+                <p style={{"cursor": "pointer", "color": "#285192"}} onClick={toggleShow}>
+                    <MDBIcon fas icon="history" /> Ver historial de escenarios
+                </p>
+                <MDBCollapse show={showShow}>
+                    <MDBTable className='caption-top'>
+                        <MDBTableHead>
+                            <tr>
+                                <th scope='col'>ID</th>
+                                <th scope='col'>Escenario</th>
+                                <th scope='col'>Excel</th>
+                                <th scope='col'>Archivo</th>
+                                <th scope='col'>Acciones</th>
+                            </tr>
+                        </MDBTableHead>
+                        <MDBTableBody>
+                            {
+                                scenarios.length === 0 ? 
+                                <tr>
+                                    <th scope='row'></th>
+                                    <td>No hay escenarios</td>
+                                    <td></td>
+                                    <td></td>
+                                    <td></td>
+                                </tr>
+                                :
+                            
+                                scenarios.map(scenario => (
+                                <tr>
+                                    <th scope='row'>{scenario.id}</th>
+                                    <td>{scenario.scenario_name}</td>
+                                    <td style={{ cursor: "pointer" }} onClick={() => handleDownload(scenario.scenario_name, scenario.url_predictions)} >
+                                    <MDBIcon fas icon='file-excel' /> Excel Predicciones
+                                    </td>
+                                    <td>Historical Data</td>
+                                    <td>
+                                        <span onClick={() => handleDeleteScenario(scenario.id)} style={{"cursor": "pointer"}} className="me-2"><MDBIcon fas icon="trash-alt" color="danger"/></span>
+                                        <span style={{"cursor": "pointer"}}><MDBIcon fas icon="edit" color="success" /></span>
+                                    </td>
+                                </tr>
+                            ))}
+                        </MDBTableBody>
+                    </MDBTable>
+                </MDBCollapse> 
+            </div>
+
             <h2 style={{"color": "black"}} className='mb-2 ms-5'>Seleccion de modelos de corrida</h2>
             <MDBContainer className="mt-4 ms-4">
                 <MDBRow>
@@ -136,7 +232,9 @@ const RunModelsPage = () => {
                                         <MDBInput label="Periodos de forecast" name="pred_p" type="number" onChange={handleInputChange}/>
                                         <select onChange={handleSelectChange} class="form-select" aria-label="Default select example">
                                             <option selected>Selecciona tipo de archivo</option>
-                                            <option value="historical_data">Historical Data</option>
+                                            {fileTypes.map((fileType) => (
+                                                <option value={fileType.id}>{convertData(fileType.model_type, true)}</option>
+                                            ))}
                                         </select>
                                     </MDBCol>
                                 </MDBRow>

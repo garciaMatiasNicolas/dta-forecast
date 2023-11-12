@@ -18,7 +18,6 @@ def obtain_file_route(route):
 
 def save_dataframe(route_file: str, file_name: str, model_type: str, wasSaved: bool) -> str:
     # Create dataframe with the Excel file
-
     if wasSaved == False:
         new_route = obtain_file_route(route=route_file)
         dataframe = pd.read_excel(new_route)
@@ -48,6 +47,7 @@ def save_dataframe(route_file: str, file_name: str, model_type: str, wasSaved: b
         dataframe.astype('str')
         dataframe.fillna(0, inplace=True)
         table_name = file_name
+
         if model_type == "historical_data":
             dataframe.to_sql(table_name, con=engine, if_exists='replace', index=False)
             return "succeed"

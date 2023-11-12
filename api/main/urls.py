@@ -12,5 +12,6 @@ urlpatterns = [
     path('scenarios/', include('forecast.router')),
     path('', include('forecast.urls')),
     path('', include('projects.urls')),
+    path('', include('files.urls')),
     path('media/<path:path>', serve, {'document_root': settings.MEDIA_ROOT}),
 ]

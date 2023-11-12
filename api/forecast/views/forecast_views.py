@@ -56,7 +56,6 @@ class RunModelsViews(APIView):
             # Get from request body scenario id
             data = GetScenarioById(data=request.data)
 
-
             if data.is_valid():
                 scenario_id = data.validated_data.get("scenario_id")
 

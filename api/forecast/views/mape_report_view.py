@@ -84,10 +84,19 @@ class MapeGraphicView(APIView):
                 cursor.execute(f'SELECT {columns} FROM {table_name}')
                 data_rows = cursor.fetchall()
                 data_rows = list(zip(*data_rows))
+                print(f'SELECT {columns} FROM {table_name}')
+                mape_values = mape_calc_by_month(data=data_rows)
+                for mape in mape_values:
+                    list(mape_values)
+                    mape_values.append(mape[0])
 
-                mape_values = mape_calc_by_month(data_rows)
+                list_months = []
 
-                data = {"x": last_year_months, "y": mape_values}
+                for month in last_year_months:
+                    month = datetime.strptime(month, '%Y-%m-%d').date()
+                    list_months.append(month)
+
+                data = {"x": list_months, "y": mape_values}
                 return Response(data, status=status.HTTP_200_OK)
 
         else:

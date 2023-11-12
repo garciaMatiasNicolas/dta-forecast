@@ -1,7 +1,8 @@
-from .file_model import FileRefModel
+from .file_model import FileRefModel, FileTypes
 from .filemanager import save_dataframe
-from .serializer import FileSerializer
+from .serializer import FileSerializer, FileModelType
 from rest_framework.response import Response
+from rest_framework.views import APIView
 from rest_framework import status
 from rest_framework.authentication import TokenAuthentication
 from rest_framework.permissions import IsAuthenticated
@@ -21,9 +22,7 @@ class ExcelFileUploadView(viewsets.ModelViewSet):
 
     def list(self, request, *args, **kwargs):
         user_id = request.user.id
-        model_type = request.GET.get("model_type");
-        print(model_type)
-        files = self.get_queryset().filter(user_owner_id=user_id, model_type=model_type)
+        files = self.get_queryset().filter(user_owner_id=user_id)
         serializer = self.get_serializer(files, many=True)
         return Response(serializer.data, status=status.HTTP_200_OK)
 
@@ -35,6 +34,7 @@ class ExcelFileUploadView(viewsets.ModelViewSet):
             # Get validated data from request
             model_type = file_serializer.validated_data['model_type']
             file_name = file_serializer.validated_data['file_name']
+            model_type = FileModelType.objects.get(id=model_type)
 
             # Save file
             file_serializer.save()
@@ -45,7 +45,7 @@ class ExcelFileUploadView(viewsets.ModelViewSet):
 
             # Save dataframe
             try:
-                save_dataframe(route_file=route, model_type=model_type, file_name=file_name, wasSaved=False)
+                save_dataframe(route_file=route, model_type=model_type.model_type, file_name=file_name, wasSaved=False)
                 return Response({'message': 'file_uploaded'},
                                 status=status.HTTP_201_CREATED)
 
@@ -72,3 +72,21 @@ class ExcelFileUploadView(viewsets.ModelViewSet):
         else:
             return Response({'error': 'bad_request', 'logs': file_serializer.errors},
                             status=status.HTTP_400_BAD_REQUEST)
+
+
+@authentication_classes([TokenAuthentication])
+@permission_classes([IsAuthenticated])
+class GetFileTypes(APIView):
+    def post(self, request):
+        serializer = FileModelType(data=request.data)
+
+        if serializer.is_valid():
+            serializer.save()
+            return Response({'message': 'created'})
+
+    def get(self, request):
+        files = FileTypes.objects.all()
+        serializer = FileModelType(files, many=True)
+        return Response(serializer.data)
+
+

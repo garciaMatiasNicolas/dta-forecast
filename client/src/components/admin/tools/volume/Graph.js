@@ -32,11 +32,7 @@ const Graph = () => {
   };
   
   // STATES //
-  const [showShow, setShowShow] = useState(false);
 
-  // State for show scenarios history
-  const toggleShow = () => setShowShow(!showShow);
-  
   // State for data graph all
   const [data, setData] = useState(false);
 
@@ -72,23 +68,14 @@ const Graph = () => {
       headers: headers
     })
     .then(res => {
-      setScenarios(res.data);
-      console.log(res)
+      let projectId = parseInt(localStorage.getItem("projectId"))
+      let scenarios = res.data.filter(item => item.project === projectId);
+      setScenarios(scenarios);
     })
     .catch(err => {
       console.log(err);
     })
   }, []);
-  
-  // Function for download excel
-  const handleDownload = (scenarioName, urlPath) => {
-    const link = document.createElement("a");
-    link.href = `http://localhost:8000/${urlPath}`;
-    link.download = `predicciones_${scenarioName}.xlsx`;
-    document.body.appendChild(link);
-    link.click();
-    document.body.removeChild(link);
-  };
   
   // Function for get filters from server
   const handleClickFilter = (e) => {
@@ -217,47 +204,6 @@ const Graph = () => {
     <div className='d-flex justify-content-center align-items-center gap-5 flex-column w-100'>
     
       <div className='d-flex justify-content-between align-items-center w-100 px-5'>
-        <div>
-          <p style={{"cursor": "pointer", "color": "#285192"}} onClick={toggleShow}>
-          <MDBIcon fas icon="history" /> Ver historial de escenarios
-          </p>
-          <MDBCollapse show={showShow}>
-            <MDBTable className='caption-top'>
-              <MDBTableHead>
-                <tr>
-                <th scope='col'>ID</th>
-                <th scope='col'>Escenario</th>
-                <th scope='col'>Excel</th>
-                <th scope='col'>Archivo</th>
-                </tr>
-              </MDBTableHead>
-              <MDBTableBody>
-
-              {
-                scenarios.length === 0 ? 
-                <tr>
-                  <th scope='row'></th>
-                  <td>No hay escenarios</td>
-                  <td></td>
-                  <td></td>
-                </tr>
-                  :
-              
-                scenarios.map(scenario => (
-                  <tr>
-                    <th scope='row'>{scenario.id}</th>
-                    <td>{scenario.scenario_name}</td>
-                    <td style={{ cursor: "pointer" }} onClick={() => handleDownload(scenario.scenario_name, scenario.url_predictions)} >
-                      <MDBIcon fas icon='file-excel' /> Excel Predicciones
-                    </td>
-                    <td>Historical Data</td>
-                  </tr>
-              ))}
-              </MDBTableBody>
-            </MDBTable>
-          </MDBCollapse> 
-        </div>
-
         <div>
           <select className="form-select" onChange={handleOnChange}>
             <option defaultValue>Mostrar grafico de escenario..</option>
