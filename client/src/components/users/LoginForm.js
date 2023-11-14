@@ -92,7 +92,7 @@ const LoginForm = () => {
             </button>
 
             <div className="text-center">
-                <p>¿No creaste tu tienda todavia? <Link to='/signup/'>Creala!</Link> </p>
+                <p>¿No creaste tu cuenta todavia? <Link to='/signup/'>Creala!</Link> </p>
             </div>
             
         </form>

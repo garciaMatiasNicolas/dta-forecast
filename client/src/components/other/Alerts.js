@@ -43,7 +43,19 @@ const showConifmationAlert = (typeOfConfirmation, objectId) => {
     });
   }
   else if (typeOfConfirmation === "file"){
-
+    Swal.fire({
+      text: '¿Estás seguro de eliminar este archivo? Se borrarán todas las predicciones relacionadas a él.',
+      icon: 'warning',
+      showCancelButton: true,
+      confirmButtonText: 'Eliminar',
+      cancelButtonText: 'Cancelar'
+    }).then((result) => {
+      if (result.isConfirmed) {
+        axios.delete(`${apiUrl}/files/${objectId}`, {headers})
+        .then(()=>{showSuccessAlert("El archivo y sus predicciones fueron eliminados satisfactoriamente", "Archivo eliminado")})
+        .catch(()=>{showErrorAlert("Ocurrio un error inesperado, intente mas tarde")});
+      }
+    });
   }
 }
 

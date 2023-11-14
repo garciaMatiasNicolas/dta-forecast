@@ -5,7 +5,7 @@ import { showErrorAlert, showSuccessAlert } from '../../../other/Alerts';
 
 const apiUrl = process.env.REACT_APP_API_URL;
 
-const GropuButtonActions = ({props}) => {
+const GropuButtonActions = ({props, idFile}) => {
     const fileInputRef = useRef(null);
 
     const handleButtonClick = () => {
@@ -26,7 +26,6 @@ const GropuButtonActions = ({props}) => {
             }
             else {
                 showErrorAlert("Error en el servidor");
-                console.log(err.response)
             }
         })
     }
@@ -52,7 +51,7 @@ const GropuButtonActions = ({props}) => {
             "file_name": `Historical_Data_${projectName}_user${user}`,
             "project": projectId,
             "file": file,
-            "model_type": "historical_data"
+            "model_type": idFile
         };
 
         uploadFile(data, headers);
@@ -67,21 +66,16 @@ const GropuButtonActions = ({props}) => {
                     style={{ display: 'none' }}
                     onChange={handleFileUpload}
                 />
-                <MDBBtn color='success' floating onClick={handleButtonClick} >
+                <MDBBtn disabled={idFile !== 1} color='success' floating onClick={handleButtonClick} >
                     <MDBIcon fas icon="upload" />
                 </MDBBtn>
             </div>
 
             <a href={require(`../../../../../public/templates/${props}`)} download={props} target="_blank" rel="noreferrer">
-                <MDBBtn color='primary' floating>
+                <MDBBtn color='primary' floating >
                     <MDBIcon fas icon="download" />
                 </MDBBtn>
             </a>
-
-            <MDBBtn color='warning' floating>
-                <MDBIcon fas icon="download" />
-            </MDBBtn>
-        
         </>
 
     )

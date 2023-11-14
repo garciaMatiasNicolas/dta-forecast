@@ -116,6 +116,7 @@ const RunModelsPage = () => {
                 let excelFile = `http://localhost:8000/${url}`;
                 setResults([...results, excelFile]);
                 setDataGraphic(graphicData);
+                console.log(res.data)
             })
             .catch((err)=>{
                 err.response.data.error === 'data_failed' && showErrorAlert("No se subio plantilla con datos");
@@ -127,6 +128,7 @@ const RunModelsPage = () => {
         .catch((err)=>{
             showErrorAlert("Nombre de escenario ya utilizado");
             setBasicModal(!basicModal);
+            console.log(err)
         }) 
         
     };

@@ -9,8 +9,8 @@ from rest_framework.permissions import IsAuthenticated
 from rest_framework.decorators import authentication_classes, permission_classes
 from rest_framework import viewsets
 from rest_framework.parsers import FormParser, MultiPartParser
-from .filemanager import obtain_file_route
 import os
+from django.db import connection, OperationalError
 
 
 @authentication_classes([TokenAuthentication])
@@ -28,20 +28,19 @@ class ExcelFileUploadView(viewsets.ModelViewSet):
 
     def create(self, request, *args, **kwargs):
         file_serializer = self.get_serializer(data=request.data)
-        print(file_serializer.initial_data['model_type'])
+        file_model = file_serializer.initial_data['model_type']
 
         if file_serializer.is_valid():
             # Get validated data from request
-            model_type = file_serializer.validated_data['model_type']
             file_name = file_serializer.validated_data['file_name']
-            model_type = FileModelType.objects.get(id=model_type)
+            model_type = FileTypes.objects.get(id=file_model)
 
             # Save file
             file_serializer.save()
             file_ref_model = file_serializer.instance
 
             # Get file route and instance DataFrame
-            route = file_serializer.data['file']
+            route = str(file_serializer.data['file'])
 
             # Save dataframe
             try:
@@ -52,7 +51,7 @@ class ExcelFileUploadView(viewsets.ModelViewSet):
             except ValueError as err:
                 err = str(err)
                 # Delete file from server
-                route = obtain_file_route(route)
+                route = os.path.join('media', route)
                 if os.path.exists(route):
                     os.remove(route)
 
@@ -72,6 +71,27 @@ class ExcelFileUploadView(viewsets.ModelViewSet):
         else:
             return Response({'error': 'bad_request', 'logs': file_serializer.errors},
                             status=status.HTTP_400_BAD_REQUEST)
+
+    def destroy(self, request, pk = None):
+        file_to_destroy = self.get_queryset().filter(id=pk).first()
+
+        if file_to_destroy:
+            file_url = os.path.join('media', str(file_to_destroy.file))
+
+            if os.path.exists(file_url):
+                os.remove(file_url)
+
+            try:
+                with connection.cursor() as cursor:
+                    cursor.execute(f'DROP TABLE {file_to_destroy.file_name}')
+            except OperationalError:
+                pass
+
+            file_to_destroy.delete()
+            return Response({'message': 'file_deleted'}, status=status.HTTP_200_OK)
+
+        else:
+            return Response({'error': 'file_not_found'}, status=status.HTTP_400_BAD_REQUEST)
 
 
 @authentication_classes([TokenAuthentication])

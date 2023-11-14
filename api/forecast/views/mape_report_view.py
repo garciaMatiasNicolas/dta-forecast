@@ -24,25 +24,27 @@ class MapeReportAPIView(APIView):
             filter_value = filters.validated_data['filter_value']
             scenario = ForecastScenario.objects.filter(pk=scenario_id).first()
             table_name = scenario.predictions_table_name
-
+            query = f'''
+                SELECT
+                SKU,
+                DESCRIPTION,
+                MAX(CASE WHEN MODEL = 'actual' THEN "{filter_value}" END) AS actual,
+                MAX(CASE WHEN MODEL != 'actual' THEN "{filter_value}" END) AS fit,
+                ROUND(
+                    CASE
+                        WHEN MAX(CASE WHEN MODEL = 'actual' THEN "{filter_value}" END) = 0 AND MAX(CASE WHEN MODEL != 'actual' THEN "{filter_value}" END) = 0
+                        THEN 0 
+                        WHEN MAX(CASE WHEN MODEL = 'actual' THEN "{filter_value}" END) = 0
+                        THEN 100
+                        ELSE ABS(MAX(CASE WHEN MODEL = 'actual' THEN "{filter_value}" END) - MAX(CASE WHEN MODEL != 'actual' THEN "{filter_value}" END) / MAX(CASE WHEN MODEL = 'actual' THEN "{filter_value}" END)) * 100
+                    END, 2
+                ) AS MAPE
+                FROM {table_name} GROUP BY SKU, DESCRIPTION;
+            '''
             with connection.cursor() as cursor:
-                cursor.execute(f'''
-                      SELECT 
-                      SKU, 
-                      DESCRIPTION,
-                      ROUND(MAX(CASE WHEN MODEL = 'actual' THEN "{filter_value}" END), 2) AS actual,
-                      ROUND(MAX(CASE WHEN MODEL != 'actual' THEN "{filter_value}" END), 2) AS fit,
-                      ROUND(
-                        CASE
-                          WHEN MAX(CASE WHEN MODEL = 'actual' THEN "{filter_value}" END) = 0 
-                          THEN 100 - MAX(CASE WHEN MODEL != 'actual' THEN "{filter_value}" END)
-                          ELSE MAX(CASE WHEN MODEL = 'actual' THEN "{filter_value}" END) - 
-                          MAX(CASE WHEN MODEL != 'actual' THEN "{filter_value}" END)
-                        END, 2
-                      ) FROM {table_name} GROUP BY SKU, DESCRIPTION;''')
+                cursor.execute(query)
 
                 rows = cursor.fetchall()
-
                 data_to_return = []
 
                 for row in rows:
@@ -63,7 +65,7 @@ class MapeGraphicView(APIView):
             if actual_date.month - month <= 0:
                 year -= 1
             date = datetime(year, (actual_date.month - month - 1) % 12 + 1, 1)
-            months.append(f'"{date.strftime("%Y-%m-%d")}"')
+            months.append(date.strftime('"%Y-%m-%d"'))
 
         return months
 
@@ -78,26 +80,42 @@ class MapeGraphicView(APIView):
             table_name = scenario.predictions_table_name
 
             last_year_months = self.obtain_last_year_months()
-            columns = ', '.join(last_year_months)
 
-            with connection.cursor() as cursor:
-                cursor.execute(f'SELECT {columns} FROM {table_name}')
-                data_rows = cursor.fetchall()
-                data_rows = list(zip(*data_rows))
-                print(f'SELECT {columns} FROM {table_name}')
-                mape_values = mape_calc_by_month(data=data_rows)
-                for mape in mape_values:
-                    list(mape_values)
-                    mape_values.append(mape[0])
+            mape_values = []
+            for date in last_year_months:
+                with connection.cursor() as cursor:
+                    query = f'''
+                        SELECT ROUND(AVG(MAPE), 2) AS MAPE
+                        FROM (
+                            SELECT
+                                ROUND(
+                                    CASE
+                                        WHEN MAX(CASE WHEN MODEL = 'actual' THEN {date} END) = 0 
+                                        AND MAX(CASE WHEN MODEL != 'actual' THEN {date} END) = 0
+                                        THEN 0 
+                                        WHEN MAX(CASE WHEN MODEL = 'actual' THEN {date} END) = 0
+                                        THEN 100
+                                        ELSE ABS(MAX(CASE WHEN MODEL = 'actual' THEN {date} END) 
+                                        - MAX(CASE WHEN MODEL != 'actual' THEN {date} END) 
+                                        / MAX(CASE WHEN MODEL = 'actual' THEN {date} END)) * 100
+                                    END, 2
+                                ) AS MAPE
+                            FROM {table_name}
+                            GROUP BY SKU
+                        ) AS Subquery;
+                    '''
+                    cursor.execute(query)
+                    data = cursor.fetchall()
+                    mape_values.append(data[0][0])
 
-                list_months = []
+            dates = []
+            for date_str in last_year_months:
+                date_str = date_str.strip('"')
+                date_obj = datetime.strptime(date_str, "%Y-%m-%d")
+                formatted_date = date_obj.strftime("%Y-%m-%d")
+                dates.append(formatted_date)
 
-                for month in last_year_months:
-                    month = datetime.strptime(month, '%Y-%m-%d').date()
-                    list_months.append(month)
-
-                data = {"x": list_months, "y": mape_values}
-                return Response(data, status=status.HTTP_200_OK)
+            return Response({'x': dates, 'y': mape_values}, status=status.HTTP_200_OK)
 
         else:
             return Response({'error': 'bad_request', 'logs': filters.errors},

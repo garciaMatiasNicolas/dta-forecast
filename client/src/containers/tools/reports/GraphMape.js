@@ -24,6 +24,7 @@ const GraphMape = ({scenario, graphicData}) => {
         },
     };
 
+
     // Graph data
     const dataBar = {
         labels: graphicData.x,

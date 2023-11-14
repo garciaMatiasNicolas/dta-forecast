@@ -15,6 +15,7 @@ from datetime import datetime
 import pandas as pd
 import numpy as np
 import os
+import threading
 
 
 class RunModelsViews(APIView):
@@ -77,38 +78,42 @@ class RunModelsViews(APIView):
                             table_name = f'Historical_Data_{project.project_name}_user{user}'
 
                             # Get dataframe run models
-                            dataframe = get_historical_data(table_name=table_name)
-                            result = best_model(dataframe=dataframe, test_p=test_p, pred_p=pred_p, models=models)
-                            path = f'media/excel_files/predictions/{table_name}_prediction_results_scenario_{scenario_name}.xlsx'
+                            def run_models() -> Response:
+                                dataframe = get_historical_data(table_name=table_name)
+                                result = best_model(dataframe=dataframe, test_p=test_p, pred_p=pred_p, models=models)
+                                path = f'media/excel_files/predictions/{table_name}_prediction_results_scenario_{scenario_name}.xlsx'
 
-                            # Write excel with model run results
-                            with pd.ExcelWriter(path, engine='xlsxwriter') as excel_writer:
-                                result.to_excel(excel_writer, sheet_name='result', index=True, merge_cells=False)
-                                work_sheet = excel_writer.sheets['result']
+                                # Write excel with model run results
+                                with pd.ExcelWriter(path, engine='xlsxwriter') as excel_writer:
+                                    result.to_excel(excel_writer, sheet_name='result', index=True, merge_cells=False)
+                                    work_sheet = excel_writer.sheets['result']
 
-                                for i, column in enumerate(result.columns):
-                                    width_column = max(result[column].astype(str).apply(len).max(),
-                                                        len(column)) + 2
-                                    work_sheet.set_column(i, i, width_column)
+                                    for i, column in enumerate(result.columns):
+                                        width_column = max(result[column].astype(str).apply(len).max(),
+                                                            len(column)) + 2
+                                        work_sheet.set_column(i, i, width_column)
 
-                            final_data, data_per_year, mape = self.graphic_predictions(
-                                os.path.join(settings.MEDIA_ROOT, 'excel_files\\predictions',
-                                                f'{table_name}_prediction_results_scenario_{scenario_name}.xlsx'))
+                                final_data, data_per_year, mape = self.graphic_predictions(
+                                    os.path.join(settings.MEDIA_ROOT, 'excel_files\\predictions',
+                                                    f'{table_name}_prediction_results_scenario_{scenario_name}.xlsx'))
 
-                            # Save graphic_data and predictions excel url in the scenario
-                            scenario.final_data_pred = final_data
-                            scenario.data_year_pred = data_per_year
-                            scenario.predictions_table_name = f'{table_name}_prediction_results_scenario_{scenario_name}'
-                            scenario.mape_scenario = mape
-                            scenario.url_predictions = path
-                            scenario.save()
+                                # Save graphic_data and predictions excel url in the scenario
+                                scenario.final_data_pred = final_data
+                                scenario.data_year_pred = data_per_year
+                                scenario.predictions_table_name = f'{table_name}_prediction_results_scenario_{scenario_name}'
+                                scenario.mape_scenario = mape
+                                scenario.url_predictions = path
+                                scenario.save()
 
-                            # Create table with predicted data
-                            save_dataframe(route_file=path,
-                                            file_name=f'{table_name}_prediction_results_scenario_{scenario_name}',
-                                            model_type="historical_data", wasSaved=True)
+                                # Create table with predicted data
+                                save_dataframe(route_file=path,
+                                                file_name=f'{table_name}_prediction_results_scenario_{scenario_name}',
+                                                model_type="historical_data", wasSaved=True)
 
-                            return Response({'message': 'succeed'}, status=status.HTTP_200_OK)
+                                return Response({'message': 'succeed'}, status=status.HTTP_200_OK)
+
+                            run_models_thread = threading.Thread(target=run_models)
+                            run_models_thread.start()
 
                     else:
                         return Response({'error': 'scenario_not_found'}, status=status.HTTP_200_OK)
