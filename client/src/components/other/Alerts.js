@@ -59,4 +59,31 @@ const showConifmationAlert = (typeOfConfirmation, objectId) => {
   }
 }
 
-export {showErrorAlert, showSuccessAlert, showConifmationAlert}
+const updateAlert = async (objectId) => {
+  const token = localStorage.getItem("userToken");
+  const headers = {
+    'Authorization': `Token ${token}`, 
+    'Content-Type': 'application/json', 
+  };
+
+  const { value: scenarioName } = await Swal.fire({
+    title: "Actualizar Escenario",
+    input: "text",
+    inputLabel: "Ingrese nuevo nombre del escenario",
+    inputPlaceholder: "Nombre escenario"
+  });
+  if (scenarioName) {
+    axios.put(`${apiUrl}/scenarios/${objectId}`, {
+      data: {
+        "scenario_name": scenarioName
+      }, 
+      headers: headers
+    })
+    .then(()=>{showSuccessAlert("El escenario se actualizo satisfactoriamente", "Escenario actualizado")})
+    .catch(()=>{showErrorAlert("Ocurrio un error inesperdo, intente nuevamente")})
+  } else {
+    showErrorAlert("Debe ingresar un nuevo nombre")
+  }
+}
+
+export {showErrorAlert, showSuccessAlert, showConifmationAlert, updateAlert}

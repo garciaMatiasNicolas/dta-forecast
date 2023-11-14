@@ -110,10 +110,10 @@ class RunModelsViews(APIView):
                                                 file_name=f'{table_name}_prediction_results_scenario_{scenario_name}',
                                                 model_type="historical_data", wasSaved=True)
 
-                                return Response({'message': 'succeed'}, status=status.HTTP_200_OK)
-
                             run_models_thread = threading.Thread(target=run_models)
                             run_models_thread.start()
+                            run_models_thread.join()
+                            return Response({'message': 'succeed'}, status=status.HTTP_200_OK)
 
                     else:
                         return Response({'error': 'scenario_not_found'}, status=status.HTTP_200_OK)

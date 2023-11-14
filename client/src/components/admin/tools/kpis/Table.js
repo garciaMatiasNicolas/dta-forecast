@@ -60,7 +60,7 @@ const TableReport = ({ props, data }) => {
         </MDBTableBody>
       </MDBTable>
       {
-        data.data.length >= 7 && 
+        data.data.length >= 6 && 
         <ReactPaginate
           previousLabel={<MDBIcon fas icon="angle-double-left" />}
           nextLabel={<MDBIcon fas icon="angle-double-right" />}
@@ -71,7 +71,8 @@ const TableReport = ({ props, data }) => {
           onPageChange={handlePageClick}
           containerClassName={'pagination'}
           subContainerClassName={'pages pagination'}
-          activeClassName={'active'}
+          pageClassName={'page-item'}
+          activeClassName={'active text-decoration-underline'}
         />
       }
     </div>

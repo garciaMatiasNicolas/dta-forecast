@@ -72,3 +72,18 @@ text-shadow: #0062cc 1px 1px, #0062cc 2px 2px, #0062cc 3px 3px, #0062cd 4px 4px,
 .pagination ul li.next a {
     margin-left: auto;
 }
+  
+.page-item {
+    display: inline-block;
+    margin-right: 5px; /* Ajusta el margen según tu diseño */
+}
+  
+.page-item a {
+    text-decoration: none; /* Quita la subrayado predeterminado */
+}
+  
+.page-item.active a {
+    text-decoration: underline; 
+    color: red/* Subrayado para la página activa */
+}
+  

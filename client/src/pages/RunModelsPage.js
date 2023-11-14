@@ -2,7 +2,7 @@ import axios from "axios";
 import ToolsNav from "../components/navs/ToolsNav"
 import { useState, useContext, useEffect } from "react";
 import { ClipLoader } from "react-spinners";
-import { showConifmationAlert, showErrorAlert, showSuccessAlert } from "../components/other/Alerts";
+import { showConifmationAlert, showErrorAlert, showSuccessAlert, updateAlert } from "../components/other/Alerts";
 import { MDBCheckbox, MDBCol, MDBContainer, MDBInput, MDBRow, MDBBtn, MDBIcon,  MDBModal, MDBModalDialog, MDBModalContent, MDBModalBody, MDBCollapse, MDBTable, MDBTableBody, MDBTableHead} from "mdb-react-ui-kit";
 import { AppContext } from "../context/Context";
 import convertData from "../functions/stringFormat";
@@ -93,6 +93,10 @@ const RunModelsPage = () => {
 
     const handleDeleteScenario = (objectId) => {
         showConifmationAlert("scenario", objectId);
+    }
+
+    const handleUpdateScenario = (objectId) => {
+        updateAlert(objectId);
     }
 
     const handleSubmit = (event) => {
@@ -199,8 +203,12 @@ const RunModelsPage = () => {
                                     </td>
                                     <td>Historical Data</td>
                                     <td>
-                                        <span onClick={() => handleDeleteScenario(scenario.id)} style={{"cursor": "pointer"}} className="me-2"><MDBIcon fas icon="trash-alt" color="danger"/></span>
-                                        <span style={{"cursor": "pointer"}}><MDBIcon fas icon="edit" color="success" /></span>
+                                        <span onClick={() => handleDeleteScenario(scenario.id)} style={{"cursor": "pointer"}} className="me-5">
+                                            <MDBIcon fas icon="trash-alt" color="danger"/>
+                                        </span>
+                                        <span onClick={()=> handleUpdateScenario(scenario.id)} style={{"cursor": "pointer"}}>
+                                            <MDBIcon fas icon="edit" color="success" />
+                                        </span>
                                     </td>
                                 </tr>
                             ))}

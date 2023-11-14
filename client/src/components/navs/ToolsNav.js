@@ -4,7 +4,7 @@ import { Link } from 'react-router-dom';
 const ToolsNav = () => {
   const project = localStorage.getItem("projectId");
   return (
-    <nav className='mb-2 ms-5'>
+    <nav className='mb-2 ms-5 d-flex justify-content-start'>
       <MDBPagination className='mb-0'>
         <Link to="/dashboard/">
           <MDBPaginationItem className='bg-transparent d-flex justify-content-center align-items-center gap-1 p-2' style={{"cursor": "pointer"}}>

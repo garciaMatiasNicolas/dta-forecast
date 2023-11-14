@@ -51,7 +51,7 @@ const TemplatesPage = () => {
             <MDBIcon fas icon="history" /> Ver historial de archivos
           </p>
           <MDBCollapse show={showShow}>
-            <MDBTable className='caption-top'>
+            <MDBTable align='middle' className='caption-top'>
               <MDBTableHead>
                 <tr>
                   <th scope='col'>ID</th>
@@ -79,8 +79,7 @@ const TemplatesPage = () => {
                           <MDBIcon fas icon='file-excel' /> Excel subido
                         </td>
                         <td>
-                          <span onClick={() => handleDeleteScenario(file.id)} style={{"cursor": "pointer"}} className="me-2"><MDBIcon fas icon="trash-alt" color="danger"/></span>
-                          <span style={{"cursor": "pointer"}}><MDBIcon fas icon="edit" color="success" /></span>
+                          <span onClick={() => handleDeleteScenario(file.id)} style={{"cursor": "pointer"}} className='ms-3'><MDBIcon fas icon="trash-alt" color="danger"/></span>
                         </td>
                       </tr>
                     ))}
