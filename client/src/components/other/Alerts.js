@@ -38,7 +38,7 @@ const showConifmationAlert = (typeOfConfirmation, objectId) => {
       if (result.isConfirmed) {
         axios.delete(`${apiUrl}/scenarios/${objectId}`, {headers})
         .then(()=>{showSuccessAlert("El escenario y sus predicciones fueron eliminados satisfactoriamente", "Escenario eliminado")})
-        .catch(()=>{showErrorAlert("Ocurrio un error inesperado, intente mas tarde")});
+        .catch((err)=>{showErrorAlert("Ocurrio un error inesperado, intente mas tarde"); console.log(err)});
       }
     });
   }

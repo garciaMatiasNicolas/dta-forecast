@@ -9,25 +9,16 @@ from ..models import ForecastScenario
 from ..serializer import FilterData
 from django.db import connection
 from datetime import datetime
-from ..mape_cacl import mape_calc_by_month
+from ..mape_cacl import mape_calc_reports
 
 
 class MapeReportAPIView(APIView):
-    @staticmethod
-    def mape_calc(predicted: float, actual: float):
-        if actual == 0 and predicted == 0:
-            mape = 0
-        elif actual == 0 and predicted != 0:
-            mape = 100
-        else:
-            mape = abs((actual - predicted) / actual) * 100
-
-        return round(mape, 2)
-
     @authentication_classes([TokenAuthentication])
     @permission_classes([IsAuthenticated])
     def post(self, request):
         filters = FilterData(data=request.data)
+        product = request.data.get("product")
+
 
         if filters.is_valid():
             scenario_id = filters.validated_data['scenario_id']
@@ -36,13 +27,25 @@ class MapeReportAPIView(APIView):
             scenario = ForecastScenario.objects.filter(pk=scenario_id).first()
             table_name = scenario.predictions_table_name
 
-            query = f'''
+            if product:
+                query = f'''
+                SELECT
+                SKU|| ' ' ||DESCRIPTION AS product, 
+                ROUND(MAX(CASE WHEN MODEL = 'actual' THEN "{filter_value}" END),2) AS actual, 
+                ROUND(MAX(CASE WHEN MODEL != 'actual' THEN "{filter_value}" END),2) AS fit 
+                FROM {table_name} WHERE SKU = {product}
+                GROUP BY SKU, DESCRIPTION;
+                '''
+
+            else:
+                query = f'''
                 SELECT
                 SKU|| ' ' ||DESCRIPTION AS product, 
                 ROUND(MAX(CASE WHEN MODEL = 'actual' THEN "{filter_value}" END),2) AS actual, 
                 ROUND(MAX(CASE WHEN MODEL != 'actual' THEN "{filter_value}" END),2) AS fit 
                 FROM {table_name} GROUP BY SKU, DESCRIPTION;
-            '''
+                '''
+
             try:
                 with connection.cursor() as cursor:
                     cursor.execute(query)
@@ -53,7 +56,7 @@ class MapeReportAPIView(APIView):
                     for index, row in enumerate(rows):
                         actual_val = row[1]
                         predicted_val = row[2]
-                        mape = self.mape_calc(predicted=predicted_val, actual=actual_val)
+                        mape = mape_calc_reports(predicted=predicted_val, actual=actual_val)
                         new_data = list(row)
                         new_data.append(mape)
                         data_to_return.append(new_data)
@@ -92,35 +95,66 @@ class MapeGraphicView(APIView):
             scenario_id = filters.validated_data['scenario_id']
             scenario = ForecastScenario.objects.filter(pk=scenario_id).first()
             table_name = scenario.predictions_table_name
+            filter_name = filters.validated_data['filter_name']
+            filter_value = filters.validated_data['filter_value']
 
             last_year_months = self.obtain_last_year_months()
-
             mape_values = []
-            for date in last_year_months:
-                with connection.cursor() as cursor:
-                    query = f'''
-                        SELECT ROUND(AVG(MAPE), 2) AS MAPE
-                        FROM (
-                            SELECT
-                                ROUND(
-                                    CASE
-                                        WHEN MAX(CASE WHEN MODEL = 'actual' THEN {date} END) = 0 
-                                        AND MAX(CASE WHEN MODEL != 'actual' THEN {date} END) = 0
-                                        THEN 0 
-                                        WHEN MAX(CASE WHEN MODEL = 'actual' THEN {date} END) = 0
-                                        THEN 100
-                                        ELSE ABS(MAX(CASE WHEN MODEL = 'actual' THEN {date} END) 
-                                        - MAX(CASE WHEN MODEL != 'actual' THEN {date} END) 
-                                        / MAX(CASE WHEN MODEL = 'actual' THEN {date} END)) * 100
-                                    END, 2
-                                ) AS MAPE
-                            FROM {table_name}
-                            GROUP BY SKU
-                        ) AS Subquery;
-                    '''
-                    cursor.execute(query)
-                    data = cursor.fetchall()
-                    mape_values.append(data[0][0])
+
+            if filter_name == "date":
+                for date in last_year_months:
+                    with connection.cursor() as cursor:
+
+                        query = f'''
+                           SELECT
+                           ROUND(MAX(CASE WHEN MODEL = 'actual' THEN {date} END),2) AS actual, 
+                           ROUND(MAX(CASE WHEN MODEL != 'actual' THEN {date} END),2) AS fit 
+                           FROM {table_name} GROUP BY SKU, DESCRIPTION;
+                        '''
+                        cursor.execute(query)
+                        rows = cursor.fetchall()
+                        mape_values_by_date = []
+
+                        for row in rows:
+                            actual_val = row[0]
+                            predicted_val = row[1]
+                            mape = mape_calc_reports(actual=actual_val, predicted=predicted_val)
+                            mape_values_by_date.append(mape)
+
+                    mape_values.append(round(sum(mape_values_by_date) / len(mape_values_by_date), 2))
+
+            else:
+                for date in last_year_months:
+                    with connection.cursor() as cursor:
+                        if filter_name == 'sku':
+                            query = f'''
+                                SELECT
+                                ROUND(MAX(CASE WHEN MODEL = 'actual' THEN {date} END),2) AS actual, 
+                                ROUND(MAX(CASE WHEN MODEL != 'actual' THEN {date} END),2) AS fit 
+                                FROM {table_name} WHERE {filter_name} = {filter_value}
+                                GROUP BY SKU, DESCRIPTION;
+                            '''
+
+                        else:
+                            query = f'''
+                                SELECT
+                                ROUND(MAX(CASE WHEN MODEL = 'actual' THEN {date} END),2) AS actual, 
+                                ROUND(MAX(CASE WHEN MODEL != 'actual' THEN {date} END),2) AS fit 
+                                FROM {table_name} WHERE {filter_name} = '{filter_value}'
+                                GROUP BY SKU, DESCRIPTION;
+                            '''
+
+                        cursor.execute(query)
+                        rows = cursor.fetchall()
+                        mape_values_by_date = []
+
+                        for row in rows:
+                            actual_val = row[0]
+                            predicted_val = row[1]
+                            mape = mape_calc_reports(actual=actual_val, predicted=predicted_val)
+                            mape_values_by_date.append(mape)
+
+                    mape_values.append(round(sum(mape_values_by_date) / len(mape_values_by_date), 2))
 
             dates = []
             for date_str in last_year_months:

@@ -2,6 +2,8 @@
 def mape_calc(dataframe, model_name):
     predicted_dataframe = dataframe.xs(model_name, level='model').iloc[:, -12:]
     actual_df = dataframe.xs('actual', level='model').iloc[:, -12:]
+    # predicted_dataframe = dataframe.xs(model_name, level='model').iloc[11:]
+    # actual_df = dataframe.xs('actual', level='model').iloc[11:]
 
     absolute_errors = []
 
@@ -13,13 +15,14 @@ def mape_calc(dataframe, model_name):
             raise ValueError("Column type must be numeric")
 
         n = len(actual_col)
+        print(n)
         col_errors = []
 
-        for i in range(n):
+        for i in actual_col:
             if actual_col[i] == 0.0 and predicted_col[i] == 0.0:
-                col_errors.append(0)  # Cuando ambos valores son cero, el MAPE es 0
+                col_errors.append(0)
             elif actual_col[i] == 0.0:
-                col_errors.append(100)  # Cuando el valor actual es 0.0, el MAPE es 100
+                col_errors.append(100)
             else:
                 col_errors.append(abs((actual_col[i] - predicted_col[i]) / actual_col[i]) * 100)
 
@@ -30,46 +33,13 @@ def mape_calc(dataframe, model_name):
 
     return round(mape, 2)
 
-
-# Functions to calculate mape for the past twelve months
-def calculate_mape(actual_values, predicted_values):
-    if len(actual_values) != len(predicted_values):
-        raise ValueError("Lists lengths doesn't match")
-
-    absolute_percentage_errors = []
-
-    for actual, predicted in zip(actual_values, predicted_values):
-        absolute_percentage_error = []
-        for a, p in zip(actual, predicted):
-            if a == 0:
-                absolute_percentage_error.append(0)
-            else:
-                absolute_percentage_error.append(abs((a - p) / a) * 100)
-        absolute_percentage_errors.append(absolute_percentage_error)
-
-    mape_values = []
-
-    for errors in absolute_percentage_errors:
-        mape = round(sum(errors) / len(errors), 2)
-        mape_values.append(mape)
-
-    return mape_values
+def mape_calc_reports(predicted: float, actual: float):
+    if actual == 0 and predicted == 0:
+        mape = 0
+    elif actual == 0 and predicted != 0:
+        mape = 100
+    else:
+        mape = abs((actual - predicted) / actual) * 100
 
 
-def mape_calc_by_month(data: list) -> list:
-    mape_values = []
-
-    for row in data:
-        actual = []
-        predicted = []
-
-        for index, value in enumerate(row):
-            if index % 2 == 0 or index == 0:
-                actual.append(value)
-            else:
-                predicted.append(value)
-
-        mape_per_month = calculate_mape(actual_values=actual, predicted_values=predicted)
-        mape_values.append(mape_per_month)
-
-    return mape_values
+    return round(mape, 2)

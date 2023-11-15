@@ -203,7 +203,7 @@ const RunModelsPage = () => {
                                     </td>
                                     <td>Historical Data</td>
                                     <td>
-                                        <span onClick={() => handleDeleteScenario(scenario.id)} style={{"cursor": "pointer"}} className="me-5">
+                                        <span onClick={() => handleDeleteScenario(scenario.id)} style={{"cursor": "pointer"}} className="me-2">
                                             <MDBIcon fas icon="trash-alt" color="danger"/>
                                         </span>
                                         <span onClick={()=> handleUpdateScenario(scenario.id)} style={{"cursor": "pointer"}}>

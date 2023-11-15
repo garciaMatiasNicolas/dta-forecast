@@ -99,7 +99,6 @@ const Graph = () => {
       project_id: localStorage.getItem("projectId"),
       filter_value: e.target.value
     };
-    console.log(dataFilter)
 
     axios.post(`http://localhost:8000/filter-data`, dataFilter,{ headers })
     .then(res => {

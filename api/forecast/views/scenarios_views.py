@@ -6,7 +6,7 @@ from rest_framework.response import Response
 from rest_framework import status
 from ..serializer import ForecastScenarioSerializer
 from ..models import ForecastScenario
-from django.db import connection
+from django.db import connection, OperationalError
 import os
 
 
@@ -50,19 +50,25 @@ class ForecastScenarioViewSet(ModelViewSet):
 
         if scenario_to_destroy:
             table_name = scenario_to_destroy.predictions_table_name
-            excel_with_predictions = scenario_to_destroy.url_predictions
+            excel_with_predictions = scenario_to_destroy.url_predictions if scenario_to_destroy.url_predictions is not None else ""
 
             try:
-                os.remove(excel_with_predictions)
+                if os.path.exists(excel_with_predictions):
+                    os.remove(excel_with_predictions)
 
-                with connection.cursor() as cursor:
-                    cursor.execute(f'DROP TABLE {table_name}')
+                try:
+                    with connection.cursor() as cursor:
+                        cursor.execute(f'DROP TABLE {table_name}')
+
+                except OperationalError as dbError:
+                    pass
 
                 scenario_to_destroy.delete()
                 return Response({'message': 'scenario_deleted'}, status=status.HTTP_200_OK)
 
             except Exception as error:
-                return Response({'error': error})
+                print(error)
+                return Response({'error': 'server_error'}, status=status.HTTP_400_BAD_REQUEST)
 
         else:
             return Response({'error': 'scenario_not_found'},
