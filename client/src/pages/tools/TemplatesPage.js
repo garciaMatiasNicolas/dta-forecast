@@ -46,7 +46,7 @@ const TemplatesPage = () => {
       <main style={{"minHeight": "100vh"}} className="d-flex flex-column justify-content-start gap-3 align-items-start p-3 pt-5 bg-white">
         <ToolsNav/>
 
-        <div className="w-100 ms-5 mb-5" style={{"maxWidth": "650px"}}>
+        <div className="w-100 ms-5 mb-5 container" style={{"maxWidth": "700px"}}>
           <p style={{"cursor": "pointer", "color": "#285192"}} onClick={toggleShow}>
             <MDBIcon fas icon="history" /> Ver historial de archivos
           </p>

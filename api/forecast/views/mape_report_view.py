@@ -13,6 +13,17 @@ from ..mape_cacl import mape_calc_by_month
 
 
 class MapeReportAPIView(APIView):
+    @staticmethod
+    def mape_calc(predicted: float, actual: float):
+        if actual == 0 and predicted == 0:
+            mape = 0
+        elif actual == 0 and predicted != 0:
+            mape = 100
+        else:
+            mape = abs((actual - predicted) / actual) * 100
+
+        return round(mape, 2)
+
     @authentication_classes([TokenAuthentication])
     @permission_classes([IsAuthenticated])
     def post(self, request):
@@ -24,34 +35,37 @@ class MapeReportAPIView(APIView):
             filter_value = filters.validated_data['filter_value']
             scenario = ForecastScenario.objects.filter(pk=scenario_id).first()
             table_name = scenario.predictions_table_name
+
             query = f'''
                 SELECT
-                SKU,
-                DESCRIPTION,
-                MAX(CASE WHEN MODEL = 'actual' THEN "{filter_value}" END) AS actual,
-                MAX(CASE WHEN MODEL != 'actual' THEN "{filter_value}" END) AS fit,
-                ROUND(
-                    CASE
-                        WHEN MAX(CASE WHEN MODEL = 'actual' THEN "{filter_value}" END) = 0 AND MAX(CASE WHEN MODEL != 'actual' THEN "{filter_value}" END) = 0
-                        THEN 0 
-                        WHEN MAX(CASE WHEN MODEL = 'actual' THEN "{filter_value}" END) = 0
-                        THEN 100
-                        ELSE ABS(MAX(CASE WHEN MODEL = 'actual' THEN "{filter_value}" END) - MAX(CASE WHEN MODEL != 'actual' THEN "{filter_value}" END) / MAX(CASE WHEN MODEL = 'actual' THEN "{filter_value}" END)) * 100
-                    END, 2
-                ) AS MAPE
+                SKU|| ' ' ||DESCRIPTION AS product, 
+                ROUND(MAX(CASE WHEN MODEL = 'actual' THEN "{filter_value}" END),2) AS actual, 
+                ROUND(MAX(CASE WHEN MODEL != 'actual' THEN "{filter_value}" END),2) AS fit 
                 FROM {table_name} GROUP BY SKU, DESCRIPTION;
             '''
-            with connection.cursor() as cursor:
-                cursor.execute(query)
+            try:
+                with connection.cursor() as cursor:
+                    cursor.execute(query)
 
-                rows = cursor.fetchall()
-                data_to_return = []
+                    rows = cursor.fetchall()
+                    data_to_return = []
 
-                for row in rows:
-                    row_to_list = list(row)
-                    data_to_return.append(row_to_list)
+                    for index, row in enumerate(rows):
+                        actual_val = row[1]
+                        predicted_val = row[2]
+                        mape = self.mape_calc(predicted=predicted_val, actual=actual_val)
+                        new_data = list(row)
+                        new_data.append(mape)
+                        data_to_return.append(new_data)
 
                 return Response(data_to_return, status=status.HTTP_200_OK)
+
+            except Exception as err:
+                print(err)
+                return Response({'error': 'database_error'}, status=status.HTTP_400_BAD_REQUEST)
+
+        else:
+            return Response({'error': 'bad_request', 'logs': filters.errors}, status=status.HTTP_400_BAD_REQUEST)
 
 
 class MapeGraphicView(APIView):

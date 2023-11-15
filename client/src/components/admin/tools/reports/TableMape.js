@@ -30,10 +30,10 @@ const TableMape = ({ data }) => {
         <MDBTableBody>
           {currentData.map((record, index) => (
             <tr key={index}>
-              <th>{record[0] + ' ' + record[1]}</th>
+              <th>{record[0]}</th>
+              <td className='col-2'>{record[1]}</td>
               <td className='col-2'>{record[2]}</td>
               <td className='col-2'>{record[3]}</td>
-              <td className='col-2'>{record[4]}</td>
             </tr>
           ))}
         </MDBTableBody>

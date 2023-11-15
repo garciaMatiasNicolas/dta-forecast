@@ -61,7 +61,7 @@ const MetricsByDateContainer = () => {
     };
 
     axios.post(`${apiUrl}/report-mape-date`, data,{headers})
-    .then(res => {setData(res.data)})
+    .then(res => {setData(res.data); console.log(res.data)})
     .catch(res => {console.log(res)})
   };
 
