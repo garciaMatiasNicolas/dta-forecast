@@ -1,9 +1,6 @@
-# Function to calculate mape in models
 def mape_calc(dataframe, model_name):
     predicted_dataframe = dataframe.xs(model_name, level='model').iloc[:, -12:]
     actual_df = dataframe.xs('actual', level='model').iloc[:, -12:]
-    # predicted_dataframe = dataframe.xs(model_name, level='model').iloc[11:]
-    # actual_df = dataframe.xs('actual', level='model').iloc[11:]
 
     absolute_errors = []
 
@@ -15,14 +12,13 @@ def mape_calc(dataframe, model_name):
             raise ValueError("Column type must be numeric")
 
         n = len(actual_col)
-        print(n)
         col_errors = []
 
-        for i in actual_col:
+        for i in range(n):
             if actual_col[i] == 0.0 and predicted_col[i] == 0.0:
-                col_errors.append(0)
+                col_errors.append(0)  # Cuando ambos valores son cero, el MAPE es 0
             elif actual_col[i] == 0.0:
-                col_errors.append(100)
+                col_errors.append(100)  # Cuando el valor actual es 0.0, el MAPE es 100
             else:
                 col_errors.append(abs((actual_col[i] - predicted_col[i]) / actual_col[i]) * 100)
 

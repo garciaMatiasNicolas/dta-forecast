@@ -1,5 +1,5 @@
 from .forecast_models import arima_predictions, linear_regression, exponential_smothing, \
-    holt_winters_predictions, lasso, bayesian_regression
+    holt_winters_predictions, lasso, bayesian_regression, decision_tree, sarimax
 from database.db_engine import engine
 import pandas as pd
 import numpy as np
@@ -54,6 +54,14 @@ def best_model(dataframe, test_p, pred_p, models: list):
         if 'bayesian' in models:
             bayesian_df, bayesian_mape = bayesian_regression.bayesian_regression_predictions(row, test_p, pred_p)
             model_data['bayesian'] = {'mape': bayesian_mape, 'df': bayesian_df}
+
+        if 'decisionTree' in models:
+            decision_tree_df, decision_tree_mape = decision_tree.decision_tree_regression_predictions(row, test_p, pred_p)
+            model_data['decisionTree'] = {'mape': decision_tree_mape, 'df': decision_tree_df}
+
+        if 'sarimax' in models:
+            sarimax_df, sarimax_mape = sarimax.sarimax_predictions(row, test_p, pred_p)
+            model_data['sarimax'] = {'mape': sarimax_mape, 'df': sarimax_df}
 
         best_model_name = min(model_data, key=lambda k: model_data[k]['mape'])
         best_df = model_data[best_model_name]['df']

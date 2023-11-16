@@ -225,18 +225,23 @@ const RunModelsPage = () => {
                             <MDBContainer>
                                 <MDBRow>
                                     <MDBCol size='lg'>
-                                        <p style={{"color": "black"}}>Elige los modelos que quieres correr</p>
+                                        <p className="text-primary">Modelos Series Temporales</p>
                                         <MDBCheckbox name='modelSelection' value='holtsWintersExponentialSmoothing' id='holtsWintersExponentialSmoothing' label='Suavización Exponencial Holt-Winters' 
                                         onChange={() => handleCheckboxChange('holtsWintersExponentialSmoothing')}/>
                                         <MDBCheckbox name='modelSelection' value='simpleExponentialSmoothing' id='simpleExponentialSmoothing' label='Suavización Exponencial Simple'  
                                         onChange={() => handleCheckboxChange('simpleExponentialSmoothing')}/>
-                                        <MDBCheckbox name='modelSelection' value='linearRegression' id='linearRegression' label='Regresión lineal' onChange={() => handleCheckboxChange('linearRegression')}/>
                                         <MDBCheckbox name='modelSelection' value='arima' id='arima' label='ARIMA ' onChange={() => handleCheckboxChange('arima')}/>
+                                        <MDBCheckbox name='modelSelection' value='sarimax' id='sarimax' label='SARIMAX' onChange={() => handleCheckboxChange('sarimax')}/>
+                                        
+                                        <p className="mt-5 text-primary">Modelos Machine Learning</p>
+                                        <MDBCheckbox name='modelSelection' value='linearRegression' id='linearRegression' label='Regresión lineal' onChange={() => handleCheckboxChange('linearRegression')}/>
                                         <MDBCheckbox name='modelSelection' value='bayesian' id='bayesian' label='Regresion Bayesiana ' onChange={() => handleCheckboxChange('bayesian')}/>
-                                        <MDBCheckbox name='modelSelection' value='lasso' id='lasso' label='Lasso' onChange={() => handleCheckboxChange('lasso')}/>
+                                        <MDBCheckbox name='modelSelection' value='lasso' id='lasso' label='Regresión Lasso' onChange={() => handleCheckboxChange('lasso')}/>
+                                        <MDBCheckbox name='modelSelection' value='decisionTree' id='decisionTree' label='Árbol de decisiones' onChange={() => handleCheckboxChange('decisionTree')}/>
+
                                     </MDBCol>
 
-                                    <MDBCol size='lg' className="d-flex justify-content-center align-items-center flex-column gap-3">
+                                    <MDBCol size='lg' className="d-flex justify-content-start align-items-center flex-column gap-3">
                                         <MDBInput label="Nombre de escenario" type="text" name="scenario_name" onChange={handleInputChange}/>
                                         <MDBInput label="Periodos de entrenamiento de modelo" name="test_p" type="number" onChange={handleInputChange}/>
                                         <MDBInput label="Periodos de forecast" name="pred_p" type="number" onChange={handleInputChange}/>
