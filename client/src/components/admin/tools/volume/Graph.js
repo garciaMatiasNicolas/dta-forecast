@@ -1,15 +1,15 @@
-import { Chart as ChartJS, CategoryScale, LinearScale, PointElement, LineElement, Title, Tooltip, Legend, BarElement } from 'chart.js';
-import { MDBTable, MDBTableHead, MDBTableBody, MDBIcon, MDBCollapse, MDBContainer, MDBRow, MDBCol } from 'mdb-react-ui-kit';
+import { Chart as ChartJS, CategoryScale, LinearScale, PointElement, LineElement, Title, Tooltip, Legend, BarElement, controllers } from 'chart.js';
+import { MDBIcon, MDBContainer, MDBRow, MDBCol } from 'mdb-react-ui-kit';
 import { useEffect, useState } from 'react';
-import { Line, Bar } from 'react-chartjs-2';
+import { Line, Bar, Pie } from 'react-chartjs-2';
 import { showErrorAlert } from '../../../other/Alerts';
 import axios from 'axios';
 import EmptyLineChart from './EmptyChartLine';
 import { filters } from '../../../../data/filters';
 import Mape from './Mape';
 
-const apiUrl = process.env.API_URL;
-console.log(apiUrl)
+const apiUrl = process.env.REACT_APP_API_URL;
+
 
 ChartJS.register(
   CategoryScale,
@@ -39,6 +39,9 @@ const Graph = () => {
   // State for data graph yearly
   const [dataYear, setDataYear] = useState(false);
 
+  // State for data graph yearly
+  const [dataPie, setDataPie] = useState(false);
+
   // State for set scenarios
   const [scenarios, setScenarios] = useState([]);
 
@@ -64,7 +67,7 @@ const Graph = () => {
   // USE EFFECT //
   useEffect(() => {
     // Get all scenarios and set state on first render
-    axios.get(`http://localhost:8000/scenarios/`, {
+    axios.get(`${apiUrl}/scenarios/`, {
       headers: headers
     })
     .then(res => {
@@ -86,7 +89,7 @@ const Graph = () => {
       filter_value: "x"
     };
 
-    axios.post(`http://localhost:8000/get-filters`, data, { headers })
+    axios.post(`${apiUrl}/get-filters`, data, { headers })
     .then(res => setOptionsFilter(res.data))
     .catch(err => console.log(err));
   };
@@ -100,7 +103,7 @@ const Graph = () => {
       filter_value: e.target.value
     };
 
-    axios.post(`http://localhost:8000/filter-data`, dataFilter,{ headers })
+    axios.post(`${apiUrl}/filter-data`, dataFilter,{ headers })
     .then(res => {
       let graphicLineData =  res.data.full_data;
       let graphicBarData = res.data.year_data;
@@ -149,7 +152,7 @@ const Graph = () => {
   const handleOnChange = (e) => {
     let scenarioId = e.target.value;
     setScenarioId(scenarioId);
-    axios.get(`http://localhost:8000/scenarios/${scenarioId}`, { headers })
+    axios.get(`${apiUrl}/scenarios/${scenarioId}`, { headers })
     .then(res => {
       let graphicLineData =  res.data.final_data_pred;
       let graphicBarData = res.data.data_year_pred;
@@ -187,7 +190,7 @@ const Graph = () => {
         },
         ],
       };
-        
+
       setData(dataLine);
       setDataYear(dataBar);
       setMape(res.data.mape_scenario);
@@ -212,6 +215,7 @@ const Graph = () => {
           </select>
         </div>
       </div>
+      
       <MDBContainer>
         <MDBRow>
           <MDBCol size='3' className="d-flex justify-content-start align-items-start gap-3 flex-column">

@@ -122,3 +122,42 @@ class ReportDataViews(APIView):
         else:
             return Response({'error': 'bad_request', 'logs': filters.errors},
                             status=status.HTTP_400_BAD_REQUEST)
+
+
+class ModelsGraphicAPIView(APIView):
+    @authentication_classes([TokenAuthentication])
+    @permission_classes([IsAuthenticated])
+    def post(self, request):
+        scenario_pk = request.data.get('scenario_id')
+        scenario = ForecastScenario.objects.get(id=scenario_pk)
+
+        if scenario:
+            table_name = scenario.predictions_table_name
+
+            with connection.cursor() as cursor:
+                cursor.execute(f'SELECT COUNT(*) FROM {table_name}')
+                rows = cursor.fetchall()
+                total = rows[0][0] / 2
+
+                cursor.execute(f'''
+                    SELECT  
+                    MODEL, 
+                    COUNT(*) 
+                    FROM {table_name}
+                    WHERE MODEL != 'actual' GROUP BY MODEL;''')
+
+                data_rows = cursor.fetchall()
+
+                models = []
+                avg = []
+
+                for row in data_rows:
+                    model, number_model = row[0], row[1]
+                    percentage = round((number_model / total) * 100, 2)
+                    models.append(model)
+                    avg.append(percentage)
+
+            return Response({'models': models, 'avg': avg}, status=status.HTTP_200_OK)
+
+        else:
+            return Response({'error': 'scenario_not_found'}, status=status.HTTP_400_BAD_REQUEST)

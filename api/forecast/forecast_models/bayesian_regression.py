@@ -28,7 +28,7 @@ def bayesian_regression_predictions(fila, test_periods, prediction_periods):
     start_date = pd.to_datetime(test_data.index[-1])
     next_month = start_date + pd.DateOffset(months=1)
     future_dates = pd.date_range(start=next_month, periods=prediction_periods, freq='MS')
-    future_dates = future_dates.strftime('%Y-%m-d')
+    future_dates = future_dates.strftime('%Y-%m-%d')
 
     x_future = pd.DataFrame(pd.to_numeric(pd.to_datetime(future_dates))).astype(int).values.reshape(-1, 1)
     future_predictions = np.squeeze(model.predict(x_future))

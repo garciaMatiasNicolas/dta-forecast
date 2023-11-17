@@ -12,10 +12,10 @@ def exp_smoothing_predictions(fila, test_periods, prediction_periods):
     test_data = time_series.iloc[-test_periods:]
 
     # Use Pandas' exponential smoothing function to create the model and make predictions
-    model = pd.Series(train_data).ewm(span=10).mean()
+    model = pd.Series(train_data).interpolate(method='linear').ewm(span=10).mean()
     test_predictions = model[-test_periods:]
     train_predictions = model[:-test_periods]
-    model = model.fillna(0)  # Replace not valid values for zeros
+    model = model.fillna(0)
 
     # ------------------------------------------------------------------------------------
     start_date = pd.to_datetime(test_data.index[-1])

@@ -11,20 +11,15 @@ def sarimax_predictions(fila, test_periods, prediction_periods):
     df_pred_fc = df_pred.copy()
     time_series = pd.Series(fila.iloc[12:]).astype(dtype='float')
     train_data = time_series[:-test_periods]
-
     test_data = time_series.iloc[-test_periods:]
     n_train = len(train_data)
 
-    model_autoarima = pm.auto_arima(train_data, seasonal=True, m=12)
-    order = model_autoarima.order
-    seasonal_order = model_autoarima.seasonal_order
-
-    model = SARIMAX(train_data, order=order, seasonal_order=seasonal_order)
+    model = SARIMAX(train_data, order=(1, 1, 1), seasonal_order=(0, 0, 0, 0))
     model_fit = model.fit()
 
     train_predictions = model_fit.predict(start=0, end=n_train - 1)
     test_predictions = model_fit.predict(start=n_train, end=len(time_series) - 1)
-    # -------------------------------------------------------------
+
     start_date = pd.to_datetime(test_data.index[-1])
     next_month = start_date + pd.DateOffset(months=1)
     future_dates = pd.date_range(start=next_month, periods=prediction_periods, freq='MS')

@@ -30,7 +30,7 @@ def best_model(dataframe, test_p, pred_p, models: list):
     df_pred = pd.DataFrame()
     model_data = {}
 
-    for product, row in df.iterrows():
+    for column, row in df.iterrows():
         if 'arima' in models:
             arima_df, arima_mape = arima_predictions.arima_predictions(row, test_p, pred_p)
             model_data['arima'] = {'mape': arima_mape, 'df': arima_df}

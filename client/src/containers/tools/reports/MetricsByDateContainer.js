@@ -1,4 +1,4 @@
-import { MDBBtn, MDBIcon, MDBInput, MDBRow } from "mdb-react-ui-kit"; 
+import { MDBBtn, MDBIcon, MDBRow } from "mdb-react-ui-kit"; 
 import TableMape from "../../../components/admin/tools/reports/TableMape";
 import { useEffect, useRef, useState } from "react";
 import axios from "axios";

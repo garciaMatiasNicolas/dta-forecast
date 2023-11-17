@@ -1,7 +1,7 @@
-from prophet import Prophet
+from ..mape_cacl import mape_calc
+from fbprophet import Prophet
 import pandas as pd
 import numpy as np
-from ..mape_cacl import mape_calc
 
 
 def prophet_forecast(fila, test_periods, prediction_periods):
@@ -26,14 +26,14 @@ def prophet_forecast(fila, test_periods, prediction_periods):
     test_predictions = forecast[-test_periods:]['yhat'].values
     train_predictions = model.predict(df_prophet)['yhat'].values
 
-    df_pred['date'] = pd.concat([train_data.index, test_data.index])
+    df_pred['date'] = pd.to_datetime(pd.concat([train_data.index, test_data.index]))
     df_pred['value'] = pd.concat([train_data, pd.Series(test_predictions)])
 
     df_pred_pivot = df_pred.pivot_table(values='value', index=['family', 'region', 'salesman', 'client', 'category',
                                                                'subcategory', 'sku', 'description', 'model'],
                                         columns='date')
 
-    mape = mape_calc(df_pred_pivot, 'prophet')
+    mape = mape_calc(df_pred_pivot, 'prophet')  # Define your mape_calc function
 
     future_pred_dates = pd.to_datetime(future_dates[-prediction_periods:])
     df_pred_fc['date'] = future_pred_dates
@@ -46,4 +46,5 @@ def prophet_forecast(fila, test_periods, prediction_periods):
     result = pd.concat([df_pred_pivot, df_pred_fc_pivot], axis=1)
 
     return result, mape
+
 

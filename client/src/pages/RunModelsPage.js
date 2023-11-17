@@ -1,22 +1,16 @@
 import axios from "axios";
 import ToolsNav from "../components/navs/ToolsNav"
-import { useState, useContext, useEffect } from "react";
+import { useState, useContext, useEffect, useRef } from "react";
 import { ClipLoader } from "react-spinners";
 import { showConifmationAlert, showErrorAlert, showSuccessAlert, updateAlert } from "../components/other/Alerts";
-import { MDBCheckbox, MDBCol, MDBContainer, MDBInput, MDBRow, MDBBtn, MDBIcon,  MDBModal, MDBModalDialog, MDBModalContent, MDBModalBody, MDBCollapse, MDBTable, MDBTableBody, MDBTableHead} from "mdb-react-ui-kit";
+import { MDBCheckbox, MDBCol, MDBContainer, MDBInput, MDBRow, MDBBtn, MDBIcon,  MDBModal, MDBModalDialog, MDBModalContent, MDBModalBody, MDBTable, MDBTableBody, MDBTableHead} from "mdb-react-ui-kit";
 import { AppContext } from "../context/Context";
 import convertData from "../functions/stringFormat";
+import ReactPaginate from 'react-paginate';
 
 const apiUrl = process.env.REACT_APP_API_URL;
 
 const RunModelsPage = () => {
-    const {setDataGraphic} = useContext(AppContext);
-
-    const token = localStorage.getItem("userToken");
-    const headers = {
-        'Authorization': `Token ${token}`, 
-        'Content-Type': 'application/json', 
-    };
     
     const initialFormData = {
         user: localStorage.getItem("userPk"),
@@ -27,25 +21,67 @@ const RunModelsPage = () => {
         test_p: '',
         pred_p: ''
     };
-    
+
     // STATES //
     const [showShow, setShowShow] = useState(false);
-
+    
     const [fileTypes, setFileTypes] = useState([]);
-
+    
     const [formData, setFormData] = useState(initialFormData);
-
+    
     const [basicModal, setBasicModal] = useState(false);
-
+    
     const [results, setResults] = useState([]);
+
+    // State for set scenarios
+    const [scenarios, setScenarios] = useState([]);
+    
+    // USE EFFECT //
+    useEffect(() => {
+        // Get file types
+        axios.get(`http://localhost:8000/file-types`, {headers})
+        .then(res => setFileTypes(res.data))
+        .catch(err => console.log(err));
+    
+        // Get all scenarios and set state on first render
+        axios.get(`http://localhost:8000/scenarios/`, {
+            headers: headers
+        })
+        .then(res => {
+            let projectId = parseInt(localStorage.getItem("projectId"))
+            let scenarios = res.data.filter(item => item.project === projectId);
+            setScenarios(scenarios);
+        })
+        .catch(err => {
+            console.log(err);
+        })
+    }, []);
+
+    const {setDataGraphic} = useContext(AppContext);
+
+    const token = localStorage.getItem("userToken");
+    const headers = {
+        'Authorization': `Token ${token}`, 
+        'Content-Type': 'application/json', 
+    };
+
+    const formRef = useRef(null);
+    
+    const [currentPage, setCurrentPage] = useState(0);
+    const itemsPerPage = 3; // Cantidad de elementos por página
+
+    const indexOfLastItem = (currentPage + 1) * itemsPerPage;
+    const indexOfFirstItem = indexOfLastItem - itemsPerPage;
+    const currentItems = scenarios.slice(indexOfFirstItem, indexOfLastItem);
 
     // State for show scenarios history
     const toggleShow = () => setShowShow(!showShow);
 
-    // State for set scenarios
-    const [scenarios, setScenarios] = useState([]);
-
     const showModal = () => setBasicModal(!basicModal);
+
+    const handlePageClick = ({ selected }) => {
+        setCurrentPage(selected);
+    };
 
     // Function for download excel
     const handleDownload = (scenarioName, urlPath) => {
@@ -123,8 +159,7 @@ const RunModelsPage = () => {
                 console.log(res.data)
             })
             .catch((err)=>{
-                err.response.data.error === 'data_failed' && showErrorAlert("No se subio plantilla con datos");
-                console.log(err)
+                showErrorAlert(`Ocurrio un error en la corrida de los modelos: ${err.response.data.error}`);
                 axios.delete(`${apiUrl}/scenarios/${id}`, { headers })
             })
             .finally(()=>{setBasicModal(!basicModal)}); 
@@ -133,8 +168,9 @@ const RunModelsPage = () => {
             showErrorAlert("Nombre de escenario ya utilizado");
             setBasicModal(!basicModal);
             console.log(err)
-        }) 
-        
+        });
+
+        formRef.current.reset();
     };
 
     const isFormValid = () => {
@@ -142,86 +178,89 @@ const RunModelsPage = () => {
         return scenario_name && models.length > 0 && test_p && pred_p && file_id !== 0;
     };
 
-    // USE EFFECT //
-    useEffect(() => {
-        // Get file types
-        axios.get(`http://localhost:8000/file-types`, {headers})
-        .then(res => setFileTypes(res.data))
-        .catch(err => console.log(err));
-
-        // Get all scenarios and set state on first render
-        axios.get(`http://localhost:8000/scenarios/`, {
-            headers: headers
-        })
-        .then(res => {
-            let projectId = parseInt(localStorage.getItem("projectId"))
-            let scenarios = res.data.filter(item => item.project === projectId);
-            setScenarios(scenarios);
-        })
-        .catch(err => {
-            console.log(err);
-        })
-    }, []);
 
     return (
         <main style={{"minHeight": "100vh"}} className="bg-white pt-5 pb-5">
             <ToolsNav/>
 
-            <div className="w-100 ms-5 mb-5" style={{"maxWidth": "650px"}}>
+            <div className="w-100 ms-5 mb-5 mt-5" style={{"maxWidth": "800px"}}>
                 <p style={{"cursor": "pointer", "color": "#285192"}} onClick={toggleShow}>
                     <MDBIcon fas icon="history" /> Ver historial de escenarios
                 </p>
-                <MDBCollapse show={showShow}>
-                    <MDBTable className='caption-top'>
-                        <MDBTableHead>
+                <MDBTable className='caption-top' hover>
+                    <MDBTableHead className="bg-primary">
+                    <tr>
+                        <th scope='col' className="text-white">ID</th>
+                        <th scope='col' className="text-white">Escenario</th>
+                        <th scope='col' className="text-white">Excel</th>
+                        <th scope='col' className="text-white">Archivo</th>
+                        <th scope='col' className="text-white">Acciones</th>
+                    </tr>
+                    </MDBTableHead>
+                    <MDBTableBody>
+                        {currentItems.length === 0 ? (
                             <tr>
-                                <th scope='col'>ID</th>
-                                <th scope='col'>Escenario</th>
-                                <th scope='col'>Excel</th>
-                                <th scope='col'>Archivo</th>
-                                <th scope='col'>Acciones</th>
+                            <th scope='row'></th>
+                            <td>No hay escenarios</td>
+                            <td></td>
+                            <td></td>
+                            <td></td>
                             </tr>
-                        </MDBTableHead>
-                        <MDBTableBody>
-                            {
-                                scenarios.length === 0 ? 
-                                <tr>
-                                    <th scope='row'></th>
-                                    <td>No hay escenarios</td>
-                                    <td></td>
-                                    <td></td>
-                                    <td></td>
-                                </tr>
-                                :
-                            
-                                scenarios.map(scenario => (
-                                <tr>
-                                    <th scope='row'>{scenario.id}</th>
-                                    <td>{scenario.scenario_name}</td>
-                                    <td style={{ cursor: "pointer" }} onClick={() => handleDownload(scenario.scenario_name, scenario.url_predictions)} >
-                                    <MDBIcon fas icon='file-excel' /> Excel Predicciones
-                                    </td>
-                                    <td>Historical Data</td>
-                                    <td>
-                                        <span onClick={() => handleDeleteScenario(scenario.id)} style={{"cursor": "pointer"}} className="me-2">
-                                            <MDBIcon fas icon="trash-alt" color="danger"/>
-                                        </span>
-                                        <span onClick={()=> handleUpdateScenario(scenario.id)} style={{"cursor": "pointer"}}>
-                                            <MDBIcon fas icon="edit" color="success" />
-                                        </span>
-                                    </td>
-                                </tr>
-                            ))}
-                        </MDBTableBody>
-                    </MDBTable>
-                </MDBCollapse> 
+                        ) : (
+                            currentItems.map((scenario) => (
+                            <tr key={scenario.id}>
+                                <th scope='row'>{scenario.id}</th>
+                                <td>{scenario.scenario_name}</td>
+                                <td
+                                style={{ cursor: 'pointer' }}
+                                onClick={() =>
+                                    handleDownload(
+                                    scenario.scenario_name,
+                                    scenario.url_predictions
+                                    )
+                                }
+                                >
+                                <MDBIcon fas icon='file-excel' /> Excel Predicciones
+                                </td>
+                                <td>Historical Data</td>
+                                <td>
+                                <span
+                                    onClick={() => handleDeleteScenario(scenario.id)}
+                                    style={{ cursor: 'pointer' }}
+                                    className='me-2'
+                                >
+                                    <MDBIcon fas icon='trash-alt' color='danger' />
+                                </span>
+                                <span
+                                    onClick={() => handleUpdateScenario(scenario.id)}
+                                    style={{ cursor: 'pointer' }}
+                                >
+                                    <MDBIcon fas icon='edit' color='success' />
+                                </span>
+                                </td>
+                            </tr>
+                            ))
+                        )}
+                    </MDBTableBody>
+                </MDBTable>
+                <ReactPaginate
+                    pageCount={Math.ceil(scenarios.length / itemsPerPage)}
+                    pageRangeDisplayed={5}
+                    marginPagesDisplayed={2}
+                    onPageChange={handlePageClick}
+                    containerClassName={'pagination'}
+                    subContainerClassName={'pages pagination'}
+                    activeClassName={'active'}
+                    previousLabel={<MDBIcon fas icon="angle-double-left" />}
+                    nextLabel={<MDBIcon fas icon="angle-double-right" />}
+                />
             </div>
 
             <h2 style={{"color": "black"}} className='mb-2 ms-5'>Seleccion de modelos de corrida</h2>
             <MDBContainer className="mt-4 ms-4">
                 <MDBRow>
                     <MDBCol size='12'>
-                        <form className='p-5 border rounded' onSubmit={handleSubmit}>
+                        <form ref={formRef} className='p-5 border rounded' onSubmit={handleSubmit}>
                             <MDBContainer>
                                 <MDBRow>
                                     <MDBCol size='lg'>
@@ -232,13 +271,16 @@ const RunModelsPage = () => {
                                         onChange={() => handleCheckboxChange('simpleExponentialSmoothing')}/>
                                         <MDBCheckbox name='modelSelection' value='arima' id='arima' label='ARIMA ' onChange={() => handleCheckboxChange('arima')}/>
                                         <MDBCheckbox name='modelSelection' value='sarimax' id='sarimax' label='SARIMAX' onChange={() => handleCheckboxChange('sarimax')}/>
-                                        
+                                        <MDBCheckbox name='modelSelection' value='arimax' id='arimax' label='ARIMAX ' onChange={() => handleCheckboxChange('arimax')}/>
+
                                         <p className="mt-5 text-primary">Modelos Machine Learning</p>
                                         <MDBCheckbox name='modelSelection' value='linearRegression' id='linearRegression' label='Regresión lineal' onChange={() => handleCheckboxChange('linearRegression')}/>
                                         <MDBCheckbox name='modelSelection' value='bayesian' id='bayesian' label='Regresion Bayesiana ' onChange={() => handleCheckboxChange('bayesian')}/>
                                         <MDBCheckbox name='modelSelection' value='lasso' id='lasso' label='Regresión Lasso' onChange={() => handleCheckboxChange('lasso')}/>
                                         <MDBCheckbox name='modelSelection' value='decisionTree' id='decisionTree' label='Árbol de decisiones' onChange={() => handleCheckboxChange('decisionTree')}/>
 
+                                        <p className="mt-5 text-primary">Otros modelos</p>
+                                        <MDBCheckbox name='modelSelection' value='prophet' id='prophet' label='Prophet' onChange={() => handleCheckboxChange('prophet')}/>
                                     </MDBCol>
 
                                     <MDBCol size='lg' className="d-flex justify-content-start align-items-center flex-column gap-3">

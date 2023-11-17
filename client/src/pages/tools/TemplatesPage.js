@@ -2,8 +2,9 @@ import React, { useEffect, useState } from 'react'
 import TemplatesContainer from '../../containers/tools/uploads/TemplateContainer';
 import ToolsNav from '../../components/navs/ToolsNav';
 import axios from 'axios';
-import { MDBIcon, MDBCollapse, MDBTable, MDBTableBody, MDBTableHead} from 'mdb-react-ui-kit';
+import { MDBIcon, MDBTable, MDBTableBody, MDBTableHead} from 'mdb-react-ui-kit';
 import { showConifmationAlert } from '../../components/other/Alerts';
+import ReactPaginate from 'react-paginate';
 
 const apiUrl = process.env.REACT_APP_API_URL;
 
@@ -23,7 +24,11 @@ const TemplatesPage = () => {
 
   useEffect(() => {
     axios.get(`${apiUrl}/files`, {headers})
-    .then(res => {setFiles(res.data); console.log(res.data)})
+    .then(res => {
+      let projectId = parseInt(localStorage.getItem("projectId"))
+      let files = res.data.filter(item => item.project === projectId);
+      setFiles(files);
+    })
     .catch(err => console.log(err));
   }, []);
 
@@ -41,28 +46,38 @@ const TemplatesPage = () => {
     showConifmationAlert("file", objectId);
   }
 
+  const [currentPage, setCurrentPage] = useState(0);
+  const itemsPerPage = 3; // Cantidad de elementos por página
+
+  const indexOfLastItem = (currentPage + 1) * itemsPerPage;
+  const indexOfFirstItem = indexOfLastItem - itemsPerPage;
+  const currentItems = files.slice(indexOfFirstItem, indexOfLastItem);
+
+  const handlePageClick = ({ selected }) => {
+    setCurrentPage(selected);
+  };
+
   return (
     <>
       <main style={{"minHeight": "100vh"}} className="d-flex flex-column justify-content-start gap-3 align-items-start p-3 pt-5 bg-white">
         <ToolsNav/>
 
-        <div className="w-100 ms-5 mb-5 container" style={{"maxWidth": "700px"}}>
+        <div className="w-100 ms-5 mb-3 container mt-5" style={{"maxWidth": "700px"}}>
           <p style={{"cursor": "pointer", "color": "#285192"}} onClick={toggleShow}>
             <MDBIcon fas icon="history" /> Ver historial de archivos
           </p>
-          <MDBCollapse show={showShow}>
-            <MDBTable align='middle' className='caption-top'>
-              <MDBTableHead>
+            <MDBTable align='middle' className='caption-top' hover>
+              <MDBTableHead className="bg-primary">
                 <tr>
-                  <th scope='col'>ID</th>
-                  <th scope='col'>Tipo de Archivo</th>
-                  <th scope='col'>Excel</th>
-                  <th scope='col'>Acciones</th>
+                  <th scope='col' className="text-white">ID</th>
+                  <th scope='col' className="text-white">Tipo de Archivo</th>
+                  <th scope='col' className="text-white">Excel</th>
+                  <th scope='col' className="text-white">Acciones</th>
                 </tr>
               </MDBTableHead>
                 <MDBTableBody>
                     {
-                      files.length === 0 ? 
+                      currentItems.length === 0 ? 
                       <tr>
                         <th scope='row'></th>
                         <td>No hay Archivos</td>
@@ -71,7 +86,7 @@ const TemplatesPage = () => {
                       </tr>
                       :
                     
-                      files.map(file => (
+                      currentItems.map(file => (
                       <tr>
                         <th scope='row'>{file.id}</th>
                         <td>{file.model_type}</td>
@@ -85,7 +100,17 @@ const TemplatesPage = () => {
                     ))}
                 </MDBTableBody>
             </MDBTable>
-          </MDBCollapse> 
+            <ReactPaginate
+              pageCount={Math.ceil(files.length / itemsPerPage)}
+              pageRangeDisplayed={5}
+              marginPagesDisplayed={2}
+              onPageChange={handlePageClick}
+              containerClassName={'pagination'}
+              subContainerClassName={'pages pagination'}
+              activeClassName={'active'}
+              previousLabel={<MDBIcon fas icon="angle-double-left" />}
+              nextLabel={<MDBIcon fas icon="angle-double-right" />}
+            />
         </div>
         <TemplatesContainer/>
       </main>
