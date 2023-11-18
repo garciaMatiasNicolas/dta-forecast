@@ -51,8 +51,9 @@ const Graph = () => {
   // State for get filters from server
   const [optionsFilter, setOptionsFilter] = useState([]);
 
-  // State for MAPE
+  // State for MAPES
   const [mape, setMape] = useState(0);
+  const [mapeLastPeriod, setMapeLastPeriod] = useState(0);
 
   // Graph options
   const options = {
@@ -74,6 +75,7 @@ const Graph = () => {
       let projectId = parseInt(localStorage.getItem("projectId"))
       let scenarios = res.data.filter(item => item.project === projectId);
       setScenarios(scenarios);
+      console.log(res.data)
     })
     .catch(err => {
       console.log(err);
@@ -193,7 +195,8 @@ const Graph = () => {
 
       setData(dataLine);
       setDataYear(dataBar);
-      setMape(res.data.mape_scenario);
+      setMape(res.data.mape_last_twelve_periods);
+      setMapeLastPeriod(res.data.mape_last_period);
     })
     .catch(err => {
       console.log(err)
@@ -219,7 +222,7 @@ const Graph = () => {
       <MDBContainer>
         <MDBRow>
           <MDBCol size='3' className="d-flex justify-content-start align-items-start gap-3 flex-column">
-            <Mape mape={mape}/>
+            <Mape mape={mape} mapeLastPeriod={mapeLastPeriod}/>
             {filters.map(item => (
               <div className='w-100'>
                 <div className="d-flex justify-content-start align-items-center gap-3">

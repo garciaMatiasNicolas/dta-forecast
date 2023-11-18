@@ -4,6 +4,7 @@ import { useEffect, useRef, useState } from "react";
 import axios from "axios";
 import GraphMape from "./GraphMape";
 import { showErrorAlert } from "../../../components/other/Alerts";
+import GraphModels from "./GraphModels";
 
 const apiUrl = process.env.REACT_APP_API_URL;
 
@@ -21,6 +22,7 @@ const MetricsByDateContainer = () => {
   const [scenarioId, setScenarioId] = useState(0);
   const [data, setData] = useState([]);
   const [dataGraph, setDataGraph] = useState({"x": 0, "y": 0});
+  const[dataModelGraph, setDataModelGraph] = useState({"models": 0, "avg": 0});
   const [selectedDate, setSelectedDate] = useState(null);
   const [optionsFilter, setOptionsFilter] = useState([]);
   const inputRef = useRef(null);
@@ -41,8 +43,13 @@ const MetricsByDateContainer = () => {
     .catch((err) => {setDates([])} );
 
     handleGraphicData(id);
-    if (id == "-----" || id == 0) {setOptionsFilter([]); setDataGraph({"x": 0, "y": 0})}
-    console.log(id);
+    handleGraphicDataModels(id);
+
+    if (id == "-----" || id == 0) {
+      setOptionsFilter([]); 
+      setDataGraph({"x": 0, "y": 0}); 
+      setDataModelGraph({"models": 0, "avg": 0})
+    };
   };
 
   // Function to get graphic data 
@@ -56,6 +63,17 @@ const MetricsByDateContainer = () => {
 
     axios.post(`${apiUrl}/graphic-mape`, data, {headers})
     .then(res => setDataGraph(res.data))
+    .catch(err => console.log(err)); 
+  };
+
+  // Function to get graphic data 
+  const handleGraphicDataModels = (scId) => { 
+    const data = {
+      "scenario_id": scId,
+    }
+
+    axios.post(`${apiUrl}/graphic-model`, data, {headers})
+    .then(res => setDataModelGraph(res.data))
     .catch(err => console.log(err)); 
   };
 
@@ -150,6 +168,45 @@ const MetricsByDateContainer = () => {
     .catch(err => {console.log(err);})
   }, []);
 
+  const handleExportExcel = () => {
+    if(data === null || selectedDate === "-----" || selectedDate === null){
+      showErrorAlert("Debe elegirse una fecha");
+    }
+    else {
+      const dataToSend = {
+        "columns": ["Producto", "Venta Real", "Venta Predecida", "MAPE"],
+        "rows": data,
+        "file_name": `ReportePorFecha`,
+        "project_pk": parseInt(localStorage.getItem("projectId"))
+      }
+      console.log(dataToSend);
+      
+      axios.post(`${apiUrl}/export_excel`, dataToSend, {
+        headers: headers,
+        responseType: 'blob'
+      })
+      .then(res => {
+        // Crear un blob a partir de la respuesta
+        const file = new Blob([res.data], { type: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet' });
+        
+        // Crear una URL para el blob
+        const fileURL = URL.createObjectURL(file);
+
+        // Crear un enlace y simular un clic para iniciar la descarga
+        const a = document.createElement('a');
+        a.href = fileURL;
+        a.download = 'ReportePorFecha.xlsx'; // Nombre del archivo que se descargará
+        document.body.appendChild(a);
+        a.click();
+
+        // Limpiar el enlace y el blob después de la descarga
+        window.URL.revokeObjectURL(fileURL);
+        document.body.removeChild(a);
+      })
+      .catch(err => console.log(err.response.data)) 
+    }
+  }
+
   return (
     <div className="w-100 px-3 gap-5">
       <MDBRow className="d-flex justify-content-start align-items-start gap-2 flex-wrap">
@@ -196,8 +253,9 @@ const MetricsByDateContainer = () => {
 
       </MDBRow>
 
-      <MDBRow>
+      <MDBRow className="w-auto d-flex justify-content-between align-items-center" >
         <GraphMape scenario={scenarioId} graphicData={dataGraph}/>
+        <GraphModels scenario={scenarioId} graphicData={dataModelGraph}/>
       </MDBRow>
 
       <MDBRow className="mt-5">
@@ -220,6 +278,11 @@ const MetricsByDateContainer = () => {
             </select>
           </div>
         </div>
+        
+        <MDBBtn onClick={handleExportExcel} className="w-auto mb-4 ms-3" style={{ backgroundColor: '#25d366' }}>
+          Exportar como Excel
+          <MDBIcon className="ms-2" fas icon="file-export" />
+        </MDBBtn>
 
         <TableMape data={data}/>
       </MDBRow>

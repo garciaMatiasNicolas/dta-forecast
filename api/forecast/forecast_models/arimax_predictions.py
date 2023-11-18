@@ -3,7 +3,7 @@ import pandas as pd
 from statsmodels.tsa.arima.model import ARIMA
 
 
-def arimax_predictions(train_data, test_data, prediction_periods, exog_data=None, order=(1, 1, 1)):
+def arimax_predictions(train_data, test_data, prediction_periods, exog_data=None, order=(1, 0, 1)):
     df_pred = pd.DataFrame(columns=['family', 'region', 'salesman', 'client', 'category', 'subcategory',
                                     'sku', 'description', 'model', 'date', 'value'])
 

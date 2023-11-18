@@ -121,6 +121,7 @@ const DetailReportPage = () => {
             <main style={{"minHeight": "100vh"}} className="d-flex flex-column justify-content-start gap-3 align-items-start p-3 pt-5 bg-white">
                 <ToolsNav/>
                 <div className='d-flex w-auto justify-content-start align-items-center ms-5 gap-2 w-100'>
+                    
                     <div className='d-flex flex-column justify-content-start align-items-center gap-2 w-100'>
                         <div className='py-1 px-2 bg-primary text-white w-100'>
                             Escenario
@@ -132,6 +133,7 @@ const DetailReportPage = () => {
                             ))}
                         </select>
                     </div>
+                    
                     <div className='d-flex flex-column justify-content-start align-items-center gap-2 w-100' style={{"minWidth": "100px"}}>
                         <div className='py-1 px-2 bg-primary text-white w-100'>
                             Agrupar por
@@ -147,6 +149,7 @@ const DetailReportPage = () => {
                             <option name="Cliente" value='client'>Cliente</option>
                         </select>
                     </div>
+                    
                     <div className='d-flex flex-column justify-content-start align-items-center gap-2' style={{"minWidth": "190px"}}>
                         <div className='py-1 px-2 bg-primary text-white w-100'>
                             Fecha seleccionada

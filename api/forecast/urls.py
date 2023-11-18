@@ -19,5 +19,5 @@ urlpatterns = [
     path('get-report', report, name='report'),
     path('report-mape-date', report_mape_by_date, name='report_mape_by_date'),
     path('graphic-mape', graphic_mape, name='graphic_mape'),
-    path('graphic_model', graphic_model, name='graphic_model' )
+    path('graphic-model', graphic_model, name='graphic_model' )
 ]

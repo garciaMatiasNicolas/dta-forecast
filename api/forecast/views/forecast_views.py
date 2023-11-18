@@ -11,7 +11,7 @@ from rest_framework.views import APIView
 from ..models import ForecastScenario
 from rest_framework import status
 from django.conf import settings
-from datetime import datetime
+from ..mape_cacl import mape_calc_reports
 import pandas as pd
 import numpy as np
 import os
@@ -19,9 +19,29 @@ import threading
 
 
 class RunModelsViews(APIView):
-
     @staticmethod
-    def graphic_predictions(file_path):
+    def mape_last_period(dataframe: pd.DataFrame, pred_periods: int) -> float:
+        try:
+            last_period_column = pred_periods + 1
+            last_period = dataframe.iloc[:, -last_period_column: -pred_periods]
+
+            mapes = []
+
+            for i in range(0, len(last_period), 2):
+                actual_value = last_period.iloc[i].item()  # Acceder al valor único en lugar de la serie completa
+                predicted_value = last_period.iloc[i + 1].item()  # Acceder al valor único en lugar de la serie completa
+
+                mape = mape_calc_reports(predicted_value, actual_value)
+                mapes.append(mape)
+
+            average_mape = sum(mapes) / len(mapes)
+
+            return round(average_mape, 2)
+
+        except Exception as err:
+            print(str(err))
+
+    def graphic_predictions(self, file_path, pred_periods):
         try:
             df_pred = pd.read_excel(file_path)
         except pd.errors.ParserError:
@@ -30,6 +50,7 @@ class RunModelsViews(APIView):
         mape = df_pred['MAPE']
         mape = np.mean(mape)
         mape = round(mape, 2)
+        last_period_mape = self.mape_last_period(df_pred, pred_periods)
 
         df_pred = df_pred.drop(columns=['MAPE'])
         date_columns = df_pred.columns[9:]
@@ -47,92 +68,100 @@ class RunModelsViews(APIView):
         final_data = {'actual_data': actual_data, 'other_data': other_data}
         data_per_year = graphic_predictions_per_year(data=final_data)
 
-        return final_data, data_per_year, mape
+        return final_data, data_per_year, mape, last_period_mape
 
     @authentication_classes([TokenAuthentication])
     @permission_classes([IsAuthenticated])
     def post(self, request):
-
+        # Check if the request method is POST
         if request.method == "POST":
-            # Get from request body scenario id
+            # Get scenario id from request body
             data = GetScenarioById(data=request.data)
 
-            if data.is_valid():
-                scenario_id = data.validated_data.get("scenario_id")
+            # Check if the data is valid
+            if not data.is_valid():
+                return Response({'error': 'bad_request', 'logs': data.errors},
+                                status=status.HTTP_400_BAD_REQUEST)
 
-                try:
-                    # Search scenario by id
-                    scenario = ForecastScenario.objects.filter(pk=scenario_id).first()
+            scenario_id = data.validated_data.get("scenario_id")
 
-                    # If scenario exists
-                    if scenario:
-                        project = ProjectsModel.objects.filter(pk=scenario.project.id).first()
+            try:
+                # Search for the scenario by ID
+                scenario = ForecastScenario.objects.filter(pk=scenario_id).first()
 
-                        if project:
-                            # Get scenario data
-                            test_p = scenario.test_p
-                            pred_p = scenario.pred_p
-                            user = scenario.user.id
-                            scenario_name = scenario.scenario_name
-                            models = scenario.models
-                            table_name = f'Historical_Data_{project.project_name}_user{user}'
+                # If scenario does not exist, return a not found error
+                if not scenario:
+                    return Response({'error': 'scenario_not_found'}, status=status.HTTP_404_NOT_FOUND)
 
-                            # Get dataframe run models
-                            def run_models():
-                                try:
-                                    dataframe = get_historical_data(table_name=table_name)
+                # Get the project related to the scenario
+                project = ProjectsModel.objects.filter(pk=scenario.project.id).first()
 
-                                    result = best_model(dataframe=dataframe, test_p=test_p, pred_p=pred_p, models=models)
-                                    path = f'media/excel_files/predictions/{table_name}_prediction_results_scenario_{scenario_name}.xlsx'
+                # If project does not exist, return a not found error
+                if not project:
+                    return Response({'error': 'project_not_found'}, status=status.HTTP_404_NOT_FOUND)
 
-                                    # Write excel with model run results
-                                    with pd.ExcelWriter(path, engine='xlsxwriter') as excel_writer:
-                                        result.to_excel(excel_writer, sheet_name='result', index=True, merge_cells=False)
-                                        work_sheet = excel_writer.sheets['result']
+                # Extract required scenario data
+                test_p = scenario.test_p
+                pred_p = scenario.pred_p
+                user = scenario.user.id
+                scenario_name = scenario.scenario_name
+                models = scenario.models
+                table_name = f'Historical_Data_{project.project_name}_user{user}'
 
-                                        for i, column in enumerate(result.columns):
-                                            width_column = max(result[column].astype(str).apply(len).max(),
-                                                                len(column)) + 2
-                                            work_sheet.set_column(i, i, width_column)
+                # Define a function to run models
+                def run_models():
+                    try:
+                        # Get historical data for the scenario
+                        dataframe = get_historical_data(table_name=table_name)
 
-                                    final_data, data_per_year, mape = self.graphic_predictions(
-                                        os.path.join(settings.MEDIA_ROOT, 'excel_files\\predictions',
-                                                        f'{table_name}_prediction_results_scenario_{scenario_name}.xlsx'))
+                        # Run the models and generate predictions
+                        result = best_model(dataframe=dataframe, test_p=test_p, pred_p=pred_p, models=models)
 
-                                    # Save graphic_data and predictions excel url in the scenario
-                                    scenario.final_data_pred = final_data
-                                    scenario.data_year_pred = data_per_year
-                                    scenario.predictions_table_name = f'{table_name}_prediction_results_scenario_{scenario_name}'
-                                    scenario.mape_scenario = mape
-                                    scenario.url_predictions = path
-                                    scenario.save()
+                        # Create an Excel file with the prediction results
+                        path = f'media/excel_files/predictions/{table_name}_prediction_results_scenario_{scenario_name}.xlsx'
+                        with pd.ExcelWriter(path, engine='xlsxwriter') as excel_writer:
+                            result.to_excel(excel_writer, sheet_name='result', index=True, merge_cells=False)
+                            work_sheet = excel_writer.sheets['result']
+                            for i, column in enumerate(result.columns):
+                                width_column = max(result[column].astype(str).apply(len).max(),
+                                                   len(column)) + 2
+                                work_sheet.set_column(i, i, width_column)
 
-                                    # Create table with predicted data
-                                    save_dataframe(route_file=path,
-                                                    file_name=f'{table_name}_prediction_results_scenario_{scenario_name}',
-                                                    model_type="historical_data", wasSaved=True)
+                        # Generate graphical predictions
+                        final_data, data_per_year, mape, last_period_mape = self.graphic_predictions(
+                            file_path=os.path.join(settings.MEDIA_ROOT, 'excel_files\\predictions', f'{table_name}_prediction_results_scenario_{scenario_name}.xlsx'),
+                            pred_periods=pred_p
+                        )
 
-                                except Exception as err:
-                                    return err
+                        # Save the predictions in the scenario
+                        scenario.final_data_pred = final_data
+                        scenario.data_year_pred = data_per_year
+                        scenario.predictions_table_name = f'{table_name}_prediction_results_scenario_{scenario_name}'
+                        scenario.mape_last_twelve_periods = mape
+                        scenario.mape_last_period = last_period_mape
+                        scenario.url_predictions = path
+                        scenario.save()
 
-                            run_models_thread = threading.Thread(target=run_models)
-                            run_models_thread.start()
-                            run_models_thread.join()
-                            return Response({'message': 'succeed'}, status=status.HTTP_200_OK)
+                        # Save the predicted data as a table
+                        save_dataframe(route_file=path,
+                                       file_name=f'{table_name}_prediction_results_scenario_{scenario_name}',
+                                       model_type="historical_data", wasSaved=True)
 
-                    else:
-                        return Response({'error': 'scenario_not_found'}, status=status.HTTP_200_OK)
+                    except Exception as err:
+                        return err
 
-                except ForecastScenario.DoesNotExist:
-                    return Response({'error': 'not_found'}, status=status.HTTP_200_OK)
+                # Run the models in a separate thread
+                run_models_thread = threading.Thread(target=run_models)
+                run_models_thread.start()
+                run_models_thread.join()
 
-                except Exception as e:
-                    return Response({'error': str(e)}, status=status.HTTP_400_BAD_REQUEST)
+                # Return success message if everything ran successfully
+                return Response({'message': 'succeed'}, status=status.HTTP_200_OK)
 
-                else:
-                    return Response({'error': 'bad_request', 'logs': data.errors}, status=status.HTTP_400_BAD_REQUEST)
+            except ForecastScenario.DoesNotExist:
+                # Return not found error if the scenario does not exist
+                return Response({'error': 'not_found'}, status=status.HTTP_404_NOT_FOUND)
 
-            else:
-                return Response({'error': 'method_not_allowed'}, status=status.HTTP_405_METHOD_NOT_ALLOWED)
-
-            
+            except Exception as e:
+                # Return a general bad request error for other exceptions
+                return Response({'error': str(e)}, status=status.HTTP_400_BAD_REQUEST)

@@ -16,9 +16,11 @@ def mape_calc(dataframe, model_name):
 
         for i in range(n):
             if actual_col[i] == 0.0 and predicted_col[i] == 0.0:
-                col_errors.append(0)  # Cuando ambos valores son cero, el MAPE es 0
-            elif actual_col[i] == 0.0:
-                col_errors.append(100)  # Cuando el valor actual es 0.0, el MAPE es 100
+                col_errors.append(0)
+
+            elif actual_col[i] == 0.0 or actual_col[i] < 0.0:
+                col_errors.append(100)
+
             else:
                 col_errors.append(abs((actual_col[i] - predicted_col[i]) / actual_col[i]) * 100)
 
@@ -29,6 +31,7 @@ def mape_calc(dataframe, model_name):
 
     return round(mape, 2)
 
+
 def mape_calc_reports(predicted: float, actual: float):
     if actual == 0 and predicted == 0:
         mape = 0
@@ -36,6 +39,5 @@ def mape_calc_reports(predicted: float, actual: float):
         mape = 100
     else:
         mape = abs((actual - predicted) / actual) * 100
-
 
     return round(mape, 2)
