@@ -3,8 +3,9 @@ import TemplatesContainer from '../../containers/tools/uploads/TemplateContainer
 import ToolsNav from '../../components/navs/ToolsNav';
 import axios from 'axios';
 import { MDBIcon, MDBTable, MDBTableBody, MDBTableHead} from 'mdb-react-ui-kit';
-import { showConifmationAlert } from '../../components/other/Alerts';
+import Swal from "sweetalert2";
 import ReactPaginate from 'react-paginate';
+import { showErrorAlert, showSuccessAlert } from '../../components/other/Alerts';
 
 const apiUrl = process.env.REACT_APP_API_URL;
 
@@ -23,6 +24,10 @@ const TemplatesPage = () => {
   const toggleShow = () => setShowShow(!showShow);
 
   useEffect(() => {
+    updateFileHistory();
+  }, []);
+
+  const updateFileHistory = () => {
     axios.get(`${apiUrl}/files`, {headers})
     .then(res => {
       let projectId = parseInt(localStorage.getItem("projectId"))
@@ -30,7 +35,7 @@ const TemplatesPage = () => {
       setFiles(files);
     })
     .catch(err => console.log(err));
-  }, []);
+  }
 
   // Function for download excel
   const handleDownload = (fileName, urlPath) => {
@@ -43,7 +48,19 @@ const TemplatesPage = () => {
   };
 
   const handleDeleteScenario = (objectId) => {
-    showConifmationAlert("file", objectId);
+    Swal.fire({
+      text: '¿Estás seguro de eliminar este archivo? Se borrarán todas las predicciones relacionadas a él.',
+      icon: 'warning',
+      showCancelButton: true,
+      confirmButtonText: 'Eliminar',
+      cancelButtonText: 'Cancelar'
+    }).then((result) => {
+      if (result.isConfirmed) {
+        axios.delete(`${apiUrl}/files/${objectId}/`, {headers})
+        .then(()=>{showSuccessAlert("El archivo y sus predicciones fueron eliminados satisfactoriamente", "Archivo eliminado"); updateFileHistory();})
+        .catch(()=>{showErrorAlert("Ocurrio un error inesperado, intente mas tarde")});
+      }
+    });
   }
 
   const [currentPage, setCurrentPage] = useState(0);

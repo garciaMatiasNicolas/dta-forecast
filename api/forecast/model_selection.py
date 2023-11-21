@@ -1,5 +1,5 @@
 from .forecast_models import arima_predictions, linear_regression, exponential_smothing, \
-    holt_winters_predictions, lasso, bayesian_regression, decision_tree, sarimax
+    holt_winters_holt, lasso, bayesian_regression, decision_tree, sarima_sarimax, arimax_predictions
 from database.db_engine import engine
 import pandas as pd
 import numpy as np
@@ -36,8 +36,12 @@ def best_model(dataframe, test_p, pred_p, models: list):
             model_data['arima'] = {'mape': arima_mape, 'df': arima_df}
 
         if 'holtsWintersExponentialSmoothing' in models:
-            holt_df, holt_mape = holt_winters_predictions.holt_winters_predictions(row, test_p, pred_p)
-            model_data['holtsWintersExponentialSmoothing'] = {'mape': holt_mape, 'df': holt_df}
+            holt_wint_df, holt_wint_mape = holt_winters_holt.holt_winters_holt(row, test_p, pred_p, 'holt_winters')
+            model_data['holtsWintersExponentialSmoothing'] = {'mape': holt_wint_mape, 'df': holt_wint_df}
+
+        if 'holtsExponentialSmoothing' in models:
+            holt_df, holt_mape = holt_winters_holt.holt_winters_holt(row, test_p, pred_p, 'holt')
+            model_data['holtsExponentialSmoothing'] = {'mape': holt_mape, 'df': holt_df}
 
         if 'simpleExponentialSmoothing' in models:
             exp_df, exp_mape = exponential_smothing.exp_smoothing_predictions(row, test_p, pred_p)
@@ -59,9 +63,19 @@ def best_model(dataframe, test_p, pred_p, models: list):
             decision_tree_df, decision_tree_mape = decision_tree.decision_tree_regression_predictions(row, test_p, pred_p)
             model_data['decisionTree'] = {'mape': decision_tree_mape, 'df': decision_tree_df}
 
+        if 'sarima' in models:
+            sarima_df, sarima_mape = sarima_sarimax.sarima_sarimax_predictions(row, test_p, pred_p)
+            model_data['sarima'] = {'mape': sarima_mape, 'df': sarima_df}
+
         if 'sarimax' in models:
-            sarimax_df, sarimax_mape = sarimax.sarimax_predictions(row, test_p, pred_p)
-            model_data['sarimax'] = {'mape': sarimax_mape, 'df': sarimax_df}
+            # Logica para obtener variables exogenas
+            sarimax_df, sarimax_mape = sarima_sarimax.sarima_sarimax_predictions(row, test_p, pred_p, exog_data=True)
+            model_data['sarima'] = {'mape': sarimax_mape, 'df': sarimax_df}
+
+        if 'arimax' in models:
+            # Logica para obtener variables exogenas
+            arimax_df, arimax_mape = arimax_predictions.arimax_predictions(row, test_p, pred_p, exog_data=True)
+            model_data['sarima'] = {'mape': arimax_mape, 'df': arimax_df}
 
         best_model_name = min(model_data, key=lambda k: model_data[k]['mape'])
         best_df = model_data[best_model_name]['df']

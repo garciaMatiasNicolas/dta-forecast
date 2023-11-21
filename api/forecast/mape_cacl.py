@@ -1,12 +1,12 @@
 def mape_calc(dataframe, model_name):
-    predicted_dataframe = dataframe.xs(model_name, level='model').iloc[:, -12:]
-    actual_df = dataframe.xs('actual', level='model').iloc[:, -12:]
+    last_twelve_periods_predicted = dataframe.xs(model_name, level='model').iloc[:, -12:]
+    last_twelve_periods_actual = dataframe.xs('actual', level='model').iloc[:, -12:]
 
     absolute_errors = []
 
-    for col in predicted_dataframe.columns:
-        predicted_col = predicted_dataframe[col]
-        actual_col = actual_df[col]
+    for col in last_twelve_periods_predicted.columns:
+        predicted_col = last_twelve_periods_predicted[col]
+        actual_col = last_twelve_periods_actual[col]
 
         if not (predicted_col.dtype == float and actual_col.dtype == float):
             raise ValueError("Column type must be numeric")
@@ -32,10 +32,26 @@ def mape_calc(dataframe, model_name):
     return round(mape, 2)
 
 
+def mape_calc_last_period(dataframe, predictions_periods):
+    last_period_column = predictions_periods + 2
+    last_period = dataframe.iloc[:, -last_period_column]
+
+    mapes = []
+
+    for i in range(0, len(last_period), 2):
+        actual = last_period[i]
+        predicted = last_period[i + 1]
+        mape = mape_calc_reports(predicted, actual)
+        mapes.append(mape)
+
+    mape_last_period = round(sum(mapes) / len(mapes), 2)
+    return mape_last_period
+
+
 def mape_calc_reports(predicted: float, actual: float):
     if actual == 0 and predicted == 0:
         mape = 0
-    elif actual == 0 and predicted != 0:
+    elif (actual == 0 or actual < 0) and predicted != 0:
         mape = 100
     else:
         mape = abs((actual - predicted) / actual) * 100

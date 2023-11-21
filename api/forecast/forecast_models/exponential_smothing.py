@@ -1,21 +1,26 @@
 from ..mape_cacl import mape_calc
+from statsmodels.tsa.holtwinters import SimpleExpSmoothing
 import pandas as pd
 
 
 def exp_smoothing_predictions(fila, test_periods, prediction_periods):
     df_pred = pd.DataFrame(columns=['family', 'region', 'salesman', 'client', 'category', 'subcategory',
                                     'sku', 'description', 'model', 'date', 'value'])
-
     df_pred_fc = df_pred.copy()
     time_series = pd.Series(fila.iloc[12:]).astype(dtype='float')
     train_data = time_series[:-test_periods]
     test_data = time_series.iloc[-test_periods:]
 
-    # Use Pandas' exponential smoothing function to create the model and make predictions
-    model = pd.Series(train_data).interpolate(method='linear').ewm(span=10).mean()
-    test_predictions = model[-test_periods:]
-    train_predictions = model[:-test_periods]
-    model = model.fillna(0)
+    # Create Simple Exponential Smoothing (SES) model using training data
+    model = SimpleExpSmoothing(train_data)
+
+    # Fit the model
+    model_fit = model.fit()
+
+    # Make predictions on the testing data
+    test_predictions = model_fit.forecast(test_periods)
+    # Get the original values
+    train_predictions = model_fit.fittedvalues
 
     # ------------------------------------------------------------------------------------
     start_date = pd.to_datetime(test_data.index[-1])
@@ -23,7 +28,9 @@ def exp_smoothing_predictions(fila, test_periods, prediction_periods):
     future_dates = pd.date_range(start=next_month, periods=prediction_periods, freq='MS')
     future_dates = future_dates.strftime('%Y-%m-%d')
 
-    future_predictions = model.ewm(span=10, min_periods=0).mean().iloc[-1:].repeat(len(future_dates))
+    # Apply exponential smoothing on the entire time series for future predictions
+    smoothed_series = time_series.ewm(span=10, min_periods=0).mean()
+    future_predictions = smoothed_series.iloc[-1:].repeat(len(future_dates))
     # -------------------------------------------------------
     for i, og in enumerate(train_predictions):
         og_date = train_data.index[i]

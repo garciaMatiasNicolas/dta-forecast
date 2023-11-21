@@ -1,54 +1,49 @@
+import { useRef, useState } from 'react';
+import { MDBBtn, MDBIcon, MDBModal, MDBModalBody, MDBModalContent, MDBModalDialog } from 'mdb-react-ui-kit';
+import ClipLoader from 'react-spinners/ClipLoader';
 import axios from 'axios';
-import { MDBBtn, MDBIcon} from 'mdb-react-ui-kit';
-import React, { useRef, useState } from 'react';
 import { showErrorAlert, showSuccessAlert } from '../../../other/Alerts';
 
 const apiUrl = process.env.REACT_APP_API_URL;
 
-const GropuButtonActions = ({props, idFile}) => {
+const GroupButtonActions = ({ props, idFile }) => {
     const fileInputRef = useRef(null);
+    
+    const [basicModal, setBasicModal] = useState(false);
+
+    const showModal = () => setBasicModal(true);
 
     const handleButtonClick = () => {
         fileInputRef.current.click();
     };
 
     const uploadFile = (data, headers) => {
-        axios.post(`${apiUrl}/files/`, data, {headers})
-        .then(res => {
-            showSuccessAlert("Archivo subido exitosamente!", "Data recibida")
-        })
-        .catch(err => {
-            if (err.response.data.error === "bad_request") {
-                showErrorAlert("El archivo no se subio correctamente, intente nuevamente");
-                console.log(err.response)
-            } 
-            else if(err.response.data.error === "columns_not_in_date_type"){
-                showErrorAlert("El archivo debe contener sus columnas en formato fecha, verifique el formato de las columnas e intente nuevamente");
-                console.log(err.response)
-            }
-            else {
-                showErrorAlert("Error en el servidor");
-                console.log(err.response)
-            }
-        })
-    }
+        axios.post(`${apiUrl}/files/`, data, { headers })
+            .then(() => {
+                showSuccessAlert("Archivo subido exitosamente! Data recibida");
+            })
+            .catch(err => {
+                if (err.response.data.error === "bad_request") {
+                    setTimeout(showErrorAlert("El archivo no se subió correctamente, intente nuevamente"), 3000);
+                } else if (err.response.data.error === "columns_not_in_date_type") {
+                    showErrorAlert("El archivo debe contener sus columnas en formato fecha, verifique el formato de las columnas e intente nuevamente");
+                } else {
+                    showErrorAlert("Error en el servidor");
+                }
+            })
+            .finally(() => {setBasicModal(false)})
+    };
 
     const handleFileUpload = (event) => {
         let token = localStorage.getItem("userToken");
-
         const headers = {
-            'Authorization': `Token ${token}`, 
-            'Content-Type': 'multipart/form-data', 
+            'Authorization': `Token ${token}`,
+            'Content-Type': 'multipart/form-data',
         };
-
         const file = event.target.files[0];
-
         const user = localStorage.getItem("userPk");
-
         const projectName = localStorage.getItem('projectName');
-
         const projectId = localStorage.getItem("projectId");
-
         const data = {
             "user_owner": localStorage.getItem("userPk"),
             "file_name": `Historical_Data_${projectName}_user${user}`,
@@ -57,7 +52,11 @@ const GropuButtonActions = ({props, idFile}) => {
             "model_type": idFile
         };
 
-        uploadFile(data, headers);
+        showModal();
+        
+        setTimeout(() => {
+            uploadFile(data, headers);
+        }, 2000);
     };
 
     return (
@@ -69,7 +68,7 @@ const GropuButtonActions = ({props, idFile}) => {
                     style={{ display: 'none' }}
                     onChange={handleFileUpload}
                 />
-                <MDBBtn disabled={idFile !== 1} color='success' floating onClick={handleButtonClick} >
+                <MDBBtn disabled={idFile !== 1} color='success' floating onClick={handleButtonClick}>
                     <MDBIcon fas icon="upload" />
                 </MDBBtn>
             </div>
@@ -79,9 +78,21 @@ const GropuButtonActions = ({props, idFile}) => {
                     <MDBIcon fas icon="download" />
                 </MDBBtn>
             </a>
+
+            <MDBModal staticBackdrop tabIndex="-1" show={basicModal} setShow={setBasicModal}>
+                <MDBModalDialog>
+                    <MDBModalContent>
+                        <MDBModalBody>
+                            <div className="d-flex justify-content-center align-items-center flex-column gap-2">
+                                <ClipLoader color="#2b9eb3" size={50} />
+                                <h5>Subiendo data...</h5>
+                            </div>
+                        </MDBModalBody>
+                    </MDBModalContent>
+                </MDBModalDialog>
+            </MDBModal>
         </>
+    );
+};
 
-    )
-}
-
-export default GropuButtonActions
+export default GroupButtonActions;
