@@ -3,7 +3,7 @@ from statsmodels.tsa.holtwinters import ExponentialSmoothing
 import pandas as pd
 
 
-def holt_winters_holt(fila, test_periods, prediction_periods, model_name):
+def holt_winters_holt_EMA(fila, test_periods, prediction_periods, model_name):
     df_pred = pd.DataFrame(columns=['family', 'region', 'salesman', 'client', 'category', 'subcategory',
                                     'sku', 'description', 'model', 'date', 'value'])
     df_pred_fc = df_pred.copy()
@@ -20,6 +20,9 @@ def holt_winters_holt(fila, test_periods, prediction_periods, model_name):
     if model_name == 'holt':
         # Create the Holt model using the training data
         model = ExponentialSmoothing(train_data, trend='add')
+
+    if model_name == 'exponential_moving_average':
+        model = ExponentialSmoothing(train_data, trend=None, seasonal=None)  # EMA config
 
     # Fit the model
     model_fit = model.fit()

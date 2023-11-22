@@ -5,7 +5,7 @@ const Templates = ({props}) => {
     <tr>
       <th>{props.name}</th>
       <td className='d-flex justify-content-end'>
-        <GropuButtonActions props={props.name} idFile={props.id}/>
+        <GropuButtonActions tableName={props.tableName} path={props.name} idFile={props.id}/>
       </td>
     </tr>
   )

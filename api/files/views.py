@@ -6,11 +6,10 @@ from rest_framework.views import APIView
 from rest_framework import status
 from rest_framework.authentication import TokenAuthentication
 from rest_framework.permissions import IsAuthenticated
-from rest_framework.decorators import authentication_classes, permission_classes
+from rest_framework.decorators import authentication_classes, permission_classes, action
 from rest_framework import viewsets
 from rest_framework.parsers import FormParser, MultiPartParser
 import os
-from django.db import connection, OperationalError
 
 
 @authentication_classes([TokenAuthentication])
@@ -108,5 +107,4 @@ class GetFileTypes(APIView):
         files = FileTypes.objects.all()
         serializer = FileModelType(files, many=True)
         return Response(serializer.data)
-
 

@@ -1,5 +1,5 @@
 from .forecast_models import arima_predictions, linear_regression, exponential_smothing, \
-    holt_winters_holt, lasso, bayesian_regression, decision_tree, sarima_sarimax, arimax_predictions
+    holt_winters_holt_EMA, lasso, bayesian_regression, decision_tree, sarima_sarimax, arimax_predictions
 from database.db_engine import engine
 import pandas as pd
 import numpy as np
@@ -36,12 +36,18 @@ def best_model(dataframe, test_p, pred_p, models: list):
             model_data['arima'] = {'mape': arima_mape, 'df': arima_df}
 
         if 'holtsWintersExponentialSmoothing' in models:
-            holt_wint_df, holt_wint_mape = holt_winters_holt.holt_winters_holt(row, test_p, pred_p, 'holt_winters')
+            holt_wint_df, holt_wint_mape = holt_winters_holt_EMA.holt_winters_holt_EMA(row, test_p, pred_p,
+                                                                                       'holt_winters')
             model_data['holtsWintersExponentialSmoothing'] = {'mape': holt_wint_mape, 'df': holt_wint_df}
 
         if 'holtsExponentialSmoothing' in models:
-            holt_df, holt_mape = holt_winters_holt.holt_winters_holt(row, test_p, pred_p, 'holt')
+            holt_df, holt_mape = holt_winters_holt_EMA.holt_winters_holt_EMA(row, test_p, pred_p, 'holt')
             model_data['holtsExponentialSmoothing'] = {'mape': holt_mape, 'df': holt_df}
+
+        if 'exponential_moving_average' in models:
+            ema_df, ema_mape = holt_winters_holt_EMA.holt_winters_holt_EMA(row, test_p, pred_p,
+                                                                           'exponential_moving_average')
+            model_data['exponential_moving_average'] = {'mape': ema_mape, 'df': ema_df}
 
         if 'simpleExponentialSmoothing' in models:
             exp_df, exp_mape = exponential_smothing.exp_smoothing_predictions(row, test_p, pred_p)

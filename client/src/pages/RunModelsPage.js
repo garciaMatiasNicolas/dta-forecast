@@ -2,7 +2,7 @@ import axios from "axios";
 import ToolsNav from "../components/navs/ToolsNav"
 import { useState, useContext, useEffect, useRef } from "react";
 import { ClipLoader } from "react-spinners";
-import { showErrorAlert, showSuccessAlert } from "../components/other/Alerts";
+import { showErrorAlert, showSuccessAlert, showWariningAlert } from "../components/other/Alerts";
 import { MDBCheckbox, MDBCol, MDBContainer, MDBInput, MDBRow, MDBBtn, MDBIcon,  MDBModal, MDBModalDialog, MDBModalContent, MDBModalBody} from "mdb-react-ui-kit";
 import { AppContext } from "../context/Context";
 import convertData from "../functions/stringFormat";
@@ -123,15 +123,18 @@ const RunModelsPage = () => {
                 });
             })
             .catch((err)=>{
-                showErrorAlert(`Ocurrio un error en la corrida de los modelos: ${err.response.data.error}`);
+                if(err.response.data.error === "exogenous_variables_not_found") {
+                    showWariningAlert("Para seleccionar modelos de variables exogenas, debe haber subido anteriormente la plantilla con datos de variables exógenas. Elija otro modelo, o bien, suba la plantilla requerida", "ATENCIÓN");
+                } else {
+                    showErrorAlert(`Ocurrio un error en la corrida de los modelos: ${err.response.data.error}`);
+                }
                 axios.delete(`${apiUrl}/scenarios/${id}`, { headers })
             })
             .finally(()=>{setBasicModal(!basicModal)}); 
         })
-        .catch((err)=>{
+        .catch(()=>{
             showErrorAlert("Nombre de escenario ya utilizado");
             setBasicModal(!basicModal);
-            console.log(err)
         });
 
         formRef.current.reset();
@@ -160,6 +163,9 @@ const RunModelsPage = () => {
 
                                         <MDBCheckbox name='modelSelection' value='holtsExponentialSmoothing' id='holtsExponentialSmoothing' label='Suavización Exponencial Holt' 
                                         onChange={() => handleCheckboxChange('holtsExponentialSmoothing')}/>
+
+                                        <MDBCheckbox name='modelSelection' value='exponential_moving_average' id='exponential_moving_average' label='Promedio Móvil Exponencial ' 
+                                        onChange={() => handleCheckboxChange('exponential_moving_average')}/>
 
                                         <MDBCheckbox name='modelSelection' value='simpleExponentialSmoothing' id='simpleExponentialSmoothing' label='Suavización Exponencial Simple'  
                                         onChange={() => handleCheckboxChange('simpleExponentialSmoothing')}/>

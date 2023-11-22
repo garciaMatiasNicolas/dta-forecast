@@ -18,5 +18,13 @@ const showSuccessAlert = (message, title) => {
   });
 };
 
+const showWariningAlert = (message, title) => {
+  Swal.fire({
+    icon: 'warning',
+    title: title,
+    text: message,
+  });
+}
 
-export {showErrorAlert, showSuccessAlert}
+
+export {showErrorAlert, showSuccessAlert, showWariningAlert}

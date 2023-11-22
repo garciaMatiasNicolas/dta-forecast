@@ -1,12 +1,11 @@
 import { useRef, useState } from 'react';
 import { MDBBtn, MDBIcon, MDBModal, MDBModalBody, MDBModalContent, MDBModalDialog } from 'mdb-react-ui-kit';
-import ClipLoader from 'react-spinners/ClipLoader';
 import axios from 'axios';
 import { showErrorAlert, showSuccessAlert } from '../../../other/Alerts';
 
 const apiUrl = process.env.REACT_APP_API_URL;
 
-const GroupButtonActions = ({ props, idFile }) => {
+const GroupButtonActions = ({ tableName, path, idFile }) => {
     const fileInputRef = useRef(null);
     
     const [basicModal, setBasicModal] = useState(false);
@@ -46,7 +45,7 @@ const GroupButtonActions = ({ props, idFile }) => {
         const projectId = localStorage.getItem("projectId");
         const data = {
             "user_owner": localStorage.getItem("userPk"),
-            "file_name": `Historical_Data_${projectName}_user${user}`,
+            "file_name": `${tableName}_${projectName}_user${user}`,
             "project": projectId,
             "file": file,
             "model_type": idFile
@@ -68,12 +67,13 @@ const GroupButtonActions = ({ props, idFile }) => {
                     style={{ display: 'none' }}
                     onChange={handleFileUpload}
                 />
+                
                 <MDBBtn disabled={idFile !== 1} color='success' floating onClick={handleButtonClick}>
                     <MDBIcon fas icon="upload" />
                 </MDBBtn>
             </div>
 
-            <a href={require(`../../../../../public/templates/${props}`)} download={props} target="_blank" rel="noreferrer">
+            <a href={require(`../../../../../public/templates/${path}`)} download={path} target="_blank" rel="noreferrer">
                 <MDBBtn color='primary' floating >
                     <MDBIcon fas icon="download" />
                 </MDBBtn>
@@ -84,7 +84,7 @@ const GroupButtonActions = ({ props, idFile }) => {
                     <MDBModalContent>
                         <MDBModalBody>
                             <div className="d-flex justify-content-center align-items-center flex-column gap-2">
-                                <ClipLoader color="#2b9eb3" size={50} />
+                                {/* <ClipLoader color="#2b9eb3" size={50} /> */}
                                 <h5>Subiendo data...</h5>
                             </div>
                         </MDBModalBody>

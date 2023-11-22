@@ -5,7 +5,7 @@ import axios from 'axios';
 import { MDBIcon, MDBTable, MDBTableBody, MDBTableHead} from 'mdb-react-ui-kit';
 import Swal from "sweetalert2";
 import ReactPaginate from 'react-paginate';
-import { showErrorAlert, showSuccessAlert } from '../../components/other/Alerts';
+import { showErrorAlert, showSuccessAlert, showWariningAlert } from '../../components/other/Alerts';
 
 const apiUrl = process.env.REACT_APP_API_URL;
 
@@ -24,7 +24,16 @@ const TemplatesPage = () => {
   const toggleShow = () => setShowShow(!showShow);
 
   useEffect(() => {
-    updateFileHistory();
+    axios.get(`${apiUrl}/files`, {headers})
+    .then(res => {
+      let projectId = parseInt(localStorage.getItem("projectId"))
+      let files = res.data.filter(item => item.project === projectId);
+      files.length > 0 && showWariningAlert("Existen plantillas subidas para este proyecto, si sube alguna plantilla con datos que ya exista, se sobreescribira y se perderan las predicciones realizadas. Recomendamos actualizar las plantillas por proyecto", "ATENCION");
+      setFiles(files);
+    })
+    .catch(err => console.log(err));
+    
+    
   }, []);
 
   const updateFileHistory = () => {

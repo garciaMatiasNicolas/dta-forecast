@@ -11,6 +11,7 @@ from rest_framework.views import APIView
 from ..models import ForecastScenario
 from rest_framework import status
 from django.conf import settings
+from django.db import connection, OperationalError
 from ..mape_cacl import mape_calc_last_period
 import pandas as pd
 import numpy as np
@@ -78,12 +79,32 @@ class RunModelsViews(APIView):
                 if not project:
                     return Response({'error': 'project_not_found'}, status=status.HTTP_404_NOT_FOUND)
 
+                # Validate models
+                models = scenario.models
+                user = scenario.user.id
+
+                if 'arimax' in models or 'sarimax' in models:
+
+                    with connection.cursor() as cursor:
+                        '''
+                        QUERY FOR MYSQL = SHOW TABLES LIKE \'{table_name}\' 
+                        '''
+
+                        query = f'''SELECT name FROM sqlite_master 
+                                    WHERE type='table' 
+                                    AND name='Historical_Exogenous_Variables_{project.project_name}_user{user}' '''
+                        cursor.execute(query)
+
+                        table = cursor.fetchone()
+
+                        if table is None:
+                            return Response({'error': 'exogenous_variables_not_found'},
+                                            status=status.HTTP_400_BAD_REQUEST)
+
                 # Extract required scenario data
                 test_p = scenario.test_p
                 pred_p = scenario.pred_p
-                user = scenario.user.id
                 scenario_name = scenario.scenario_name
-                models = scenario.models
                 table_name = f'Historical_Data_{project.project_name}_user{user}'
 
                 # Get historical data for the scenario
