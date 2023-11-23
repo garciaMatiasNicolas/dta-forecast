@@ -1,8 +1,10 @@
 import { MDBIcon, MDBBadge, MDBBtn } from "mdb-react-ui-kit"
 import {  useNavigate } from 'react-router-dom';
 import DeleteProjectBtn from "./DeleteProjectBtn";
-import { showErrorAlert } from "../../other/Alerts";
+import { showErrorAlert, showSuccessAlert } from "../../other/Alerts";
 import convertData from "../../../functions/stringFormat";
+import Swal from "sweetalert2";
+import axios from "axios";
 
 const apiUrl = process.env.REACT_APP_API_URL;
 
@@ -29,6 +31,29 @@ const Projects = ({props, deleteProject, updateProject}) => {
     }
   }
 
+  const handleUpdate = async (objectId) => {
+    const { value: projectName } = await Swal.fire({
+      title: "Actualizar Proyecto",
+      input: "text",
+      inputLabel: "Ingrese nuevo nombre del proyecto",
+      inputPlaceholder: "Nombre proyecto",
+      showCancelButton: true,
+      cancelButtonText: "Cancelar"
+    });
+
+    if (projectName) {
+      const data = { "project_name": projectName };
+
+      axios.put(`${apiUrl}/projects/${objectId}/`, data, {headers})
+      .then(()=>{showSuccessAlert("El proyecto se actualizo satisfactoriamente", "Proyecto actualizado"); updateProject();})
+      .catch(()=>{showErrorAlert("Ocurrio un error inesperdo, intente nuevamente")});
+
+    } 
+  }
+
+  const newDate = new Date(props.created_at);
+  const formatDate = newDate.toISOString().split('T')[0];
+
   return (
     <>
       <tr>
@@ -46,9 +71,9 @@ const Projects = ({props, deleteProject, updateProject}) => {
             props.status === true ? <MDBBadge color='success' pill>Activo</MDBBadge> : <MDBBadge color='danger' pill>Inactivo</MDBBadge>
           }
         </td>
-        <td>{props.created_at}</td>
+        <td>{formatDate}</td>
         <td>
-          <MDBBtn color='success' outline floating rounded size='sm' className="me-2" data-bs-toggle="modal" data-bs-target="#modalUpdate">
+          <MDBBtn onClick={()=>{handleUpdate(props.id)}} color='success' outline floating rounded size='sm' className="me-2">
             <MDBIcon fas icon="pen" color="succes"/>
           </MDBBtn>
           <DeleteProjectBtn projectData={props} deleteProject={deleteProject} updateProject={updateProject}/>

@@ -1,8 +1,10 @@
-import React from 'react'
+import ToolsNav from "../../components/navs/ToolsNav";
 
 const CollaborationPage = () => {
   return (
-    <div>CollaborationPage</div>
+    <main style={{"minHeight": "100vh"}} className="bg-white pt-5 pb-5">
+      <ToolsNav/>
+    </main>
   )
 }
 

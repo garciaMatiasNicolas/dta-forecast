@@ -25,17 +25,17 @@ const ProfileDataContainer = ({dataProfile}) => {
                 Mis datos
               </MDBTabsLink>
             </MDBTabsItem>
-            <MDBTabsItem>
+            {/* <MDBTabsItem>
               <MDBTabsLink onClick={()=>{setUpdate(true)}} >
                 Actualizar Informacion
               </MDBTabsLink>
-            </MDBTabsItem>
+            </MDBTabsItem> */}
           </MDBTabs>
         </MDBCardHeader>
         <MDBCardBody>
-          {
-            update ? <ProfileUpdate/> : <ProfileInfo data={dataProfile}/>
-          }
+        
+         <ProfileInfo data={dataProfile}/>
+       
         </MDBCardBody>
       </MDBCard>
     );
