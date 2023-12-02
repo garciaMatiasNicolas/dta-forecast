@@ -87,3 +87,9 @@ text-shadow: #0062cc 1px 1px, #0062cc 2px 2px, #0062cc 3px 3px, #0062cd 4px 4px,
     color: red/* Subrayado para la página activa */
 }
   
+th {
+    white-space: nowrap; /* Evita que el texto se divida en varias líneas */
+    overflow: hidden; /* Oculta el texto que excede el ancho del contenedor */
+    text-overflow: ellipsis; /* Agrega puntos suspensivos para mostrar que el texto está truncado */
+    max-width: 200px; /* Ancho máximo de la celda */
+}

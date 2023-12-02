@@ -19,6 +19,7 @@ def sarima_sarimax_predictions(fila, test_periods, prediction_periods, exog_data
         model_fit = model.fit()
         train_predictions = model_fit.predict(start=0, end=n_train - 1)
         test_predictions = model_fit.predict(start=n_train, end=len(time_series) - 1, exog=exog_data[-test_periods:])
+
     else:
         model_name = 'sarima'
         model = SARIMAX(train_data, order=(1, 1, 1), seasonal_order=(0, 0, 0, 0))

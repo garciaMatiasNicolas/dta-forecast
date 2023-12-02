@@ -1,9 +1,10 @@
 from .forecast_models import arima_predictions, linear_regression, exponential_smothing, \
-    holt_winters_holt_EMA, lasso, bayesian_regression, decision_tree, sarima_sarimax, arimax_predictions
+    holt_winters_holt_EMA, lasso, bayesian_regression, decision_tree, sarima_sarimax, arimax_predictions, prophet
 from database.db_engine import engine
 import pandas as pd
 import numpy as np
 import datetime as dt
+import traceback
 
 
 # Function to get historical data
@@ -53,6 +54,10 @@ def best_model(dataframe, test_p, pred_p, models: list):
             exp_df, exp_mape = exponential_smothing.exp_smoothing_predictions(row, test_p, pred_p)
             model_data['simpleExponentialSmoothing'] = {'mape': exp_mape, 'df': exp_df}
 
+        if 'prophet' in models:
+            prophet_df, prophet_mape = prophet.prophet_predictions(row, test_p, pred_p)
+            model_data['prophet'] = {'mape': prophet_mape, 'df': prophet_df}
+
         if 'linearRegression' in models:
             linear_df, linear_mape = linear_regression.linear_regression_predictions(row, test_p, pred_p)
             model_data['linearRegression'] = {'mape': linear_mape, 'df': linear_df}
@@ -76,12 +81,12 @@ def best_model(dataframe, test_p, pred_p, models: list):
         if 'sarimax' in models:
             # Logica para obtener variables exogenas
             sarimax_df, sarimax_mape = sarima_sarimax.sarima_sarimax_predictions(row, test_p, pred_p, exog_data=True)
-            model_data['sarima'] = {'mape': sarimax_mape, 'df': sarimax_df}
+            model_data['sarimax'] = {'mape': sarimax_mape, 'df': sarimax_df}
 
         if 'arimax' in models:
             # Logica para obtener variables exogenas
             arimax_df, arimax_mape = arimax_predictions.arimax_predictions(row, test_p, pred_p, exog_data=True)
-            model_data['sarima'] = {'mape': arimax_mape, 'df': arimax_df}
+            model_data['arimax'] = {'mape': arimax_mape, 'df': arimax_df}
 
         best_model_name = min(model_data, key=lambda k: model_data[k]['mape'])
         best_df = model_data[best_model_name]['df']
@@ -90,3 +95,4 @@ def best_model(dataframe, test_p, pred_p, models: list):
         df_pred = df_pred._append(best_df, ignore_index=False)
 
     return df_pred
+

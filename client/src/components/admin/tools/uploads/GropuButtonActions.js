@@ -2,6 +2,8 @@ import { useRef, useState } from 'react';
 import { MDBBtn, MDBIcon, MDBModal, MDBModalBody, MDBModalContent, MDBModalDialog } from 'mdb-react-ui-kit';
 import axios from 'axios';
 import { showErrorAlert, showSuccessAlert } from '../../../other/Alerts';
+import { ClipLoader } from 'react-spinners';
+
 
 const apiUrl = process.env.REACT_APP_API_URL;
 
@@ -51,7 +53,7 @@ const GroupButtonActions = ({ tableName, path, idFile }) => {
             "model_type": idFile
         };
 
-        showModal();
+        file != null && showModal();
         
         setTimeout(() => {
             uploadFile(data, headers);
@@ -84,7 +86,7 @@ const GroupButtonActions = ({ tableName, path, idFile }) => {
                     <MDBModalContent>
                         <MDBModalBody>
                             <div className="d-flex justify-content-center align-items-center flex-column gap-2">
-                                {/* <ClipLoader color="#2b9eb3" size={50} /> */}
+                                <ClipLoader color="#2b9eb3" size={50} />
                                 <h5>Subiendo data...</h5>
                             </div>
                         </MDBModalBody>

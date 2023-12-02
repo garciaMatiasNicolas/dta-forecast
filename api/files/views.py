@@ -9,6 +9,7 @@ from rest_framework.permissions import IsAuthenticated
 from rest_framework.decorators import authentication_classes, permission_classes, action
 from rest_framework import viewsets
 from rest_framework.parsers import FormParser, MultiPartParser
+from django.db import connection, OperationalError
 import os
 
 
@@ -63,7 +64,8 @@ class ExcelFileUploadView(viewsets.ModelViewSet):
                     return Response({'error': 'model_not_allowed'}, status=status.HTTP_400_BAD_REQUEST)
 
                 if err == "columns_not_in_date_type":
-                    return Response({'error': 'columns_not_in_date_type'}, status=status.HTTP_400_BAD_REQUEST)
+                    return Response({'error': 'columns_not_in_date_type'},
+                                    status=status.HTTP_400_BAD_REQUEST)
 
                 return Response({'error': 'other_value_error'}, status=status.HTTP_400_BAD_REQUEST)
 

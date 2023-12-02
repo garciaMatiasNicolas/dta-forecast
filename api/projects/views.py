@@ -6,6 +6,10 @@ from rest_framework.decorators import api_view, authentication_classes, permissi
 from rest_framework import status
 from .serializers import ProjectSerializer
 from .models import ProjectsModel
+from files.file_model import FileRefModel
+from forecast.models import ForecastScenario
+from django.db import connection, OperationalError
+import os
 
 
 class ProjectsViewSet(ModelViewSet):
@@ -49,6 +53,14 @@ class ProjectsViewSet(ModelViewSet):
     def destroy(self, request, pk=None):
         type_of_delete = request.data.get('type')
         project_to_delete = self.get_queryset().filter(id=pk).first()
+        files = FileRefModel.objects.filter(project_id=pk)
+        scenarios = ForecastScenario.objects.filter(project_id=pk)
+
+        data_tables = [file.file_name for file in files]
+        excel_data_uploaded = [file.file.name for file in files]
+
+        predicted_data_tables = [scenario.predictions_table_name for scenario in scenarios]
+        excel_predictions = [scenario.url_predictions for scenario in scenarios]
 
         if project_to_delete:
 
@@ -59,6 +71,24 @@ class ProjectsViewSet(ModelViewSet):
                                 status=status.HTTP_200_OK)
 
             else:
+
+                with connection.cursor() as cursor:
+                    try:
+                        for table in data_tables:
+                            cursor.execute(f'DROP TABLE {table}')
+                    except OperationalError:
+                        pass
+
+                    try:
+                        for table_pred in predicted_data_tables:
+                            cursor.execute(F'DROP TABLE {table_pred}')
+                    except OperationalError:
+                        pass
+
+                for excel_pred in excel_predictions:
+                    if os.path.exists(path=excel_pred):
+                        os.remove(path=excel_pred)
+
                 project_to_delete.delete()
                 return Response({'message': 'project_deleted'},
                                 status=status.HTTP_200_OK)

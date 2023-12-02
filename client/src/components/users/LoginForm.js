@@ -39,6 +39,7 @@ const LoginForm = () => {
         .catch(error => {
             error.response === undefined && showErrorAlert("Error en el servidor, intente mas tarde"); 
             error.response.data.error === "credentials_invalids" && showErrorAlert("Email o contraseña incorrectos");
+            error.response.data.error === "user_not_found" && showErrorAlert("El email proporcionado no esta registrado");
             error.response.data.error === "user_inactive" && showErrorAlert("Su usuario esta inactivo, debe confirmar su mail para loguearse");
             console.log(error.response.data.error);
         })

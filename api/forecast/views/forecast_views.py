@@ -17,6 +17,7 @@ import pandas as pd
 import numpy as np
 import os
 import threading
+import traceback
 
 
 class RunModelsViews(APIView):
@@ -148,16 +149,28 @@ class RunModelsViews(APIView):
                                        file_name=f'{table_name}_prediction_results_scenario_{scenario_name}',
                                        model_type="historical_data", wasSaved=True)
 
-                    except Exception as err:
-                        return err
+                        result_holder['result'] = result
 
-                # Run the models in a separate thread
-                run_models_thread = threading.Thread(target=run_models)
-                run_models_thread.start()
-                run_models_thread.join()
+                    except Exception as errorModels:
+                        print("Error en corrida: ", str(errorModels))
+                        traceback.print_exc()
+                        result_holder['error'] = str(errorModels)
 
-                # Return success message if everything ran successfully
-                return Response({'message': 'succeed'}, status=status.HTTP_200_OK)
+                try:
+                    # Run the models in a separate thread
+                    result_holder = {'result': None, 'error': None}
+                    run_models_thread = threading.Thread(target=run_models)
+                    run_models_thread.start()
+                    run_models_thread.join()
+
+                    if result_holder['error']:
+                        return Response({'error': result_holder['error']}, status=status.HTTP_400_BAD_REQUEST)
+
+                    # Return success message if everything ran successfully
+                    return Response({'message': 'succeed'}, status=status.HTTP_200_OK)
+
+                except Exception as e:
+                    return Response({'error': str(e)}, status=status.HTTP_400_BAD_REQUEST)
 
             except ForecastScenario.DoesNotExist:
                 # Return not found error if the scenario does not exist

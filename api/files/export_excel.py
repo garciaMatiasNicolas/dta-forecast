@@ -8,7 +8,6 @@ import pandas as pd
 
 
 class ExportExcelAPIView(APIView):
-
     @staticmethod
     def create_excel(rows: list, columns: list):
         try:

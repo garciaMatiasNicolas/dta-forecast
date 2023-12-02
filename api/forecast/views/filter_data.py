@@ -73,6 +73,7 @@ class GetFiltersView(APIView):
         if filters.is_valid():
             scenario_id = filters.validated_data['scenario_id']
             filter_name = filters.validated_data['filter_name']
+            project_pk = filters.validated_data['project_id']
             scenario = ForecastScenario.objects.filter(pk=scenario_id).first()
             table_name = scenario.predictions_table_name
 
@@ -99,5 +100,6 @@ class GetFiltersView(APIView):
 
         else:
             return Response({'error': 'bad_request', 'logs': filters.errors}, status=status.HTTP_400_BAD_REQUEST)
+
 
 

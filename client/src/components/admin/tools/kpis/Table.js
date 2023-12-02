@@ -32,10 +32,10 @@ const TableReport = ({ props, data }) => {
 
   return (
     <div>
-      <MDBTable>
-        <MDBTableHead light>
+      <MDBTable className='w-100' hover>
+        <MDBTableHead className='bg-primary'>
           <tr>
-            <th scope='col'>{props}</th>
+            <th scope='col' className='text-white'>{props}</th>
             {data.length === 0 ? (
               <>
                 <th scope='col'></th>
@@ -44,8 +44,11 @@ const TableReport = ({ props, data }) => {
                 <th scope='col'></th>
               </>
             ) : (
-              data.years.map((year) => <th scope='col'>{year}</th>)
+              data.columns.map((year) => <th scope='col' className='text-white'>{year}</th>)
             )}
+          {/* <th scope='col' className='text-white'>ult. 12 meses sobre año pasado</th>
+            <th scope='col' className='text-white'>ult. 3 meses sobre año pasado</th>
+            <th scope='col' className='text-white'>ult. mes sobre año pasado</th> */}
           </tr>
         </MDBTableHead>
         <MDBTableBody>

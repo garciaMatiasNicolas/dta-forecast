@@ -2,6 +2,9 @@ def mape_calc(dataframe, model_name):
     last_twelve_periods_predicted = dataframe.xs(model_name, level='model').iloc[:, -12:]
     last_twelve_periods_actual = dataframe.xs('actual', level='model').iloc[:, -12:]
 
+    print("Actual Column:", last_twelve_periods_predicted)
+    print("Predicted Column:", last_twelve_periods_predicted)
+
     absolute_errors = []
 
     for col in last_twelve_periods_predicted.columns:
@@ -9,7 +12,7 @@ def mape_calc(dataframe, model_name):
         actual_col = last_twelve_periods_actual[col]
 
         if not (predicted_col.dtype == float and actual_col.dtype == float):
-            raise ValueError("Column type must be numeric")
+                raise ValueError("Column type must be numeric")
 
         n = len(actual_col)
         col_errors = []

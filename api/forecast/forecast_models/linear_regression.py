@@ -24,7 +24,7 @@ def linear_regression_predictions(fila, test_periods, prediction_periods):
     test_predictions = np.squeeze(model.predict(x_test))
     train_predictions = np.squeeze(model.predict(x_train))
 
-# --------------------------------------------------------------------
+    # --------------------------------------------------------------------
     start_date = pd.to_datetime(test_data.index[-1])
     next_month = start_date + pd.DateOffset(months=1)
     future_dates = pd.date_range(start=next_month, periods=prediction_periods, freq='MS')

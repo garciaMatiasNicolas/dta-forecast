@@ -8,6 +8,8 @@ from rest_framework.authtoken.views import ObtainAuthToken
 from django.contrib.sessions.models import Session
 from .models import User
 from django.shortcuts import redirect
+from django.core.exceptions import ObjectDoesNotExist
+
 
 class UserAuthenticationViews:
     @staticmethod
@@ -25,6 +27,12 @@ class UserAuthenticationViews:
         def post(self, request, *args, **kwargs):
             credentials = self.get_serializer(data=request.data,
                                               context={'request': request})
+
+            email = credentials.initial_data['username']
+            try:
+                User.objects.get(email=email)
+            except ObjectDoesNotExist:
+                return Response({'error': 'user_not_found'}, status=status.HTTP_404_NOT_FOUND)
 
             if credentials.is_valid():
                 user = credentials.validated_data['user']

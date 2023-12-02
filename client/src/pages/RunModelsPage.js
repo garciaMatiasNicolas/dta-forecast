@@ -36,7 +36,7 @@ const RunModelsPage = () => {
     // USE EFFECT //
     useEffect(() => {
         // Get file types
-        axios.get(`http://localhost:8000/file-types`, {headers})
+        axios.get(`${apiUrl}/file-types`, {headers})
         .then(res => setFileTypes(res.data))
         .catch(err => console.log(err));
     }, []);
@@ -97,6 +97,7 @@ const RunModelsPage = () => {
         };
         axios.post(`${apiUrl}/scenarios/`, dataToSend, { headers })
         .then((res)=>{
+            showModal();
             let id = res.data.scenario_id;
             let data = {scenario_id: id};
 
@@ -130,12 +131,12 @@ const RunModelsPage = () => {
                 }
                 axios.delete(`${apiUrl}/scenarios/${id}`, { headers })
             })
-            .finally(()=>{setBasicModal(!basicModal)}); 
+            .finally(()=>{setBasicModal(false)}); 
         })
         .catch(()=>{
             showErrorAlert("Nombre de escenario ya utilizado");
-            setBasicModal(!basicModal);
         });
+        
 
         formRef.current.reset();
     };
@@ -175,9 +176,9 @@ const RunModelsPage = () => {
                                         <MDBCheckbox name='modelSelection' value='sarima' id='sarima' label='SARIMA' onChange={() => handleCheckboxChange('sarima')}/>
 
                                         <p className="text-primary mt-5">Modelos Variables Enxógenas</p>
-                                        <MDBCheckbox name='modelSelection' value='arimax' id='arimax' label='ARIMAX ' onChange={() => handleCheckboxChange('arimax')}/>
-                                        <MDBCheckbox name='modelSelection' value='sarimax' id='sarimax' label='SARIMAX' onChange={() => handleCheckboxChange('sarimax')}/>
-                                        <MDBCheckbox name='modelSelection' value='autoarimax' id='autoarimax' label='AUTOARIMAX' onChange={() => handleCheckboxChange('autoarimax')}/>
+                                        <MDBCheckbox name='modelSelection' value='arimax' id='arimax' label='ARIMAX ' onChange={() => handleCheckboxChange('arimax')} disabled/>
+                                        <MDBCheckbox name='modelSelection' value='sarimax' id='sarimax' label='SARIMAX' onChange={() => handleCheckboxChange('sarimax')} disabled/>
+                                        <MDBCheckbox name='modelSelection' value='autoarimax' id='autoarimax' label='AUTOARIMAX' onChange={() => handleCheckboxChange('autoarimax')} disabled/>
 
                                         <p className="mt-5 text-primary">Modelos Machine Learning</p>
                                         <MDBCheckbox name='modelSelection' value='linearRegression' id='linearRegression' label='Regresión lineal' onChange={() => handleCheckboxChange('linearRegression')}/>
@@ -186,7 +187,7 @@ const RunModelsPage = () => {
                                         <MDBCheckbox name='modelSelection' value='decisionTree' id='decisionTree' label='Árbol de decisiones' onChange={() => handleCheckboxChange('decisionTree')}/>
 
                                         <p className="mt-5 text-primary">Otros modelos</p>
-                                        <MDBCheckbox name='modelSelection' value='prophet' id='prophet' label='Prophet' onChange={() => handleCheckboxChange('prophet')}/>
+                                        <MDBCheckbox name='modelSelection' value='prophet' id='prophet' label='Prophet' onChange={() => handleCheckboxChange('prophet')} />
                                     </MDBCol>
 
                                     <MDBCol size='lg' className="d-flex justify-content-start align-items-center flex-column gap-3">
@@ -209,7 +210,6 @@ const RunModelsPage = () => {
                                     className="w-auto d-flex justify-content-center align-items-center gap-2 ms-3" 
                                     color="primary" 
                                     disabled={!isFormValid()}
-                                    onClick={showModal}
                                 >
                                     <MDBIcon fas icon="forward" color="white"/>
                                     <span>Forecast</span>
