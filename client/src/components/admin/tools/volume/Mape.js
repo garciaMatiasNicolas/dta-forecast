@@ -1,4 +1,4 @@
-const Mape = ({mape, mapeLastPeriod}) => {
+const Mape = ({mape, mapeLastPeriod, mapeAbs}) => {
   return (
     <div className="w-auto" style={{"minWidth": "265PX"}}>
       <div className="w-100 border rounded">
@@ -27,7 +27,7 @@ const Mape = ({mape, mapeLastPeriod}) => {
         </div>
         
         <div className="p-1" style={{"backgroundColor": "rgba(43, 127, 214, 0.08)"}}>
-          <p className="text-center text-black">{mape}</p>
+          <p className="text-center text-black">{mapeAbs}</p>
         </div>
       </div>
     </div>

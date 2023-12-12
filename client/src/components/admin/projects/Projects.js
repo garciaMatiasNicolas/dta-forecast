@@ -42,7 +42,7 @@ const Projects = ({props, deleteProject, updateProject}) => {
     });
 
     if (projectName) {
-      const data = { "project_name": projectName };
+      const data = { "project_name": convertData(projectName, false) };
 
       axios.put(`${apiUrl}/projects/${objectId}/`, data, {headers})
       .then(()=>{showSuccessAlert("El proyecto se actualizo satisfactoriamente", "Proyecto actualizado"); updateProject();})

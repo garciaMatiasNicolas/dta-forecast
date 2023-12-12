@@ -3,7 +3,7 @@ import pandas as pd
 from statsmodels.tsa.arima.model import ARIMA
 
 
-def arimax_predictions(train_data, test_data, prediction_periods, exog_data=None, order=(1, 0, 1)):
+def arimax_predictions(row, train_data, test_data, prediction_periods, seasonal_periods, exog_data=None, order=(1, 0, 1)):
     df_pred = pd.DataFrame(columns=['family', 'region', 'salesman', 'client', 'category', 'subcategory',
                                     'sku', 'description', 'model', 'date', 'value'])
 
@@ -27,7 +27,7 @@ def arimax_predictions(train_data, test_data, prediction_periods, exog_data=None
         df_pred = df_pred.append({
             'family': 'Example', 'region': 'Example', 'salesman': 'Example', 'client': 'Example',
             'category': 'Example', 'subcategory': 'Example', 'sku': 'Example', 'description': 'Example',
-            'model': 'arimax', 'date': og_date, 'value': og
+            'model': 'arimax', 'date': og_date, 'value': (0 if og < 0 else og)
         }, ignore_index=True)
 
     for i, test in enumerate(test_predictions):
@@ -58,7 +58,7 @@ def arimax_predictions(train_data, test_data, prediction_periods, exog_data=None
         df_pred_fc = df_pred_fc.append({
             'family': 'Example', 'region': 'Example', 'salesman': 'Example', 'client': 'Example',
             'category': 'Example', 'subcategory': 'Example', 'sku': 'Example', 'description': 'Example',
-            'model': 'arimax', 'date': fut_date, 'value': future
+            'model': 'arimax', 'date': fut_date, 'value': (0 if future_predictions[i] < 0 else future_predictions[i])
         }, ignore_index=True)
 
     df_pred_pivot = df_pred.pivot_table(values='value', index=['family', 'region', 'salesman', 'client', 'category',

@@ -2,9 +2,6 @@ def mape_calc(dataframe, model_name):
     last_twelve_periods_predicted = dataframe.xs(model_name, level='model').iloc[:, -12:]
     last_twelve_periods_actual = dataframe.xs('actual', level='model').iloc[:, -12:]
 
-    print("Actual Column:", last_twelve_periods_predicted)
-    print("Predicted Column:", last_twelve_periods_predicted)
-
     absolute_errors = []
 
     for col in last_twelve_periods_predicted.columns:
@@ -40,15 +37,21 @@ def mape_calc_last_period(dataframe, predictions_periods):
     last_period = dataframe.iloc[:, -last_period_column]
 
     mapes = []
+    actual_vals = []
+    predicted_vals = []
 
     for i in range(0, len(last_period), 2):
         actual = last_period[i]
         predicted = last_period[i + 1]
+        actual_vals.append(actual)
+        predicted_vals.append(predicted)
         mape = mape_calc_reports(predicted, actual)
         mapes.append(mape)
 
+    mape_abs = mape_calc_reports(predicted=sum(predicted_vals), actual=sum(actual_vals))
     mape_last_period = round(sum(mapes) / len(mapes), 2)
-    return mape_last_period
+
+    return mape_last_period, mape_abs
 
 
 def mape_calc_reports(predicted: float, actual: float):
@@ -60,3 +63,5 @@ def mape_calc_reports(predicted: float, actual: float):
         mape = abs((actual - predicted) / actual) * 100
 
     return round(mape, 2)
+
+

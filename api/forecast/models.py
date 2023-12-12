@@ -11,6 +11,9 @@ class ForecastScenario(models.Model):
     scenario_name = models.CharField(max_length=200, unique=True)
     pred_p = models.IntegerField()
     test_p = models.IntegerField()
+    replace_negatives = models.BooleanField(default=False)
+    seasonal_periods = models.IntegerField(blank=True, null=True)
+    max_historical_date = models.DateField(blank=True, null=True)
     final_data_pred = models.JSONField(blank=True, null=True)
     data_year_pred = models.JSONField(blank=True, null=True)
     mape_last_twelve_periods = models.FloatField(blank=True, null=True)
@@ -19,5 +22,6 @@ class ForecastScenario(models.Model):
     predictions_table_name = models.CharField(max_length=250, blank=True, null=True)
     url_predictions = models.CharField(max_length=500, blank=True, null=True)
     models = models.JSONField(default=list)
+
 
 

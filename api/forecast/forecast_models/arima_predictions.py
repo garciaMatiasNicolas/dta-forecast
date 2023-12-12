@@ -4,7 +4,7 @@ import pandas as pd
 import pmdarima as pm
 
 
-def arima_predictions(fila, test_periods, prediction_periods):
+def arima_predictions(fila, test_periods, prediction_periods, seasonal_periods):
     try:
         df_pred = pd.DataFrame(columns=['family', 'region', 'salesman', 'client', 'category', 'subcategory',
                                         'sku', 'description', 'model', 'date', 'value'])
@@ -44,22 +44,19 @@ def arima_predictions(fila, test_periods, prediction_periods):
                  'client': fila.iloc[3],
                  'category': fila.iloc[4], 'subcategory': fila.iloc[5],
                  'sku': fila.iloc[6], 'description': fila.iloc[7], 'model': 'arima',
-                 'date': og_date, 'value': og}, ignore_index=True)
+                 'date': og_date, 'value': (0 if og < 0 else og)}, ignore_index=True)
 
         for i, test in enumerate(test_predictions):
-
             test_date = test_data.index[i]
             df_pred = df_pred._append(
                 {'family': fila.iloc[0], 'region': fila.iloc[1], 'salesman': fila.iloc[2],
-                 'client': fila.iloc[3],
-                 'category': fila.iloc[4], 'subcategory': fila.iloc[5],
+                 'client': fila.iloc[3], 'category': fila.iloc[4], 'subcategory': fila.iloc[5],
                  'sku': fila.iloc[6], 'description': fila.iloc[7], 'model': 'actual',
                  'date': test_date, 'value': fila[test_date]}, ignore_index=True)
 
             df_pred = df_pred._append(
                 {'family': fila.iloc[0], 'region': fila.iloc[1], 'salesman': fila.iloc[2],
-                 'client': fila.iloc[3],
-                 'category': fila.iloc[4], 'subcategory': fila.iloc[5],
+                 'client': fila.iloc[3], 'category': fila.iloc[4], 'subcategory': fila.iloc[5],
                  'sku': fila.iloc[6], 'description': fila.iloc[7], 'model': 'arima',
                  'date': test_date, 'value': test}, ignore_index=True)
 
@@ -83,7 +80,8 @@ def arima_predictions(fila, test_periods, prediction_periods):
                  'client': fila.iloc[3],
                  'category': fila.iloc[4], 'subcategory': fila.iloc[5],
                  'sku': fila.iloc[6], 'description': fila.iloc[7], 'model': 'arima',
-                 'date': fut_date, 'value': future_predictions[i]}, ignore_index=True)
+                 'date': fut_date, 'value': (0 if future_predictions[i] < 0 else future_predictions[i])},
+                ignore_index=True)
 
         df_pred_fc_pivot = df_pred_fc.pivot(values='value', index=['family', 'region', 'salesman', 'client', 'category',
                                             'subcategory', 'sku', 'description', 'model'],
@@ -94,4 +92,5 @@ def arima_predictions(fila, test_periods, prediction_periods):
         return result, mape
 
     except Exception as err:
+
         print(f"Error arima : {str(err)}")

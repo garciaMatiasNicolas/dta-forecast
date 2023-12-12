@@ -3,7 +3,7 @@ from statsmodels.tsa.holtwinters import SimpleExpSmoothing
 import pandas as pd
 
 
-def exp_smoothing_predictions(fila, test_periods, prediction_periods):
+def exp_smoothing_predictions(fila, test_periods, prediction_periods, seasonal_periods):
     df_pred = pd.DataFrame(columns=['family', 'region', 'salesman', 'client', 'category', 'subcategory',
                                     'sku', 'description', 'model', 'date', 'value'])
     df_pred_fc = df_pred.copy()
@@ -47,7 +47,7 @@ def exp_smoothing_predictions(fila, test_periods, prediction_periods):
              'client': fila.iloc[3],
              'category': fila.iloc[4], 'subcategory': fila.iloc[5],
              'sku': fila.iloc[6], 'description': fila.iloc[7], 'model': 'exp_smooth',
-             'date': og_date, 'value': og}, ignore_index=True)
+             'date': og_date, 'value': (0 if og < 0 else og)}, ignore_index=True)
 
     for i, test in enumerate(test_predictions):
         test_date = test_data.index[i]
@@ -85,7 +85,7 @@ def exp_smoothing_predictions(fila, test_periods, prediction_periods):
              'client': fila.iloc[3],
              'category': fila.iloc[4], 'subcategory': fila.iloc[5],
              'sku': fila.iloc[6], 'description': fila.iloc[7], 'model': 'exp_smooth',
-             'date': fut_date, 'value': future_predictions[i]}, ignore_index=True)
+             'date': fut_date, 'value':  (0 if future_predictions[i] < 0 else future_predictions[i])}, ignore_index=True)
 
     df_pred_fc_pivot = df_pred_fc.pivot(values='value', index=['family', 'region', 'salesman', 'client', 'category',
                                                                'subcategory', 'sku', 'description', 'model'],

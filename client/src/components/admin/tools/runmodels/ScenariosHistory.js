@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react'
 import {MDBTable, MDBTableBody, MDBTableHead, MDBIcon} from "mdb-react-ui-kit";
-import { showErrorAlert, showSuccessAlert } from '../../other/Alerts';
+import { showErrorAlert, showSuccessAlert } from '../../../other/Alerts';
 import Swal from "sweetalert2";
 import ReactPaginate from 'react-paginate';
 import axios from 'axios';

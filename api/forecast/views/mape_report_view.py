@@ -18,7 +18,6 @@ class MapeReportAPIView(APIView):
         filters = FilterData(data=request.data)
         product = request.data.get("product")
 
-
         if filters.is_valid():
             scenario_id = filters.validated_data['scenario_id']
             filter_name = filters.validated_data['filter_name']
@@ -32,7 +31,7 @@ class MapeReportAPIView(APIView):
                 SKU|| ' ' ||DESCRIPTION AS product, 
                 ROUND(MAX(CASE WHEN MODEL = 'actual' THEN "{filter_value}" END),2) AS actual, 
                 ROUND(MAX(CASE WHEN MODEL != 'actual' THEN "{filter_value}" END),2) AS fit 
-                FROM {table_name} WHERE SKU = {product}
+                FROM {table_name} WHERE SKU = "{product}"
                 GROUP BY SKU, DESCRIPTION;
                 '''
 
@@ -44,7 +43,7 @@ class MapeReportAPIView(APIView):
                 ROUND(MAX(CASE WHEN MODEL != 'actual' THEN "{filter_value}" END),2) AS fit 
                 FROM {table_name} GROUP BY SKU, DESCRIPTION;
                 '''
-
+            print(query)
             try:
                 with connection.cursor() as cursor:
                     cursor.execute(query)

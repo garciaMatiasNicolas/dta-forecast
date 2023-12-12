@@ -5,7 +5,6 @@ from rest_framework.decorators import authentication_classes, permission_classes
 from rest_framework.authentication import TokenAuthentication
 from rest_framework.permissions import IsAuthenticated
 from ..serializer import FilterData
-from projects.models import ProjectsModel
 from ..models import ForecastScenario
 from django.db import connection
 from datetime import datetime
@@ -24,13 +23,11 @@ class ReportDataViews(APIView):
 
     @staticmethod
     def filter_dates_by_month(last_date, date_list, target_month):
-        try:
-            last_date = datetime.strptime(last_date, "%Y-%m-%d %H:%M:%S")
-        except ValueError:
-            last_date = datetime.strptime(last_date, "%Y-%m-%d")
-
         filtered_dates = []  # List for dates matching the criteria (month and before the current date)
         future_dates = []  # List for dates after the current date
+
+        # Convert last_date to a datetime object (assuming last_date is a date object)
+        last_date = datetime.combine(last_date, datetime.min.time())
 
         for date_str in date_list:
             # Try to parse the date string in two formats (with and without time)
@@ -40,7 +37,7 @@ class ReportDataViews(APIView):
                 date = datetime.strptime(date_str, "%Y-%m-%d")
 
             if date.month == target_month:  # Check if the date's month matches the target month
-                if date < last_date:  # If the date is before the current date
+                if date < last_date:  # If the date is before the last_date (converted to datetime)
                     filtered_dates.append(date_str)  # Add it to the filtered dates list
                 else:
                     future_dates.append(date_str)  # If the date is in the future, add it to the future dates list
@@ -92,29 +89,26 @@ class ReportDataViews(APIView):
             query_a = f'''
                 SELECT
                     {filter_name},
-                    ROUND((diff / valor_antiguo) * 100, 2) AS porcentaje_cambio
+                    ROUND(ROUND((diff) - 1 , 2) * 100, 2) AS porcentaje_cambio
                 FROM(
                     SELECT
                         {filter_name},
-                        ROUND({reports_data["last_twelve_months_since_last"]}) - 
-                        ROUND({reports_data["dates_a"]}) AS diff,
-                        ROUND({reports_data["dates_a"]}) AS valor_antiguo
+                        ROUND({reports_data["last_twelve_months_since_last"]}) / 
+                        ROUND({reports_data["dates_a"]}) AS diff
                     FROM {predictions_table_name}
                     {'WHERE SKU = ' + f"'{str(product)}'" if product else ''} 
                     GROUP BY {filter_name}
                 ) AS t;
             '''
-
             query_b = f'''
                 SELECT
                     {filter_name},
-                    ROUND((diff / valor_antiguo) * 100, 2) AS porcentaje_cambio
+                    ROUND(ROUND((diff) - 1 , 2) * 100, 2) AS porcentaje_cambio
                 FROM(
                     SELECT
                         {filter_name},
-                        ROUND({reports_data["last_three_months_since_last"]}) - 
-                        ROUND({reports_data["dates_b"]}) AS diff,
-                        ROUND({reports_data["dates_b"]}) AS valor_antiguo
+                        ROUND({reports_data["last_three_months_since_last"]}) / 
+                        ROUND({reports_data["dates_b"]}) AS diff
                     FROM {predictions_table_name} 
                     {'WHERE SKU = ' + f"'{str(product)}'" if product else ''} 
                     GROUP BY {filter_name}
@@ -124,13 +118,12 @@ class ReportDataViews(APIView):
             query_c = f'''
                 SELECT
                     {filter_name},
-                    ROUND((diff / valor_antiguo) * 100, 2) AS porcentaje_cambio
+                    ROUND(ROUND((diff) - 1 , 2) * 100, 2) AS porcentaje_cambio
                 FROM(
                     SELECT
                         {filter_name},
-                        ROUND(SUM("{last_month_since_last[0]}")) - 
-                        ROUND(SUM("{dates_c}")) AS diff,
-                        ROUND(SUM("{dates_c}")) AS valor_antiguo
+                        ROUND(SUM("{last_month_since_last[0]}")) / 
+                        ROUND(SUM("{dates_c}")) AS diff
                     FROM {predictions_table_name} 
                     {'WHERE SKU = ' + f"'{str(product)}'" if product else ''} 
                     GROUP BY {filter_name}
@@ -142,14 +135,13 @@ class ReportDataViews(APIView):
             next_year_over_last_year = f'''
                 SELECT
                     {filter_name},
-                    ROUND((diff / valor_antiguo) * 100, 2) AS porcentaje_cambio
+                    ROUND(ROUND((diff) - 1 , 2) * 100, 2) AS porcentaje_cambio
                 FROM(
                     SELECT
                         {filter_name},
-                        ROUND({reports_data["next_twelve_months_since_last"]}) - 
-                        ROUND({reports_data["last_twelve_months_since_last"]}) AS diff,
-                        ROUND({reports_data["last_twelve_months_since_last"]}) AS valor_antiguo
-                    FROM {predictions_table_name} 
+                        ROUND({reports_data["next_twelve_months_since_last"]}) / 
+                        ROUND({reports_data["last_twelve_months_since_last"]}) AS diff
+                        FROM {predictions_table_name} 
                     {'WHERE SKU = ' + f"'{str(product)}'" if product else ''} 
                     GROUP BY {filter_name}
                 ) AS t;
@@ -158,14 +150,13 @@ class ReportDataViews(APIView):
             next_three_months_over_last = f'''
                 SELECT
                     {filter_name},
-                    ROUND((diff / valor_antiguo) * 100, 2) AS porcentaje_cambio
+                    ROUND(ROUND((diff) - 1 , 2) * 100, 2) AS porcentaje_cambio
                 FROM(
                     SELECT
                         {filter_name},
-                        ROUND({reports_data["next_three_months_since_last"]}) - 
-                        ROUND({reports_data["last_three_months_since_last"]}) AS diff,
-                        ROUND({reports_data["last_three_months_since_last"]}) AS valor_antiguo
-                    FROM {predictions_table_name} 
+                        ROUND({reports_data["next_three_months_since_last"]}) / 
+                        ROUND({reports_data["last_three_months_since_last"]}) AS diff
+                        FROM {predictions_table_name} 
                     {'WHERE SKU = ' + f"'{str(product)}'" if product else ''} 
                     GROUP BY {filter_name}
                 ) AS t;
@@ -174,13 +165,12 @@ class ReportDataViews(APIView):
             next_month_over_last = f'''
                 SELECT
                     {filter_name},
-                    ROUND((diff / valor_antiguo) * 100, 2) AS porcentaje_cambio
+                    ROUND(ROUND((diff) - 1 , 2) * 100, 2) AS porcentaje_cambio
                 FROM(
                     SELECT
                         {filter_name},
-                        ROUND({reports_data["next_month_since_last"]}) - 
-                        ROUND(SUM("{last_month_since_last[0]}")) AS diff,
-                        ROUND(SUM("{last_month_since_last[0]}")) AS valor_antiguo
+                        ROUND({reports_data["next_month_since_last"]}) /
+                        ROUND(SUM("{last_month_since_last[0]}")) AS diff
                     FROM {predictions_table_name} 
                     {'WHERE SKU = ' + f"'{str(product)}'" if product else ''} 
                     GROUP BY {filter_name}
@@ -235,15 +225,10 @@ class ReportDataViews(APIView):
             filter_name = filters.validated_data['filter_name']
             month = filters.validated_data['filter_value']
             scenario = ForecastScenario.objects.filter(pk=scenario_id).first()
-            project_pk = filters.validated_data['project_id']
-            project = ProjectsModel.objects.filter(pk=project_pk).first()
             predictions_table_name = scenario.predictions_table_name
-            historical_data_table_name = f'Historical_data_{project.project_name}_user{scenario.user.id}'
 
             with connection.cursor() as cursor:
-                cursor.execute(sql=f'''SELECT MAX(name) FROM pragma_table_info("{historical_data_table_name}") 
-                                WHERE name LIKE "%-%";''')
-                last_date = cursor.fetchall()
+                last_date = scenario.max_historical_date
 
                 cursor.execute(sql=f'''SELECT name FROM pragma_table_info("{predictions_table_name}") 
                                 WHERE name LIKE "%-%";''')
@@ -269,15 +254,14 @@ class ReportDataViews(APIView):
 
                 years = sorted(list(years_set))
 
-                last_date_str = datetime.strptime(last_date[0][0], '%Y-%m-%d %H:%M:%S')
-                new_last_date = last_date_str.strftime('%Y-%m-%d')
+                new_last_date = last_date.strftime('%Y-%m-%d')
                 last_date_index = list_date_columns.index(new_last_date)
 
                 # Handle reports and get data
                 final_data = self.handle_reports(filter_name, predictions_table_name,
                                                  last_date_index, list_date_columns, product)
 
-                past_dates, future_dates = self.filter_dates_by_month(last_date=last_date[0][0],
+                past_dates, future_dates = self.filter_dates_by_month(last_date=last_date,
                                                                       date_list=list_date_columns,
                                                                       target_month=int(month))
 
@@ -292,7 +276,7 @@ class ReportDataViews(APIView):
                     {'AND SKU = ' + f"'{str(product)}'" if product else ''}
                     GROUP BY {filter_name};
                 '''
-                print(query_for_past_dates)
+
                 query_for_future_dates = f'''
                     SELECT {'SKU || " " ||DESCRIPTION' if filter_name == "sku" else filter_name},
                         {future_cols}
@@ -301,9 +285,6 @@ class ReportDataViews(APIView):
                     {'AND SKU = ' + f"'{str(product)}'" if product else ''}
                     GROUP BY {filter_name};
                 '''
-
-                # Combine past_data and future_data based on the filter_name
-                combined_data = {}
 
                 cursor.execute(sql=query_for_past_dates)
                 past_data = cursor.fetchall()

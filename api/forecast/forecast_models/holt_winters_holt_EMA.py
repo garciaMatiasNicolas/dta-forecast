@@ -3,7 +3,7 @@ from statsmodels.tsa.holtwinters import ExponentialSmoothing
 import pandas as pd
 
 
-def holt_winters_holt_EMA(fila, test_periods, prediction_periods, model_name):
+def holt_winters_holt_EMA(fila, test_periods, prediction_periods, model_name, seasonal_periods):
     try:
         df_pred = pd.DataFrame(columns=['family', 'region', 'salesman', 'client', 'category', 'subcategory',
                                         'sku', 'description', 'model', 'date', 'value'])
@@ -17,7 +17,7 @@ def holt_winters_holt_EMA(fila, test_periods, prediction_periods, model_name):
 
         if model_name == 'holt_winters':
             # Create the Holt-Winters model using the training data
-            model = ExponentialSmoothing(train_data, seasonal_periods=12, trend='add', seasonal='add')
+            model = ExponentialSmoothing(train_data, seasonal_periods=seasonal_periods, trend='add', seasonal='add')
 
         if model_name == 'holt':
             # Create the Holt model using the training data
@@ -56,7 +56,7 @@ def holt_winters_holt_EMA(fila, test_periods, prediction_periods, model_name):
                  'client': fila.iloc[3],
                  'category': fila.iloc[4], 'subcategory': fila.iloc[5],
                  'sku': fila.iloc[6], 'description': fila.iloc[7], 'model': model_name,
-                 'date': og_date, 'value': og}, ignore_index=True)
+                 'date': og_date, 'value': (0 if og < 0 else og)}, ignore_index=True)
 
         for i, test in enumerate(test_predictions):
             test_date = test_data.index[i]
@@ -94,7 +94,7 @@ def holt_winters_holt_EMA(fila, test_periods, prediction_periods, model_name):
                  'client': fila.iloc[3],
                  'category': fila.iloc[4], 'subcategory': fila.iloc[5],
                  'sku': fila.iloc[6], 'description': fila.iloc[7], 'model': model_name,
-                 'date': fut_date, 'value': future_predictions[i]}, ignore_index=True)
+                 'date': fut_date, 'value':  (0 if future_predictions[i] < 0 else future_predictions[i])}, ignore_index=True)
 
         df_pred_fc_pivot = df_pred_fc.pivot(values='value', index=['family', 'region', 'salesman', 'client', 'category',
                                                                    'subcategory', 'sku', 'description', 'model'],

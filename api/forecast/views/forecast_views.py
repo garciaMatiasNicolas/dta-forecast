@@ -11,7 +11,8 @@ from rest_framework.views import APIView
 from ..models import ForecastScenario
 from rest_framework import status
 from django.conf import settings
-from django.db import connection, OperationalError
+from django.db import connection
+from database.db_engine import engine
 from ..mape_cacl import mape_calc_last_period
 import pandas as pd
 import numpy as np
@@ -22,7 +23,7 @@ import traceback
 
 class RunModelsViews(APIView):
     @staticmethod
-    def graphic_predictions(file_path, pred_periods):
+    def graphic_predictions(file_path, max_date, pred_p):
         try:
             df_pred = pd.read_excel(file_path)
         except pd.errors.ParserError:
@@ -31,7 +32,7 @@ class RunModelsViews(APIView):
         mape = df_pred['MAPE']
         mape = np.mean(mape)
         mape = round(mape, 2)
-
+        max_date = pd.to_datetime(max_date)
         df_pred = df_pred.drop(columns=['MAPE'])
         date_columns = df_pred.columns[9:]
 
@@ -43,10 +44,17 @@ class RunModelsViews(APIView):
         other_sum = other_rows[date_columns].sum()
 
         actual_data = {'x': date_columns.tolist(), 'y': actual_sum.tolist()}
+
+        dates = actual_data['x'][:-pred_p]
+        values = actual_data['y'][:-pred_p]
+
+        actual_data['x'] = dates
+        actual_data['y'] = values
+
         other_data = {'x': date_columns.tolist(), 'y': other_sum.tolist()}
 
         final_data = {'actual_data': actual_data, 'other_data': other_data}
-        data_per_year = graphic_predictions_per_year(data=final_data)
+        data_per_year = graphic_predictions_per_year(data=final_data, max_date=max_date)
 
         return final_data, data_per_year, mape
 
@@ -96,20 +104,29 @@ class RunModelsViews(APIView):
                                     AND name='Historical_Exogenous_Variables_{project.project_name}_user{user}' '''
                         cursor.execute(query)
 
-                        table = cursor.fetchone()
+                        table_exog_vars = cursor.fetchone()
 
-                        if table is None:
+                        if table_exog_vars is None:
                             return Response({'error': 'exogenous_variables_not_found'},
                                             status=status.HTTP_400_BAD_REQUEST)
+
+                        df_exog_data = get_historical_data(table_name=table_exog_vars[0])
 
                 # Extract required scenario data
                 test_p = scenario.test_p
                 pred_p = scenario.pred_p
                 scenario_name = scenario.scenario_name
                 table_name = f'Historical_Data_{project.project_name}_user{user}'
+                query = f"SELECT * FROM {table_name}"
+                df = pd.read_sql_query(query, con=engine)
+
+                max_historical_data_date = pd.to_datetime(df.columns[-1])
+                scenario.max_historical_date = max_historical_data_date
 
                 # Get historical data for the scenario
-                dataframe = get_historical_data(table_name=table_name)
+                df_historical = get_historical_data(table_name=table_name)
+                seasonal_periods = df_historical['Periods Per Cycle'][0]
+                scenario.seasonal_periods = seasonal_periods
 
                 # Excel predictions path
                 path = f'media/excel_files/predictions/{table_name}_prediction_results_scenario_{scenario_name}.xlsx'
@@ -117,7 +134,18 @@ class RunModelsViews(APIView):
                 def run_models():
                     try:
                         # Run the models and generate predictions
-                        result = best_model(dataframe=dataframe, test_p=test_p, pred_p=pred_p, models=models)
+                        if 'arimax' in models or 'sarimax' in models:
+                            result = best_model(df_historical=df_historical,
+                                                test_p=test_p, pred_p=pred_p,
+                                                models=models,
+                                                seasonal_periods=seasonal_periods,
+                                                exog_dataframe=df_exog_data)
+
+                        else:
+                            result = best_model(df_historical=df_historical,
+                                                test_p=test_p, pred_p=pred_p,
+                                                seasonal_periods=seasonal_periods,
+                                                models=models)
 
                         with pd.ExcelWriter(path, engine='xlsxwriter') as excel_writer:
                             result.to_excel(excel_writer, sheet_name='result', index=True, merge_cells=False)
@@ -130,7 +158,8 @@ class RunModelsViews(APIView):
                         # Generate graphical predictions
                         final_data, data_per_year, mape = self.graphic_predictions(
                             file_path=os.path.join(settings.MEDIA_ROOT, 'excel_files\\predictions', f'{table_name}_prediction_results_scenario_{scenario_name}.xlsx'),
-                            pred_periods=pred_p
+                            max_date=max_historical_data_date,
+                            pred_p=pred_p
                         )
 
                         # Save the predictions in the scenario
@@ -140,8 +169,9 @@ class RunModelsViews(APIView):
                         scenario.mape_last_twelve_periods = mape
                         scenario.url_predictions = path
                         dataframe_predictions = pd.read_excel(path)
-                        scenario.mape_last_period = mape_calc_last_period(dataframe=dataframe_predictions,
-                                                                          predictions_periods=pred_p)
+                        scenario.mape_last_period, scenario.mape_abs = mape_calc_last_period(
+                                                                            dataframe=dataframe_predictions,
+                                                                            predictions_periods=pred_p)
                         scenario.save()
 
                         # Save the predicted data as a table

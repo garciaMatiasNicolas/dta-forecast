@@ -70,7 +70,7 @@ const GroupButtonActions = ({ tableName, path, idFile }) => {
                     onChange={handleFileUpload}
                 />
                 
-                <MDBBtn disabled={idFile !== 1} color='success' floating onClick={handleButtonClick}>
+                <MDBBtn disabled={idFile !== 1 && idFile !== 2} color='success' floating onClick={handleButtonClick}>
                     <MDBIcon fas icon="upload" />
                 </MDBBtn>
             </div>

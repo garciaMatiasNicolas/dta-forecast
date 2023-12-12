@@ -34,13 +34,14 @@ def save_dataframe(route_file: str, file_name: str, model_type: str, wasSaved: b
         dataframe.astype('str')
         dataframe.fillna(0, inplace=True)
         table_name = file_name
+        models_allowed = ["historical_data", "historical_exogenous_variables"]
 
-        if model_type == "historical_data":
-            dataframe.to_sql(table_name, con=engine, if_exists='replace', index=False)
-            return "succeed"
+        if model_type not in models_allowed:
+            raise ValueError("model_not_allowed")
 
         else:
-            raise ValueError("model_not_allowed")
+            dataframe.to_sql(table_name, con=engine, if_exists='replace', index=False)
+            return "succeed"
 
     else:
         new_route = obtain_file_route(route=route_file)

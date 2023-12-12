@@ -1,7 +1,7 @@
 import { MDBBtn, MDBModalDialog, MDBModal, MDBModalContent, MDBModalBody, MDBIcon} from 'mdb-react-ui-kit';
 import { useState, useEffect } from 'react';
 import { ClipLoader } from "react-spinners";
-import { showErrorAlert } from '../../other/Alerts';
+import { showErrorAlert } from '../../../other/Alerts';
 import axios from 'axios';
 
 const RunModelsButton = ({scenario}) => {

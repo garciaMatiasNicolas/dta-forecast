@@ -24,11 +24,12 @@ class FilterDataViews(APIView):
             filter_value = filters.validated_data['filter_value']
             scenario = ForecastScenario.objects.filter(pk=scenario_id).first()
             table_name = scenario.predictions_table_name
+            pred_p = scenario.pred_p
 
             with connection.cursor() as cursor:
-                cursor.execute(f'SELECT * FROM {table_name} WHERE {filter_name} = %s', [filter_value])
+                cursor.execute(f'SELECT * FROM {table_name} WHERE {filter_name} = "{filter_value}"')
                 data_rows = cursor.fetchall()
-
+                print(f'SELECT * FROM {table_name} WHERE {filter_name} = "{filter_value}"')
                 cursor.execute(f'SELECT name FROM pragma_table_info("{table_name}")')
                 columns = cursor.fetchall()
 
@@ -53,8 +54,14 @@ class FilterDataViews(APIView):
                 actual_data = {'x': date_columns, 'y': actual_sum.tolist()}
                 other_data = {'x': date_columns, 'y': other_sum.tolist()}
 
+                dates = actual_data['x'][:-pred_p]
+                values = actual_data['y'][:-pred_p]
+
+                actual_data['x'] = dates
+                actual_data['y'] = values
+
                 final_data = {'actual_data': actual_data, 'other_data': other_data}
-                data_per_year = graphic_predictions_per_year(final_data)
+                data_per_year = graphic_predictions_per_year(final_data, max_date=scenario.max_historical_date)
 
                 return Response({"full_data": final_data, "year_data": data_per_year},
                                 status=status.HTTP_200_OK)
@@ -73,7 +80,6 @@ class GetFiltersView(APIView):
         if filters.is_valid():
             scenario_id = filters.validated_data['scenario_id']
             filter_name = filters.validated_data['filter_name']
-            project_pk = filters.validated_data['project_id']
             scenario = ForecastScenario.objects.filter(pk=scenario_id).first()
             table_name = scenario.predictions_table_name
 

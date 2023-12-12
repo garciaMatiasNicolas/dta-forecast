@@ -43,8 +43,15 @@ class ProjectsViewSet(ModelViewSet):
         project_name = request.data.get('project_name')
 
         if project_to_update:
+            with connection.cursor() as cursor:
+                query = f'''
+                ALTER TABLE Historical_Data_{project_to_update.project_name}_user{project_to_update.user_owner_id}
+                RENAME TO Historical_Data_{project_name}_user{project_to_update.user_owner_id};'''
+                cursor.execute(query)
+
             project_to_update.project_name = project_name
             project_to_update.save()
+
             return Response({'message': 'project_updated'}, status=status.HTTP_200_OK)
 
         else:

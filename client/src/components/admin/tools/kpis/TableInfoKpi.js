@@ -24,7 +24,7 @@ const TableComponent = ({ props, data }) => {
 
   return (
     <div style={{"overflowX": 'auto', "whiteSpace": 'nowrap'}}>
-      <MDBTable hover className='w-100'>
+      <MDBTable hover className='w-auto'>
         <MDBTableHead className='bg-primary'>
           <tr>
             <th scope='col' className='text-white'>{props}</th>

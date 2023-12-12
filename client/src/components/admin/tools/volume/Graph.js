@@ -1,7 +1,7 @@
-import { Chart as ChartJS, CategoryScale, LinearScale, PointElement, LineElement, Title, Tooltip, Legend, BarElement, controllers } from 'chart.js';
+import { Chart as ChartJS, CategoryScale, LinearScale, PointElement, LineElement, Title, Tooltip, Legend, BarElement } from 'chart.js';
 import { MDBIcon, MDBContainer, MDBRow, MDBCol } from 'mdb-react-ui-kit';
 import { useEffect, useState } from 'react';
-import { Line, Bar, Pie } from 'react-chartjs-2';
+import { Line, Bar } from 'react-chartjs-2';
 import { showErrorAlert } from '../../../other/Alerts';
 import axios from 'axios';
 import EmptyLineChart from './EmptyChartLine';
@@ -39,9 +39,6 @@ const Graph = () => {
   // State for data graph yearly
   const [dataYear, setDataYear] = useState(false);
 
-  // State for data graph yearly
-  const [dataPie, setDataPie] = useState(false);
-
   // State for set scenarios
   const [scenarios, setScenarios] = useState([]);
 
@@ -54,8 +51,9 @@ const Graph = () => {
   // State for MAPES
   const [mape, setMape] = useState(0);
   const [mapeLastPeriod, setMapeLastPeriod] = useState(0);
+  const [mapeAbs, setMapeAbs] = useState(0);
 
-  // Graph options
+  // Graph Line options
   const options = {
     responsive: true,
     plugins: {
@@ -64,6 +62,27 @@ const Graph = () => {
       },
     },
   };
+
+  // Graph Bar options
+  const optionsBar = {
+    scales: {
+      x: { stacked: true },
+      y: { stacked: true },
+    },
+    plugins: {
+      legend: {
+        position: 'top',
+      },
+      tooltip: {
+        callbacks: {
+          label: function (context) {
+            const data = context.dataset.data[context.dataIndex];
+            return `Valor: ${data}`;
+          },
+        },
+      },
+    },
+  }
   
   // USE EFFECT //
   useEffect(() => {
@@ -75,7 +94,6 @@ const Graph = () => {
       let projectId = parseInt(localStorage.getItem("projectId"))
       let scenarios = res.data.filter(item => item.project === projectId);
       setScenarios(scenarios);
-      console.log(res.data)
     })
     .catch(err => {
       console.log(err);
@@ -111,16 +129,16 @@ const Graph = () => {
       let graphicBarData = res.data.year_data;
 
       const dataLine = {
-        labels: graphicLineData.actual_data.x,
+        labels: graphicLineData.other_data.x,
         datasets: [
           {
-            label: 'Valor actual',
+            label: 'Actual',
             data: graphicLineData.actual_data.y,
             borderColor: 'rgb(255, 99, 132)',
             backgroundColor: 'rgba(255, 99, 132, 0.5)',
           },
           {
-            label: 'Valor predecido',
+            label: 'Predecido',
             data: graphicLineData.other_data.y,
             borderColor: 'rgb(53, 162, 235)',
             backgroundColor: 'rgba(53, 162, 235, 0.5)',
@@ -129,15 +147,15 @@ const Graph = () => {
       }; 
 
       const dataBar = {
-        labels: graphicBarData.actual_data.x,
+        labels: graphicBarData.other_data.x,
         datasets: [
         {
-          label: 'Valor actual',
+          label: 'Actual',
           data: graphicBarData.actual_data.y,
-          backgroundColor: 'rgba(255, 99, 132, 0.5)',
+          backgroundColor: 'rgba(255, 99, 132, 0.5)'
         },
         {
-          label: 'Valor predecidos',
+          label: 'Predecido',
           data: graphicBarData.other_data.y,
           backgroundColor: 'rgba(53, 162, 235, 0.5)',
         },
@@ -160,16 +178,16 @@ const Graph = () => {
       let graphicBarData = res.data.data_year_pred;
       
       const dataLine = {
-        labels: graphicLineData.actual_data.x,
+        labels: graphicLineData.other_data.x,
         datasets: [
           {
-            label: 'Valor actual',
+            label: 'Actual',
             data: graphicLineData.actual_data.y,
             borderColor: 'rgb(255, 99, 132)',
             backgroundColor: 'rgba(255, 99, 132, 0.5)',
           },
           {
-            label: 'Valor predecido',
+            label: 'Predecido',
             data: graphicLineData.other_data.y,
             borderColor: 'rgb(53, 162, 235)',
             backgroundColor: 'rgba(53, 162, 235, 0.5)',
@@ -178,15 +196,15 @@ const Graph = () => {
       }; 
 
       const dataBar = {
-        labels: graphicBarData.actual_data.x,
+        labels: graphicBarData.other_data.x,
         datasets: [
         {
-          label: 'Valor actual',
+          label: 'Actual',
           data: graphicBarData.actual_data.y,
-          backgroundColor: 'rgba(255, 99, 132, 0.5)',
+          backgroundColor: 'rgba(255, 99, 132, 0.5)'
         },
         {
-          label: 'Valor predecidos',
+          label: 'Predecido',
           data: graphicBarData.other_data.y,
           backgroundColor: 'rgba(53, 162, 235, 0.5)',
         },
@@ -197,16 +215,17 @@ const Graph = () => {
       setDataYear(dataBar);
       setMape(res.data.mape_last_twelve_periods);
       setMapeLastPeriod(res.data.mape_last_period);
+      setMapeAbs(res.data.mape_abs);
+      console.log(res);
     })
     .catch(err => {
-      console.log(err)
       if (err.response.status === 401) { showErrorAlert("Su sesion ha expirado, debe iniciar sesion nuevamente"); }
       if (err.response.status === 404) { setData(false) }
     })
   }
 
   return(
-    <div className='d-flex justify-content-center align-items-center gap-5 flex-column w-100'>
+    <div className='d-flex justify-content-center align-items-center gap-5 mb-5 flex-column w-100'>
     
       <div className='d-flex justify-content-between align-items-center w-100 px-5'>
         <div>
@@ -222,14 +241,21 @@ const Graph = () => {
       <MDBContainer>
         <MDBRow>
           <MDBCol size='3' className="d-flex justify-content-start align-items-start gap-3 flex-column">
-            <Mape mape={mape} mapeLastPeriod={mapeLastPeriod}/>
+            <Mape mape={mape} mapeLastPeriod={mapeLastPeriod} mapeAbs={mapeAbs}/>
             {filters.map(item => (
               <div className='w-100'>
                 <div className="d-flex justify-content-start align-items-center gap-3">
                     <MDBIcon icon={item.icon}/>
                     <p className="mt-3">{item.label}</p>
                 </div>
-                <select onClick={handleClickFilter} onChange={handleOnChangeFilter} style={{"minWidth": "200px"}} className="form-select w-100" name={item.name}>
+                <select 
+                  onClick={handleClickFilter} onChange={handleOnChangeFilter}  
+                  style={{
+                    minWidth: '200px'
+                  }} 
+                  className="form-select w-100" 
+                  name={item.name}
+                >
                     <option defaultValue>-----</option>
                     {optionsFilter.map(item => (
                       <option key={item} value={item} >{item}</option>
@@ -240,7 +266,7 @@ const Graph = () => {
           </MDBCol>
           <MDBCol size='9' className='d-flex justify-content-center align-items-center gap-5 flex-column'>
             <div className='w-75 '>
-              { !data ? <EmptyLineChart/> : <Bar options={options} data={dataYear} />}
+              { !data ? <EmptyLineChart/> : <Bar options={optionsBar} data={dataYear} />}
             </div>
             { !data ? <EmptyLineChart/> : <Line options={options} data={data}/> }
           </MDBCol>

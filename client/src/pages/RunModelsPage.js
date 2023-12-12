@@ -3,10 +3,11 @@ import ToolsNav from "../components/navs/ToolsNav"
 import { useState, useContext, useEffect, useRef } from "react";
 import { ClipLoader } from "react-spinners";
 import { showErrorAlert, showSuccessAlert, showWariningAlert } from "../components/other/Alerts";
-import { MDBCheckbox, MDBCol, MDBContainer, MDBInput, MDBRow, MDBBtn, MDBIcon,  MDBModal, MDBModalDialog, MDBModalContent, MDBModalBody} from "mdb-react-ui-kit";
+import { MDBCheckbox, MDBCol, MDBContainer, MDBInput, MDBRow, MDBBtn, MDBIcon,  MDBModal, MDBModalDialog, MDBModalContent, MDBModalBody, MDBRadio} from "mdb-react-ui-kit";
 import { AppContext } from "../context/Context";
 import convertData from "../functions/stringFormat";
-import ScenariosHistory from "../components/admin/tools/ScenariosHistory";
+import ScenariosHistory from "../components/admin/tools/runmodels/ScenariosHistory";
+import ParamsArimaAlert from "../components/other/ParamsArimaAlert";
 
 const apiUrl = process.env.REACT_APP_API_URL;
 
@@ -69,7 +70,9 @@ const RunModelsPage = () => {
 
     const handleInputChange = (event) => {
         const { name, value } = event.target;
-        setFormData({ ...formData, [name]: value });
+        
+        const regex = /[^A-Za-z0-9\s]/g;
+        !regex.test(value) ? setFormData({ ...formData, [name]: value }) : showErrorAlert('El nombre del escenario no puede contener caracteres especiales.');
     };
 
     const handleSelectChange = (event) => {
@@ -171,7 +174,8 @@ const RunModelsPage = () => {
                                         <MDBCheckbox name='modelSelection' value='simpleExponentialSmoothing' id='simpleExponentialSmoothing' label='Suavización Exponencial Simple'  
                                         onChange={() => handleCheckboxChange('simpleExponentialSmoothing')}/>
 
-                                        <MDBCheckbox name='modelSelection' value='arima' id='arima' label='ARIMA ' onChange={() => handleCheckboxChange('arima')}/>
+                                        <MDBCheckbox name='modelSelection' value='arima' id='arima' label='ARIMA ' /* onClick={()=>{ParamsArimaAlert()}} */ onChange={() => handleCheckboxChange('arima')}>
+                                        </MDBCheckbox>
                                         
                                         <MDBCheckbox name='modelSelection' value='sarima' id='sarima' label='SARIMA' onChange={() => handleCheckboxChange('sarima')}/>
 
@@ -200,6 +204,11 @@ const RunModelsPage = () => {
                                                 <option value={fileType.id}>{convertData(fileType.model_type, true)}</option>
                                             ))}
                                         </select>
+                                        <div className="w-100 mt-4">
+                                            <p>¿Reemplazar predicciones negativas por 0?</p>
+                                            <MDBRadio name='flexRadioDefault' id='replaceNegatives' label='Si' inline/>
+                                            <MDBRadio name='flexRadioDefault' id='notReplaceNegatives' label='No' defaultChecked inline/>
+                                        </div>
                                     </MDBCol>
                                 </MDBRow>
                             </MDBContainer>

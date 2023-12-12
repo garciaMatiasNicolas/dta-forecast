@@ -120,45 +120,7 @@ const DetailReportPage = () => {
             if (err.response.status === 401) {showErrorAlert("Su sesion expiró"); navigate("'/login");}
             if (err.response.status === 500) showErrorAlert("Error en el servidor");
         });
-    }
-
-    const handleExportExcel = () => {
-        if(reportTableData.length === 0){
-          showErrorAlert("No hay datos para exportar");
-        }
-        else {
-          const dataToSend = {
-            "columns": [group, "YTD", "MTD", "QTD", "YTG", "QTG", "MTG"],
-            "rows": reportTableData,
-            "file_name": `Reporte`,
-            "project_pk": parseInt(localStorage.getItem("projectId"))
-          }
-          
-          axios.post(`${apiUrl}/export_excel`, dataToSend, {
-            headers: headers,
-            responseType: 'blob'
-          })
-          .then(res => {
-            // Crear un blob a partir de la respuesta
-            const file = new Blob([res.data], { type: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet' });
-            
-            // Crear una URL para el blob
-            const fileURL = URL.createObjectURL(file);
-    
-            // Crear un enlace y simular un clic para iniciar la descarga
-            const a = document.createElement('a');
-            a.href = fileURL;
-            a.download = 'ReportePorFecha.xlsx'; // Nombre del archivo que se descargará
-            document.body.appendChild(a);
-            a.click();
-    
-            // Limpiar el enlace y el blob después de la descarga
-            window.URL.revokeObjectURL(fileURL);
-            document.body.removeChild(a);
-          })
-          .catch(err => console.log(err.response.data)) 
-        }
-    }
+    };
     
     useEffect(() => {
         axios.get(`${apiUrl}/scenarios/`, {
@@ -252,10 +214,10 @@ const DetailReportPage = () => {
                 
                     <div className='px-5 w-100 mt-5 mb-5'>
                         <h5 className='mb-3'>Reporte desde ultimo mes con datos</h5>
-                        {/* <MDBBtn onClick={handleExportExcel} className="w-auto mb-4" style={{ backgroundColor: '#25d366' }}>
+                        <MDBBtn className="w-auto mb-4" style={{ backgroundColor: '#25d366' }}>
                             Exportar como Excel
                             <MDBIcon className="ms-2" fas icon="file-export" />
-                        </MDBBtn> */}
+                        </MDBBtn> 
                         {
                             reportTableData.length > 0 &&
                             <TableInfoKpi props={group} data={reportTableData} />

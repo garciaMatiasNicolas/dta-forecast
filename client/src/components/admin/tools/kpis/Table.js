@@ -32,7 +32,7 @@ const TableReport = ({ props, data }) => {
 
   return (
     <div>
-      <MDBTable className='w-100' hover>
+      <MDBTable className='w-auto' hover>
         <MDBTableHead className='bg-primary'>
           <tr>
             <th scope='col' className='text-white'>{props}</th>

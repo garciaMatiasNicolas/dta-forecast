@@ -2,10 +2,9 @@ from ..mape_cacl import mape_calc
 from prophet import Prophet
 import pandas as pd
 import traceback
-from dateutil.relativedelta import relativedelta
 
 
-def prophet_predictions(fila, test_periods, prediction_periods):
+def prophet_predictions(fila, test_periods, prediction_periods, seasonal_periods):
     try:
         df_pred = pd.DataFrame(columns=['family', 'region', 'salesman', 'client', 'category', 'subcategory',
                                         'sku', 'description', 'model', 'date', 'value'])
@@ -34,6 +33,7 @@ def prophet_predictions(fila, test_periods, prediction_periods):
         train_predictions = model.predict(df_prophet)['yhat'].values
         # --------------------------------------------------------------------
 
+        copy_fila = fila.copy()
         for i, og in enumerate(train_predictions):
             og_date = train_data.index[i]
 
@@ -41,7 +41,7 @@ def prophet_predictions(fila, test_periods, prediction_periods):
                 'family': fila.iloc[0], 'region': fila.iloc[1], 'salesman': fila.iloc[2], 'client': fila.iloc[3],
                 'category': fila.iloc[4], 'subcategory': fila.iloc[5],
                 'sku': fila.iloc[6], 'description': fila.iloc[7], 'model': 'actual',
-                'date': og_date, 'value': fila[og_date]
+                'date': og_date, 'value': copy_fila[og_date]
             }, ignore_index=True)
 
             df_pred = df_pred._append({
@@ -49,7 +49,7 @@ def prophet_predictions(fila, test_periods, prediction_periods):
                 'client': fila.iloc[3],
                 'category': fila.iloc[4], 'subcategory': fila.iloc[5],
                 'sku': fila.iloc[6], 'description': fila.iloc[7], 'model': 'prophet',
-                'date': og_date, 'value': og
+                'date': og_date, 'value': (0 if og < 0 else og)
             }, ignore_index=True)
 
         for i, test in enumerate(test_predictions):
@@ -59,7 +59,7 @@ def prophet_predictions(fila, test_periods, prediction_periods):
                 'client': fila.iloc[3],
                 'category': fila.iloc[4], 'subcategory': fila.iloc[5],
                 'sku': fila.iloc[6], 'description': fila.iloc[7], 'model': 'actual',
-                'date': test_date, 'value': fila[test_date]
+                'date': test_date, 'value': copy_fila[test_date]
             }, ignore_index=True)
 
             df_pred = df_pred._append({
@@ -92,7 +92,7 @@ def prophet_predictions(fila, test_periods, prediction_periods):
                 'client': fila.iloc[3],
                 'category': fila.iloc[4], 'subcategory': fila.iloc[5],
                 'sku': fila.iloc[6], 'description': fila.iloc[7], 'model': 'prophet',
-                'date': fut_date, 'value': forecast['yhat'].iloc[-prediction_periods:].values[i]
+                'date': fut_date, 'value': (0 if forecast['yhat'].iloc[-prediction_periods:].values[i] < 0 else forecast['yhat'].iloc[-prediction_periods:].values[i])
             }, ignore_index=True)
 
         df_pred_fc_pivot = df_pred_fc.pivot_table(values='value',
