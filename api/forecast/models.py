@@ -21,7 +21,9 @@ class ForecastScenario(models.Model):
     mape_abs = models.FloatField(blank=True, null=True)
     predictions_table_name = models.CharField(max_length=250, blank=True, null=True)
     url_predictions = models.CharField(max_length=500, blank=True, null=True)
+    additional_params = models.JSONField(default=dict)
     models = models.JSONField(default=list)
+
 
 
 

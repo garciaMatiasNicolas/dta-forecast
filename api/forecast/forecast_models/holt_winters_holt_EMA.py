@@ -3,25 +3,30 @@ from statsmodels.tsa.holtwinters import ExponentialSmoothing
 import pandas as pd
 
 
-def holt_winters_holt_EMA(fila, test_periods, prediction_periods, model_name, seasonal_periods):
+def holts_winters_holts_ema(row, test_periods, prediction_periods, model_name, seasonal_periods,
+                          additional_params=None):
     try:
         df_pred = pd.DataFrame(columns=['family', 'region', 'salesman', 'client', 'category', 'subcategory',
                                         'sku', 'description', 'model', 'date', 'value'])
+
         df_pred_fc = df_pred.copy()
-        print(fila.dtypes)
-        time_series = pd.Series(fila.iloc[12:]).astype(dtype='float')
+
+        time_series = pd.Series(row.iloc[12:]).astype(dtype='float')
         train_data = time_series[:-test_periods]
         test_data = time_series.iloc[-test_periods:]
 
         model = ''
 
         if model_name == 'holt_winters':
-            # Create the Holt-Winters model using the training data
-            model = ExponentialSmoothing(train_data, seasonal_periods=seasonal_periods, trend='add', seasonal='add')
+            trend, seasonal = additional_params['holtsWinters_params']
+
+            model = ExponentialSmoothing(train_data, seasonal_periods=int(seasonal_periods),
+                                         trend=trend, seasonal=seasonal)
 
         if model_name == 'holt':
-            # Create the Holt model using the training data
-            model = ExponentialSmoothing(train_data, trend='add')
+            trend = additional_params['holts_params']
+
+            model = ExponentialSmoothing(train_data, trend=trend[0])
 
         if model_name == 'exponential_moving_average':
             model = ExponentialSmoothing(train_data, trend=None, seasonal=None)  # EMA config
@@ -45,33 +50,33 @@ def holt_winters_holt_EMA(fila, test_periods, prediction_periods, model_name, se
             og_date = train_data.index[i]
 
             df_pred = df_pred._append(
-                {'family': fila.iloc[0], 'region': fila.iloc[1], 'salesman': fila.iloc[2],
-                 'client': fila.iloc[3],
-                 'category': fila.iloc[4], 'subcategory': fila.iloc[5],
-                 'sku': fila.iloc[6], 'description': fila.iloc[7], 'model': 'actual',
-                 'date': og_date, 'value': fila[og_date]}, ignore_index=True)
+                {'family': row.iloc[0], 'region': row.iloc[1], 'salesman': row.iloc[2],
+                 'client': row.iloc[3],
+                 'category': row.iloc[4], 'subcategory': row.iloc[5],
+                 'sku': row.iloc[6], 'description': row.iloc[7], 'model': 'actual',
+                 'date': og_date, 'value': row[og_date]}, ignore_index=True)
 
             df_pred = df_pred._append(
-                {'family': fila.iloc[0], 'region': fila.iloc[1], 'salesman': fila.iloc[2],
-                 'client': fila.iloc[3],
-                 'category': fila.iloc[4], 'subcategory': fila.iloc[5],
-                 'sku': fila.iloc[6], 'description': fila.iloc[7], 'model': model_name,
+                {'family': row.iloc[0], 'region': row.iloc[1], 'salesman': row.iloc[2],
+                 'client': row.iloc[3],
+                 'category': row.iloc[4], 'subcategory': row.iloc[5],
+                 'sku': row.iloc[6], 'description': row.iloc[7], 'model': model_name,
                  'date': og_date, 'value': (0 if og < 0 else og)}, ignore_index=True)
 
         for i, test in enumerate(test_predictions):
             test_date = test_data.index[i]
             df_pred = df_pred._append(
-                {'family': fila.iloc[0], 'region': fila.iloc[1], 'salesman': fila.iloc[2],
-                 'client': fila.iloc[3],
-                 'category': fila.iloc[4], 'subcategory': fila.iloc[5],
-                 'sku': fila.iloc[6], 'description': fila.iloc[7], 'model': 'actual',
-                 'date': test_date, 'value': fila[test_date]}, ignore_index=True)
+                {'family': row.iloc[0], 'region': row.iloc[1], 'salesman': row.iloc[2],
+                 'client': row.iloc[3],
+                 'category': row.iloc[4], 'subcategory': row.iloc[5],
+                 'sku': row.iloc[6], 'description': row.iloc[7], 'model': 'actual',
+                 'date': test_date, 'value': row[test_date]}, ignore_index=True)
 
             df_pred = df_pred._append(
-                {'family': fila.iloc[0], 'region': fila.iloc[1], 'salesman': fila.iloc[2],
-                 'client': fila.iloc[3],
-                 'category': fila.iloc[4], 'subcategory': fila.iloc[5],
-                 'sku': fila.iloc[6], 'description': fila.iloc[7], 'model': model_name,
+                {'family': row.iloc[0], 'region': row.iloc[1], 'salesman': row.iloc[2],
+                 'client': row.iloc[3],
+                 'category': row.iloc[4], 'subcategory': row.iloc[5],
+                 'sku': row.iloc[6], 'description': row.iloc[7], 'model': model_name,
                  'date': test_date, 'value': test}, ignore_index=True)
 
         df_pred_pivot = df_pred.pivot(values='value', index=['family', 'region', 'salesman', 'client', 'category',
@@ -83,17 +88,17 @@ def holt_winters_holt_EMA(fila, test_periods, prediction_periods, model_name, se
         for i, future in enumerate(future_dates):
             fut_date = future_dates[i]
             df_pred_fc = df_pred_fc._append(
-                {'family': fila.iloc[0], 'region': fila.iloc[1], 'salesman': fila.iloc[2],
-                 'client': fila.iloc[3],
-                 'category': fila.iloc[4], 'subcategory': fila.iloc[5],
-                 'sku': fila.iloc[6], 'description': fila.iloc[7], 'model': 'actual',
+                {'family': row.iloc[0], 'region': row.iloc[1], 'salesman': row.iloc[2],
+                 'client': row.iloc[3],
+                 'category': row.iloc[4], 'subcategory': row.iloc[5],
+                 'sku': row.iloc[6], 'description': row.iloc[7], 'model': 'actual',
                  'date': fut_date, 'value': None}, ignore_index=True)
 
             df_pred_fc = df_pred_fc._append(
-                {'family': fila.iloc[0], 'region': fila.iloc[1], 'salesman': fila.iloc[2],
-                 'client': fila.iloc[3],
-                 'category': fila.iloc[4], 'subcategory': fila.iloc[5],
-                 'sku': fila.iloc[6], 'description': fila.iloc[7], 'model': model_name,
+                {'family': row.iloc[0], 'region': row.iloc[1], 'salesman': row.iloc[2],
+                 'client': row.iloc[3],
+                 'category': row.iloc[4], 'subcategory': row.iloc[5],
+                 'sku': row.iloc[6], 'description': row.iloc[7], 'model': model_name,
                  'date': fut_date, 'value':  (0 if future_predictions[i] < 0 else future_predictions[i])}, ignore_index=True)
 
         df_pred_fc_pivot = df_pred_fc.pivot(values='value', index=['family', 'region', 'salesman', 'client', 'category',

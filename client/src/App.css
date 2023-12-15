@@ -93,3 +93,8 @@ th {
     text-overflow: ellipsis; /* Agrega puntos suspensivos para mostrar que el texto está truncado */
     max-width: 200px; /* Ancho máximo de la celda */
 }
+
+.swal2-toast {
+    background-color: #43A047 !important;
+    color: #fff;
+}

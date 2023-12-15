@@ -72,6 +72,7 @@ class RunModelsViews(APIView):
                                 status=status.HTTP_400_BAD_REQUEST)
 
             scenario_id = data.validated_data.get("scenario_id")
+            additional_params = request.data.get('additional_params')
 
             try:
                 # Search for the scenario by ID
@@ -139,12 +140,14 @@ class RunModelsViews(APIView):
                                                 test_p=test_p, pred_p=pred_p,
                                                 models=models,
                                                 seasonal_periods=seasonal_periods,
+                                                additional_params=additional_params,
                                                 exog_dataframe=df_exog_data)
 
                         else:
                             result = best_model(df_historical=df_historical,
                                                 test_p=test_p, pred_p=pred_p,
                                                 seasonal_periods=seasonal_periods,
+                                                additional_params=additional_params,
                                                 models=models)
 
                         with pd.ExcelWriter(path, engine='xlsxwriter') as excel_writer:
@@ -168,6 +171,7 @@ class RunModelsViews(APIView):
                         scenario.predictions_table_name = f'{table_name}_prediction_results_scenario_{scenario_name}'
                         scenario.mape_last_twelve_periods = mape
                         scenario.url_predictions = path
+                        scenario.additional_params = additional_params
                         dataframe_predictions = pd.read_excel(path)
                         scenario.mape_last_period, scenario.mape_abs = mape_calc_last_period(
                                                                             dataframe=dataframe_predictions,
@@ -195,7 +199,7 @@ class RunModelsViews(APIView):
 
                     if result_holder['error']:
                         return Response({'error': result_holder['error']}, status=status.HTTP_400_BAD_REQUEST)
-
+                    print("Additional params", additional_params)
                     # Return success message if everything ran successfully
                     return Response({'message': 'succeed'}, status=status.HTTP_200_OK)
 

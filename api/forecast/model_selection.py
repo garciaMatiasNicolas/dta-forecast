@@ -1,5 +1,5 @@
 from .forecast_models import arima_predictions, linear_regression, exponential_smothing, \
-    holt_winters_holt_EMA, lasso, bayesian_regression, decision_tree, sarima_sarimax, arimax_predictions, prophet
+    holt_winters_holt_EMA, lasso, bayesian_regression, decision_tree, prophet
 from database.db_engine import engine
 import pandas as pd
 import numpy as np
@@ -25,8 +25,9 @@ def get_historical_data(table_name: str):
 
 
 # Function to choose best model
-def best_model(df_historical: pd.DataFrame, test_p: int, pred_p: int, models: list, seasonal_periods,
-               exog_dataframe=None):
+def best_model(df_historical: pd.DataFrame, test_p, pred_p, models: list, seasonal_periods,
+               additional_params: dict, exog_dataframe=None):
+
     df_historical = df_historical.copy()
 
     if exog_dataframe is not None:
@@ -37,24 +38,39 @@ def best_model(df_historical: pd.DataFrame, test_p: int, pred_p: int, models: li
 
     for column, row in df_historical.iterrows():
         if 'arima' in models:
-            arima_df, arima_mape = arima_predictions.arima_predictions(row, test_p, pred_p, seasonal_periods)
+            if 'arima_params' not in additional_params:
+                additional_params = None
+
+            arima_df, arima_mape = arima_predictions.arima_sarima_arimax_sarimax_predictions(row=row,
+            test_periods=test_p, prediction_periods=pred_p, seasonal_periods=seasonal_periods, model_name='arima',
+            additional_params=additional_params)
+
             model_data['arima'] = {'mape': arima_mape, 'df': arima_df}
 
         if 'holtsWintersExponentialSmoothing' in models:
-            holt_wint_df, holt_wint_mape = holt_winters_holt_EMA.holt_winters_holt_EMA(row, test_p, pred_p,
-                                                                                       'holt_winters',
-                                                                                       seasonal_periods)
+            if 'holts_params' not in additional_params:
+                additional_params = None
+
+            holt_wint_df, holt_wint_mape = holt_winters_holt_EMA.holts_winters_holts_ema(row=row,
+            test_periods=test_p, prediction_periods=pred_p, additional_params=additional_params,
+            model_name='holt_winters', seasonal_periods=seasonal_periods)
+
             model_data['holtsWintersExponentialSmoothing'] = {'mape': holt_wint_mape, 'df': holt_wint_df}
 
         if 'holtsExponentialSmoothing' in models:
-            holt_df, holt_mape = holt_winters_holt_EMA.holt_winters_holt_EMA(row, test_p, pred_p, 'holt',
-                                                                             seasonal_periods)
+            if 'holts_params' not in additional_params:
+                additional_params = None
+
+            holt_df, holt_mape = holt_winters_holt_EMA.holts_winters_holts_ema(row=row,
+            test_periods=test_p, prediction_periods=pred_p, additional_params=additional_params,
+            model_name='holt', seasonal_periods=seasonal_periods)
+
             model_data['holtsExponentialSmoothing'] = {'mape': holt_mape, 'df': holt_df}
 
         if 'exponential_moving_average' in models:
-            ema_df, ema_mape = holt_winters_holt_EMA.holt_winters_holt_EMA(row, test_p, pred_p,
-                                                                           'exponential_moving_average',
-                                                                           seasonal_periods)
+            ema_df, ema_mape = holt_winters_holt_EMA.holts_winters_holts_ema(row=row, test_periods=test_p,
+            prediction_periods=pred_p, model_name='exponential_moving_average',seasonal_periods=seasonal_periods)
+
             model_data['exponential_moving_average'] = {'mape': ema_mape, 'df': ema_df}
 
         if 'simpleExponentialSmoothing' in models:
@@ -62,7 +78,12 @@ def best_model(df_historical: pd.DataFrame, test_p: int, pred_p: int, models: li
             model_data['simpleExponentialSmoothing'] = {'mape': exp_mape, 'df': exp_df}
 
         if 'prophet' in models:
-            prophet_df, prophet_mape = prophet.prophet_predictions(row, test_p, pred_p, seasonal_periods)
+            if 'prophet_params' not in additional_params:
+                additional_params = None
+
+            prophet_df, prophet_mape = prophet.prophet_predictions(row=row, test_periods=test_p,
+            prediction_periods=pred_p, seasonal_periods=seasonal_periods, additional_params=additional_params)
+
             model_data['prophet'] = {'mape': prophet_mape, 'df': prophet_df}
 
         if 'linearRegression' in models:
@@ -85,7 +106,13 @@ def best_model(df_historical: pd.DataFrame, test_p: int, pred_p: int, models: li
             model_data['decisionTree'] = {'mape': decision_tree_mape, 'df': decision_tree_df}
 
         if 'sarima' in models:
-            sarima_df, sarima_mape = sarima_sarimax.sarima_sarimax_predictions(row, test_p, pred_p, seasonal_periods)
+            if 'sarima_params' not in additional_params:
+                additional_params = None
+
+            sarima_df, sarima_mape = arima_predictions.arima_sarima_arimax_sarimax_predictions(row=row,
+            test_periods=test_p, prediction_periods=pred_p, seasonal_periods=seasonal_periods, model_name='sarima',
+            additional_params=additional_params)
+
             model_data['sarima'] = {'mape': sarima_mape, 'df': sarima_df}
 
         best_model_name = min(model_data, key=lambda k: model_data[k]['mape'])
