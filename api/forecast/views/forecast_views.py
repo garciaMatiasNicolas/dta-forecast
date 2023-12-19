@@ -13,7 +13,7 @@ from rest_framework import status
 from django.conf import settings
 from django.db import connection
 from database.db_engine import engine
-from ..mape_cacl import mape_calc_last_period
+from ..error import Error
 import pandas as pd
 import numpy as np
 import os
@@ -23,17 +23,17 @@ import traceback
 
 class RunModelsViews(APIView):
     @staticmethod
-    def graphic_predictions(file_path, max_date, pred_p):
+    def graphic_predictions(file_path, max_date, pred_p, error_method):
         try:
             df_pred = pd.read_excel(file_path)
         except pd.errors.ParserError:
             return {'error': 'file_not_exists'}
 
-        mape = df_pred['MAPE']
-        mape = np.mean(mape)
-        mape = round(mape, 2)
+        error = df_pred[error_method]
+        error = np.mean(error)
+        error = round(error, 2)
         max_date = pd.to_datetime(max_date)
-        df_pred = df_pred.drop(columns=['MAPE'])
+        df_pred = df_pred.drop(columns=[error_method])
         date_columns = df_pred.columns[9:]
 
         actual_rows = df_pred[df_pred['model'] == 'actual']
@@ -56,7 +56,7 @@ class RunModelsViews(APIView):
         final_data = {'actual_data': actual_data, 'other_data': other_data}
         data_per_year = graphic_predictions_per_year(data=final_data, max_date=max_date)
 
-        return final_data, data_per_year, mape
+        return final_data, data_per_year, error
 
     @authentication_classes([TokenAuthentication])
     @permission_classes([IsAuthenticated])
@@ -116,6 +116,7 @@ class RunModelsViews(APIView):
                 # Extract required scenario data
                 test_p = scenario.test_p
                 pred_p = scenario.pred_p
+                error_method = scenario.error_type
                 scenario_name = scenario.scenario_name
                 table_name = f'Historical_Data_{project.project_name}_user{user}'
                 query = f"SELECT * FROM {table_name}"
@@ -141,6 +142,7 @@ class RunModelsViews(APIView):
                                                 models=models,
                                                 seasonal_periods=seasonal_periods,
                                                 additional_params=additional_params,
+                                                error_method=error_method,
                                                 exog_dataframe=df_exog_data)
 
                         else:
@@ -148,7 +150,9 @@ class RunModelsViews(APIView):
                                                 test_p=test_p, pred_p=pred_p,
                                                 seasonal_periods=seasonal_periods,
                                                 additional_params=additional_params,
-                                                models=models)
+                                                models=models,
+                                                error_method=error_method
+                            )
 
                         with pd.ExcelWriter(path, engine='xlsxwriter') as excel_writer:
                             result.to_excel(excel_writer, sheet_name='result', index=True, merge_cells=False)
@@ -159,23 +163,24 @@ class RunModelsViews(APIView):
                                 work_sheet.set_column(i, i, width_column)
 
                         # Generate graphical predictions
-                        final_data, data_per_year, mape = self.graphic_predictions(
+                        final_data, data_per_year, error = self.graphic_predictions(
                             file_path=os.path.join(settings.MEDIA_ROOT, 'excel_files\\predictions', f'{table_name}_prediction_results_scenario_{scenario_name}.xlsx'),
                             max_date=max_historical_data_date,
-                            pred_p=pred_p
+                            pred_p=pred_p,
+                            error_method=error_method
                         )
 
                         # Save the predictions in the scenario
                         scenario.final_data_pred = final_data
                         scenario.data_year_pred = data_per_year
                         scenario.predictions_table_name = f'{table_name}_prediction_results_scenario_{scenario_name}'
-                        scenario.mape_last_twelve_periods = mape
+                        scenario.error_last_twelve_periods = error
                         scenario.url_predictions = path
                         scenario.additional_params = additional_params
                         dataframe_predictions = pd.read_excel(path)
-                        scenario.mape_last_period, scenario.mape_abs = mape_calc_last_period(
-                                                                            dataframe=dataframe_predictions,
-                                                                            predictions_periods=pred_p)
+                        error = Error(dataframe=dataframe_predictions, model_name='', error_method=error_method)
+                        scenario.error_last_period, scenario.error_abs = error.calculate_error_last_period(
+                                                                            prediction_periods=pred_p)
                         scenario.save()
 
                         # Save the predicted data as a table

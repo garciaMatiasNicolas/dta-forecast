@@ -1,10 +1,10 @@
-from ..mape_cacl import mape_calc
+from ..error import Error
 from sklearn.linear_model import BayesianRidge
 import pandas as pd
 import numpy as np
 
 
-def bayesian_regression_predictions(fila, test_periods, prediction_periods):
+def bayesian_regression_predictions(fila, test_periods, prediction_periods, error_method):
     df_pred = pd.DataFrame(columns=['family', 'region', 'salesman', 'client', 'category', 'subcategory',
                                     'sku', 'description', 'model', 'date', 'value'])
 
@@ -71,7 +71,8 @@ def bayesian_regression_predictions(fila, test_periods, prediction_periods):
                                                          'subcategory', 'sku', 'description', 'model'],
                                   columns='date')
 
-    mape = mape_calc(df_pred_pivot, 'bayesian')
+    error = Error(dataframe=df_pred_pivot, model_name='bayesian', error_method=error_method)
+    error_calc = error.calculate_error()
 
     for i, future in enumerate(future_dates):
         fut_date = future_dates[i]
@@ -95,4 +96,4 @@ def bayesian_regression_predictions(fila, test_periods, prediction_periods):
 
     result = pd.concat([df_pred_pivot, df_pred_fc_pivot], axis=1)
 
-    return result, mape
+    return result, error_calc

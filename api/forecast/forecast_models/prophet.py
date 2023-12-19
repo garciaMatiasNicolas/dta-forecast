@@ -1,10 +1,10 @@
-from ..mape_cacl import mape_calc
+from ..error import Error
 from prophet import Prophet
 import pandas as pd
 import traceback
 
 
-def prophet_predictions(row, test_periods, prediction_periods, seasonal_periods, additional_params):
+def prophet_predictions(row, test_periods, prediction_periods, seasonal_periods, additional_params, error_method):
     try:
         df_pred = pd.DataFrame(columns=['family', 'region', 'salesman', 'client', 'category', 'subcategory',
                                         'sku', 'description', 'model', 'date', 'value'])
@@ -83,7 +83,8 @@ def prophet_predictions(row, test_periods, prediction_periods, seasonal_periods,
                                                                    'subcategory', 'sku', 'description', 'model'],
                                             columns='date')
 
-        mape = mape_calc(df_pred_pivot, 'prophet')
+        error = Error(dataframe=df_pred_pivot, model_name='prophet', error_method=error_method)
+        error_calc = error.calculate_error()
 
         future_pred_dates = forecast[-prediction_periods:]['ds'].dt.strftime('%Y-%m-%d')
 
@@ -111,7 +112,7 @@ def prophet_predictions(row, test_periods, prediction_periods, seasonal_periods,
 
         result = pd.concat([df_pred_pivot, df_pred_fc_pivot], axis=1)
 
-        return result, mape
+        return result, error_calc
 
     except Exception as err:
         traceback.print_exc()

@@ -13,7 +13,7 @@ ChartJS.register(
     BarElement, 
 );
 
-const GraphMape = ({scenario, graphicData}) => {
+const GraphMape = ({errorName, scenario, graphicData}) => {
     // Graph options
     const options = {
         responsive: true,
@@ -30,7 +30,7 @@ const GraphMape = ({scenario, graphicData}) => {
         labels: graphicData.x,
         datasets: [
             {
-                label: 'MAPE por mes',
+                label: `${errorName} por mes`,
                 data: graphicData.y,
                 backgroundColor: 'rgba(53, 162, 235, 0.5)',
             }
@@ -40,7 +40,7 @@ const GraphMape = ({scenario, graphicData}) => {
 
     return (
         <div className='w-50 mt-5'>
-            <p className="text-primary w-auto m-0 p-0">Mape último año</p>
+            <p className="text-primary w-auto m-0 p-0">{errorName} último año</p>
             {scenario === 0 ? <EmptyLineChart/> : <Bar options={options} data={dataBar} />}
             {console.log(graphicData)}
         </div>

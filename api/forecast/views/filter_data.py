@@ -23,13 +23,14 @@ class FilterDataViews(APIView):
             filter_name = filters.validated_data['filter_name']
             filter_value = filters.validated_data['filter_value']
             scenario = ForecastScenario.objects.filter(pk=scenario_id).first()
+            error_method = scenario.error_type
             table_name = scenario.predictions_table_name
             pred_p = scenario.pred_p
 
             with connection.cursor() as cursor:
                 cursor.execute(f'SELECT * FROM {table_name} WHERE {filter_name} = "{filter_value}"')
                 data_rows = cursor.fetchall()
-                print(f'SELECT * FROM {table_name} WHERE {filter_name} = "{filter_value}"')
+
                 cursor.execute(f'SELECT name FROM pragma_table_info("{table_name}")')
                 columns = cursor.fetchall()
 
@@ -41,7 +42,7 @@ class FilterDataViews(APIView):
 
                 """
                 df_pred = pd.DataFrame(data=data_rows, columns=columns)
-                df_pred = df_pred.drop(columns=[('MAPE',)])
+                df_pred = df_pred.drop(columns=[(error_method,)])
                 actual_rows = df_pred[df_pred[('model',)] == 'actual']
                 other_rows = df_pred[df_pred[('model',)] != 'actual']
 

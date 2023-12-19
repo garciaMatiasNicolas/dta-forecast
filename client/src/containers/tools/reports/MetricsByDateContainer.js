@@ -25,6 +25,7 @@ const MetricsByDateContainer = () => {
   const[dataModelGraph, setDataModelGraph] = useState({"models": 0, "avg": 0});
   const [selectedDate, setSelectedDate] = useState(null);
   const [optionsFilter, setOptionsFilter] = useState([]);
+  const [errorType, setErrorType] = useState("");
   const inputRef = useRef(null);
 
   // Function to get scenarios
@@ -39,7 +40,14 @@ const MetricsByDateContainer = () => {
     };
 
     axios.post(`${apiUrl}/get-filters`, data, {headers})
-    .then(res => {setDates(res.data);})
+    .then(res => {
+      setDates(res.data);
+      axios.get(`${apiUrl}/scenarios/${id}`, {
+        headers: headers
+      })
+      .then(res=> setErrorType(res.data.error_type))
+      .catch(err=> showErrorAlert("Ocurrio un error inesperado. Intente mas tarde"));
+    })
     .catch((err) => {setDates([])} );
 
     handleGraphicData(id);
@@ -254,7 +262,7 @@ const MetricsByDateContainer = () => {
       </MDBRow>
 
       <MDBRow className="w-auto d-flex justify-content-between align-items-center" >
-        <GraphMape scenario={scenarioId} graphicData={dataGraph}/>
+        <GraphMape errorName={errorType} scenario={scenarioId} graphicData={dataGraph}/>
         <GraphModels scenario={scenarioId} graphicData={dataModelGraph}/>
       </MDBRow>
 
@@ -284,7 +292,7 @@ const MetricsByDateContainer = () => {
           <MDBIcon className="ms-2" fas icon="file-export" />
         </MDBBtn>
 
-        <TableMape data={data}/>
+        <TableMape errortype={errorType} data={data}/>
       </MDBRow>
     </div>
   )

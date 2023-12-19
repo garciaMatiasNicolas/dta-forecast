@@ -8,10 +8,10 @@ from ..models import ForecastScenario
 from ..serializer import FilterData
 from django.db import connection
 from datetime import datetime
-from ..mape_cacl import mape_calc_reports
+from ..error import Error
 
 
-class MapeReportAPIView(APIView):
+class ErrorReportAPIView(APIView):
     @authentication_classes([TokenAuthentication])
     @permission_classes([IsAuthenticated])
     def post(self, request):
@@ -20,9 +20,9 @@ class MapeReportAPIView(APIView):
 
         if filters.is_valid():
             scenario_id = filters.validated_data['scenario_id']
-            filter_name = filters.validated_data['filter_name']
             filter_value = filters.validated_data['filter_value']
             scenario = ForecastScenario.objects.filter(pk=scenario_id).first()
+            error_method = scenario.error_type
             table_name = scenario.predictions_table_name
 
             if product:
@@ -43,7 +43,14 @@ class MapeReportAPIView(APIView):
                 ROUND(MAX(CASE WHEN MODEL != 'actual' THEN "{filter_value}" END),2) AS fit 
                 FROM {table_name} GROUP BY SKU, DESCRIPTION;
                 '''
-            print(query)
+
+            methods = {
+                'MAPE': Error.calculate_mape,
+                'SMAPE': Error.calculate_smape,
+                'RMSE': Error.calculate_rmse,
+                'MAE': Error.calculate_mae
+            }
+
             try:
                 with connection.cursor() as cursor:
                     cursor.execute(query)
@@ -54,9 +61,13 @@ class MapeReportAPIView(APIView):
                     for index, row in enumerate(rows):
                         actual_val = row[1]
                         predicted_val = row[2]
-                        mape = mape_calc_reports(predicted=predicted_val, actual=actual_val)
+
+                        if error_method in methods:
+                            calc_error = methods[error_method]
+                            error = calc_error(predicted_val, actual_val)
+
                         new_data = list(row)
-                        new_data.append(mape)
+                        new_data.append(error)
                         data_to_return.append(new_data)
 
                 return Response(data_to_return, status=status.HTTP_200_OK)
@@ -69,7 +80,17 @@ class MapeReportAPIView(APIView):
             return Response({'error': 'bad_request', 'logs': filters.errors}, status=status.HTTP_400_BAD_REQUEST)
 
 
-class MapeGraphicView(APIView):
+class ErrorGraphicView(APIView):
+    @property
+    def methods(self):
+        methods = {
+            'MAPE': Error.calculate_mape,
+            'SMAPE': Error.calculate_smape,
+            'RMSE': Error.calculate_rmse,
+            'MAE': Error.calculate_mae
+        }
+        return methods
+
     @staticmethod
     def obtain_last_year_months() -> list:
         actual_date = datetime.now().date()
@@ -95,9 +116,10 @@ class MapeGraphicView(APIView):
             table_name = scenario.predictions_table_name
             filter_name = filters.validated_data['filter_name']
             filter_value = filters.validated_data['filter_value']
+            error_method = scenario.error_type
 
             last_year_months = self.obtain_last_year_months()
-            mape_values = []
+            error_values = []
 
             if filter_name == "date":
                 for date in last_year_months:
@@ -111,15 +133,19 @@ class MapeGraphicView(APIView):
                         '''
                         cursor.execute(query)
                         rows = cursor.fetchall()
-                        mape_values_by_date = []
+                        error_values_by_date = []
 
                         for row in rows:
                             actual_val = row[0]
                             predicted_val = row[1]
-                            mape = mape_calc_reports(actual=actual_val, predicted=predicted_val)
-                            mape_values_by_date.append(mape)
 
-                    mape_values.append(round(sum(mape_values_by_date) / len(mape_values_by_date), 2))
+                            if error_method in self.methods:
+                                calc_error = self.methods[error_method]
+                                error = calc_error(predicted_val, actual_val)
+
+                            error_values_by_date.append(error)
+
+                    error_values.append(round(sum(error_values_by_date) / len(error_values_by_date), 2))
 
             else:
                 for date in last_year_months:
@@ -144,15 +170,19 @@ class MapeGraphicView(APIView):
 
                         cursor.execute(query)
                         rows = cursor.fetchall()
-                        mape_values_by_date = []
+                        error_values_by_date = []
 
                         for row in rows:
                             actual_val = row[0]
                             predicted_val = row[1]
-                            mape = mape_calc_reports(actual=actual_val, predicted=predicted_val)
-                            mape_values_by_date.append(mape)
 
-                    mape_values.append(round(sum(mape_values_by_date) / len(mape_values_by_date), 2))
+                            if error_method in self.methods:
+                                calc_error = self.methods[error_method]
+                                error = calc_error(predicted_val, actual_val)
+
+                            error_values_by_date.append(error)
+
+                    error_values.append(round(sum(error_values_by_date) / len(error_values_by_date), 2))
 
             dates = []
             for date_str in last_year_months:
@@ -161,7 +191,7 @@ class MapeGraphicView(APIView):
                 formatted_date = date_obj.strftime("%Y-%m-%d")
                 dates.append(formatted_date)
 
-            return Response({'x': dates, 'y': mape_values}, status=status.HTTP_200_OK)
+            return Response({'x': dates, 'y': error_values}, status=status.HTTP_200_OK)
 
         else:
             return Response({'error': 'bad_request', 'logs': filters.errors},

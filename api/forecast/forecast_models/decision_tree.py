@@ -1,11 +1,11 @@
 from sklearn.tree import DecisionTreeRegressor
 import pandas as pd
 import numpy as np
-from ..mape_cacl import mape_calc
+from ..error import Error
 import traceback
 
 
-def decision_tree_regression_predictions(fila, test_periods, prediction_periods, seasonal_periods):
+def decision_tree_regression_predictions(fila, test_periods, prediction_periods, seasonal_periods, error_method):
     try:
         df_pred = pd.DataFrame(columns=['family', 'region', 'salesman', 'client', 'category', 'subcategory',
                                         'sku', 'description', 'model', 'date', 'value'])
@@ -69,7 +69,8 @@ def decision_tree_regression_predictions(fila, test_periods, prediction_periods,
                                                              'subcategory', 'sku', 'description', 'model'],
                                       columns='date')
 
-        mape = mape_calc(df_pred_pivot, 'decisionTree')
+        error = Error(dataframe=df_pred_pivot, model_name='decisionTree', error_method=error_method)
+        error_calc = error.calculate_error()
 
         for i, future in enumerate(future_dates):
             fut_date = future_dates[i]
@@ -93,7 +94,7 @@ def decision_tree_regression_predictions(fila, test_periods, prediction_periods,
 
         result = pd.concat([df_pred_pivot, df_pred_fc_pivot], axis=1)
 
-        return result, mape
+        return result, error_calc
 
     except Exception as err:
         traceback.print_exc()

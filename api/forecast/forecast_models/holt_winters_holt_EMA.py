@@ -1,10 +1,10 @@
-from ..mape_cacl import mape_calc
+from ..error import Error
 from statsmodels.tsa.holtwinters import ExponentialSmoothing
 import pandas as pd
 
 
 def holts_winters_holts_ema(row, test_periods, prediction_periods, model_name, seasonal_periods,
-                          additional_params=None):
+                            error_method, additional_params=None):
     try:
         df_pred = pd.DataFrame(columns=['family', 'region', 'salesman', 'client', 'category', 'subcategory',
                                         'sku', 'description', 'model', 'date', 'value'])
@@ -83,7 +83,8 @@ def holts_winters_holts_ema(row, test_periods, prediction_periods, model_name, s
                                                              'subcategory', 'sku', 'description', 'model'],
                                       columns='date')
 
-        mape = mape_calc(df_pred_pivot, model_name)
+        error = Error(dataframe=df_pred_pivot, model_name=model_name, error_method=error_method)
+        error_calc = error.calculate_error()
 
         for i, future in enumerate(future_dates):
             fut_date = future_dates[i]
@@ -107,7 +108,7 @@ def holts_winters_holts_ema(row, test_periods, prediction_periods, model_name, s
 
         result = pd.concat([df_pred_pivot, df_pred_fc_pivot], axis=1)
 
-        return result, mape
+        return result, error_calc
 
     except Exception as err:
         print(str(err))

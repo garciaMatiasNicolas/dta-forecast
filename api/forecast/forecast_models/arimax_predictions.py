@@ -1,4 +1,4 @@
-from ..mape_cacl import mape_calc
+from ..error import error_calc
 import pandas as pd
 from statsmodels.tsa.arima.model import ARIMA
 
@@ -70,6 +70,6 @@ def arimax_predictions(row, train_data, test_data, prediction_periods, seasonal_
                                               columns='date')
 
     result = pd.concat([df_pred_pivot, df_pred_fc_pivot], axis=1)
-    mape = mape_calc(df_pred_pivot, 'arimax')
+    mape = error_calc(df_pred_pivot, 'arimax', )
 
     return result, mape

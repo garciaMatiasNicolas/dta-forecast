@@ -4,7 +4,7 @@ import ReactPaginate from 'react-paginate';
 
 const itemsPerPage = 7; // Cantidad de elementos por página
 
-const TableMape = ({ data }) => {
+const TableMape = ({ errortype, data }) => {
   const [currentPage, setCurrentPage] = useState(0);
 
   const offset = currentPage * itemsPerPage;
@@ -24,7 +24,7 @@ const TableMape = ({ data }) => {
             <th scope='col'>Producto</th>
             <th scope='col' className='col-2'>Venta Real</th>
             <th scope='col' className='col-2'>Venta Predecida</th>
-            <th scope='col' className='col-2'>MAPE</th>
+            <th scope='col' className='col-2'>{errortype}</th>
           </tr>
         </MDBTableHead>
         <MDBTableBody>

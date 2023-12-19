@@ -16,6 +16,7 @@ const RunModelsLogicContainer = ({apiUrl, token}) => {
         'Content-Type': 'application/json', 
     };
   
+    const [selectedError, setSelectedError] = useState('mape');
     
     const initialFormData = {
         user: localStorage.getItem("userPk"),
@@ -24,7 +25,8 @@ const RunModelsLogicContainer = ({apiUrl, token}) => {
         file_id: 0,
         models: [],
         test_p: '',
-        pred_p: ''
+        pred_p: '',
+        error_type: 'MAPE'
     };
 
     // STATES //
@@ -39,6 +41,7 @@ const RunModelsLogicContainer = ({apiUrl, token}) => {
     const [scenarios, setScenarios] = useState([]);
 
     const [additionalParams, setAdditionalParams] = useState({});
+
 
     // USE EFFECT //
     useEffect(() => {
@@ -157,6 +160,10 @@ const RunModelsLogicContainer = ({apiUrl, token}) => {
         });
     };
 
+    const handleOptChange = (e) => {
+        setFormData({ ...formData, error_type: e.target.id });
+    } 
+
     const handleSubmit = (event) => {
         event.preventDefault();
         
@@ -166,7 +173,7 @@ const RunModelsLogicContainer = ({apiUrl, token}) => {
             scenario_name: convertedScenarioName
         };
 
-        console.log(additionalParams);
+        console.log(dataToSend);
 
         axios.post(`${apiUrl}/scenarios/`, dataToSend, { headers })
         .then((res)=>{
@@ -209,12 +216,13 @@ const RunModelsLogicContainer = ({apiUrl, token}) => {
             })
             .finally(()=>{setBasicModal(false)}); 
         })
-        .catch(()=>{
+        .catch((err)=>{
             showErrorAlert("Nombre de escenario ya utilizado");
+            console.log(err.response.data)
         });
         
         formRef.current.reset();
-        setAdditionalParams({});
+        setAdditionalParams({}); 
     };
 
     const isFormValid = () => {
@@ -234,6 +242,7 @@ const RunModelsLogicContainer = ({apiUrl, token}) => {
             setFormData={setFormData}
             formRef={formRef}
             showModal={showModal}
+            handleOptChange={handleOptChange}
             setAdditionalParams={setAdditionalParams}
             handleSubmit={handleSubmit}
             handleAdditionalParams={handleAdditionalParams}

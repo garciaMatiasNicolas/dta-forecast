@@ -19,6 +19,7 @@ const RunModelsVisual = (props) => {
         handleInputChange,
         handleSelectChange,
         isFormValid,
+        handleOptChange
     } = props
 
     return (
@@ -89,9 +90,19 @@ const RunModelsVisual = (props) => {
                                             ))}
                                         </select>
                                         <div className="w-100 mt-4">
-                                            <p>¿Reemplazar predicciones negativas por 0?</p>
+                                            <p className="text-primary">¿Reemplazar predicciones negativas por 0?</p>
                                             <MDBRadio name='flexRadioDefault' id='replaceNegatives' label='Si' inline/>
                                             <MDBRadio name='flexRadioDefault' id='notReplaceNegatives' label='No' defaultChecked inline/>
+                                        </div>
+                                        <div className="w-100 mt-4">
+                                            <p className="text-primary">Tipo de error a utilizar</p>
+                                            <MDBRadio name='error' id='MAPE' label='MAPE' inline defaultChecked onChange={handleOptChange}/>
+                                            <MDBRadio name='error' id='SMAPE' label='SMAPE'  inline 
+                                            onChange={handleOptChange}/>
+                                            <MDBRadio name='error' id='RMSE' label='RMSE'  inline
+                                            onChange={handleOptChange}/>
+                                            <MDBRadio name='error' id='MAE' label='MAE'  inline
+                                            onChange={handleOptChange}/>
                                         </div>
                                     </MDBCol>
                                 </MDBRow>

@@ -1,9 +1,9 @@
-from ..mape_cacl import mape_calc
+from ..error import Error
 from statsmodels.tsa.holtwinters import SimpleExpSmoothing
 import pandas as pd
 
 
-def exp_smoothing_predictions(fila, test_periods, prediction_periods, seasonal_periods):
+def exp_smoothing_predictions(fila, test_periods, prediction_periods, seasonal_periods, error_method):
     df_pred = pd.DataFrame(columns=['family', 'region', 'salesman', 'client', 'category', 'subcategory',
                                     'sku', 'description', 'model', 'date', 'value'])
     df_pred_fc = df_pred.copy()
@@ -69,7 +69,8 @@ def exp_smoothing_predictions(fila, test_periods, prediction_periods, seasonal_p
                                                          'subcategory', 'sku', 'description', 'model'],
                                   columns='date')
 
-    mape = mape_calc(df_pred_pivot, 'exp_smooth')
+    error = Error(dataframe=df_pred_pivot, model_name='exp_smooth', error_method=error_method)
+    error_calc = error.calculate_error()
 
     for i, future in enumerate(future_dates):
         fut_date = future_dates[i]
@@ -93,4 +94,4 @@ def exp_smoothing_predictions(fila, test_periods, prediction_periods, seasonal_p
 
     result = pd.concat([df_pred_pivot, df_pred_fc_pivot], axis=1)
 
-    return result, mape
+    return result, error_calc

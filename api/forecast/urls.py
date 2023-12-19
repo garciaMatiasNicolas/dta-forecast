@@ -2,14 +2,14 @@ from django.urls import path
 from .views.forecast_views import RunModelsViews
 from .views.filter_data import FilterDataViews, GetFiltersView
 from .views.report_data_view import ReportDataViews, ModelsGraphicAPIView
-from .views.mape_report_view import MapeReportAPIView, MapeGraphicView
+from .views.mape_report_view import ErrorReportAPIView, ErrorGraphicView
 
 test_model = RunModelsViews.as_view()
 filter_data = FilterDataViews.as_view()
 get_filters = GetFiltersView.as_view()
 report = ReportDataViews.as_view()
-report_mape_by_date = MapeReportAPIView.as_view()
-graphic_mape = MapeGraphicView.as_view()
+report_mape_by_date = ErrorReportAPIView.as_view()
+graphic_mape = ErrorGraphicView.as_view()
 graphic_model = ModelsGraphicAPIView.as_view()
 
 urlpatterns = [

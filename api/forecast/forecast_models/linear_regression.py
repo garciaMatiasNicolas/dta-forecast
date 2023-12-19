@@ -1,11 +1,11 @@
 import traceback
-from ..mape_cacl import mape_calc
+from ..error import Error
 from sklearn.linear_model import LinearRegression
 import pandas as pd
 import numpy as np
 
 
-def linear_regression_predictions(fila, test_periods, prediction_periods, seasonal_periods):
+def linear_regression_predictions(fila, test_periods, prediction_periods, seasonal_periods, error_method):
     try:
 
         df_pred = pd.DataFrame(columns=['family', 'region', 'salesman', 'client', 'category', 'subcategory',
@@ -73,7 +73,8 @@ def linear_regression_predictions(fila, test_periods, prediction_periods, season
                                                              'subcategory', 'sku', 'description', 'model'],
                                       columns='date')
 
-        mape = mape_calc(df_pred_pivot, 'linear')
+        error = Error(dataframe=df_pred_pivot, model_name='linear', error_method=error_method)
+        error_calc = error.calculate_error()
 
         for i, future in enumerate(future_dates):
             fut_date = future_dates[i]
@@ -97,7 +98,7 @@ def linear_regression_predictions(fila, test_periods, prediction_periods, season
 
         result = pd.concat([df_pred_pivot, df_pred_fc_pivot], axis=1)
 
-        return result, mape
+        return result, error_calc
 
     except Exception as err:
         traceback.print_exc()

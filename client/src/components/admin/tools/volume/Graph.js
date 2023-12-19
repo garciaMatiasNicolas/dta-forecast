@@ -49,9 +49,10 @@ const Graph = () => {
   const [optionsFilter, setOptionsFilter] = useState([]);
 
   // State for MAPES
-  const [mape, setMape] = useState(0);
-  const [mapeLastPeriod, setMapeLastPeriod] = useState(0);
-  const [mapeAbs, setMapeAbs] = useState(0);
+  const [error, setError] = useState(0);
+  const [errorLastPeriod, setErrorLastPeriod] = useState(0);
+  const [errorAbs, setErrorAbs] = useState(0);
+  const [errorType, setErrorType] = useState('');
 
   // Graph Line options
   const options = {
@@ -213,9 +214,10 @@ const Graph = () => {
 
       setData(dataLine);
       setDataYear(dataBar);
-      setMape(res.data.mape_last_twelve_periods);
-      setMapeLastPeriod(res.data.mape_last_period);
-      setMapeAbs(res.data.mape_abs);
+      setError(res.data.error_last_twelve_periods);
+      setErrorLastPeriod(res.data.error_last_period);
+      setErrorAbs(res.data.error_abs);
+      setErrorType(res.data.error_type)
       console.log(res);
     })
     .catch(err => {
@@ -241,7 +243,7 @@ const Graph = () => {
       <MDBContainer>
         <MDBRow>
           <MDBCol size='3' className="d-flex justify-content-start align-items-start gap-3 flex-column">
-            <Mape mape={mape} mapeLastPeriod={mapeLastPeriod} mapeAbs={mapeAbs}/>
+            <Mape errorType={errorType} mainError={error} errorLastPeriod={errorLastPeriod} errorAbs={errorAbs}/>
             {filters.map(item => (
               <div className='w-100'>
                 <div className="d-flex justify-content-start align-items-center gap-3">
