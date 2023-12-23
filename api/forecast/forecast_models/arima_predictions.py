@@ -1,4 +1,4 @@
-from ..error import Error
+from ..Error import Error
 from statsmodels.tsa.arima.model import ARIMA
 from statsmodels.tsa.statespace.sarimax import SARIMAX
 import pandas as pd

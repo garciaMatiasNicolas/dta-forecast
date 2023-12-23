@@ -4,30 +4,35 @@ from database.db_engine import engine
 import pandas as pd
 import numpy as np
 import datetime as dt
+from sqlalchemy.exc import NoSuchTableError
 
 
 # Function to get historical data
 def get_historical_data(table_name: str):
-    dataframe = pd.read_sql_table(table_name, con=engine)
+    try:
+        dataframe = pd.read_sql_table(table_name, con=engine)
 
-    dataframe.iloc[:, 13:] = dataframe.iloc[:, 13:].replace(to_replace=["NaN", "null", "nan"], value=np.nan)
-    dataframe.iloc[:, 13:] = dataframe.iloc[:, 13:].fillna(0).apply(pd.to_numeric, errors='coerce').values
+        dataframe.iloc[:, 13:] = dataframe.iloc[:, 13:].replace(to_replace=["NaN", "null", "nan"], value=np.nan)
+        dataframe.iloc[:, 13:] = dataframe.iloc[:, 13:].fillna(0).apply(pd.to_numeric, errors='coerce').values
 
-    columns = dataframe.columns[13:]
+        columns = dataframe.columns[13:]
 
-    dataframe.rename(
-        columns={col: dt.datetime.strptime(col, '%Y-%m-%d %H:%M:%S').strftime('%Y-%m-%d') for col in columns},
-        inplace=True)
+        dataframe.rename(
+            columns={col: dt.datetime.strptime(col, '%Y-%m-%d %H:%M:%S').strftime('%Y-%m-%d') for col in columns},
+            inplace=True)
 
-    dataframe.iloc[:, 13:] = dataframe.iloc[:, 13:].fillna(0)
+        dataframe.iloc[:, 13:] = dataframe.iloc[:, 13:].fillna(0)
 
-    return dataframe
+        return dataframe
+
+    except NoSuchTableError as e:
+        return None
 
 
 # Function to choose best model
 def best_model(df_historical: pd.DataFrame, test_p, pred_p, models: list, seasonal_periods,
                additional_params: dict, error_method: str, exog_dataframe=None):
-
+    print("PARAMETROS ADICIONALES:", additional_params)
     df_historical = df_historical.copy()
 
     if exog_dataframe is not None:
@@ -48,7 +53,7 @@ def best_model(df_historical: pd.DataFrame, test_p, pred_p, models: list, season
             model_data['arima'] = {error_method: arima_mape, 'df': arima_df}
 
         if 'holtsWintersExponentialSmoothing' in models:
-            if 'holts_params' not in additional_params:
+            if 'holtsWinters_params' not in additional_params:
                 additional_params = None
 
             holt_wint_df, holt_wint_mape = holt_winters_holt_EMA.holts_winters_holts_ema(row=row,

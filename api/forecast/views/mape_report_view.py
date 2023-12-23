@@ -8,7 +8,7 @@ from ..models import ForecastScenario
 from ..serializer import FilterData
 from django.db import connection
 from datetime import datetime
-from ..error import Error
+from ..Error import Error
 
 
 class ErrorReportAPIView(APIView):

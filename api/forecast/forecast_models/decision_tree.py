@@ -1,7 +1,7 @@
 from sklearn.tree import DecisionTreeRegressor
 import pandas as pd
 import numpy as np
-from ..error import Error
+from ..Error import Error
 import traceback
 
 

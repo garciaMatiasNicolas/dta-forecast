@@ -1,4 +1,4 @@
-from ..error import Error
+from ..Error import Error
 from prophet import Prophet
 import pandas as pd
 import traceback

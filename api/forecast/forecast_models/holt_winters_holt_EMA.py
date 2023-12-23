@@ -1,7 +1,7 @@
-from ..error import Error
+from ..Error import Error
 from statsmodels.tsa.holtwinters import ExponentialSmoothing
 import pandas as pd
-
+import traceback
 
 def holts_winters_holts_ema(row, test_periods, prediction_periods, model_name, seasonal_periods,
                             error_method, additional_params=None):
@@ -111,4 +111,5 @@ def holts_winters_holts_ema(row, test_periods, prediction_periods, model_name, s
         return result, error_calc
 
     except Exception as err:
-        print(str(err))
+        traceback.print_exc()
+        print("ERROR HOLT: ",  str(err))

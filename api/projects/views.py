@@ -83,18 +83,20 @@ class ProjectsViewSet(ModelViewSet):
                     try:
                         for table in data_tables:
                             cursor.execute(f'DROP TABLE {table}')
+
                     except OperationalError:
                         pass
 
                     try:
                         for table_pred in predicted_data_tables:
                             cursor.execute(F'DROP TABLE {table_pred}')
+
                     except OperationalError:
                         pass
 
-                for excel_pred in excel_predictions:
+                """for excel_pred in excel_predictions:
                     if os.path.exists(path=excel_pred):
-                        os.remove(path=excel_pred)
+                        os.remove(path=excel_pred)"""
 
                 project_to_delete.delete()
                 return Response({'message': 'project_deleted'},

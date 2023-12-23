@@ -8,7 +8,7 @@ class ForecastScenario(models.Model):
     user = models.ForeignKey(User, on_delete=models.CASCADE)
     project = models.ForeignKey(ProjectsModel, on_delete=models.CASCADE)
     file_id = models.ForeignKey(FileRefModel, on_delete=models.CASCADE)
-    scenario_name = models.CharField(max_length=200, unique=True)
+    scenario_name = models.CharField(max_length=200)
     pred_p = models.IntegerField()
     test_p = models.IntegerField()
     replace_negatives = models.BooleanField(default=False)

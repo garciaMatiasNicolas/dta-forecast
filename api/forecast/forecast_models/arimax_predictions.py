@@ -1,4 +1,4 @@
-from ..error import error_calc
+from ..Error import error_calc
 import pandas as pd
 from statsmodels.tsa.arima.model import ARIMA
 

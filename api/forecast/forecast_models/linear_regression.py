@@ -1,5 +1,5 @@
 import traceback
-from ..error import Error
+from ..Error import Error
 from sklearn.linear_model import LinearRegression
 import pandas as pd
 import numpy as np

@@ -1,4 +1,3 @@
-import pandas as pd
 from urllib.parse import urlparse
 from database.db_engine import engine
 import datetime
@@ -17,10 +16,18 @@ def save_dataframe(route_file: str, file_name: str, model_type: str, wasSaved: b
     # Create dataframe with the Excel file
     if not wasSaved:
         new_route = obtain_file_route(route=route_file)
-        print(new_route)
         dataframe = pd.read_excel(new_route)
-        date_columns = dataframe.iloc[:, 12:].columns
-        not_date_columns = dataframe.iloc[:, :12].columns
+
+        if model_type == 'historical_data':
+            date_columns = dataframe.iloc[:, 12:].columns
+            not_date_columns = dataframe.iloc[:, :12].columns
+
+        elif model_type == 'historical_exogenous_variables':
+            date_columns = dataframe.iloc[:, 8:].columns
+            not_date_columns = dataframe.iloc[:, :8].columns
+
+        else:
+            raise ValueError("model_not_allowed")
 
         for col in not_date_columns:
             dataframe[col] = dataframe[col].astype(str)
@@ -28,6 +35,7 @@ def save_dataframe(route_file: str, file_name: str, model_type: str, wasSaved: b
         for date in date_columns:
             if isinstance(date, datetime.datetime):
                 dataframe[date] = dataframe[date].astype(float)
+
             else:
                 raise ValueError("columns_not_in_date_type")
 
@@ -40,7 +48,12 @@ def save_dataframe(route_file: str, file_name: str, model_type: str, wasSaved: b
             raise ValueError("model_not_allowed")
 
         else:
-            dataframe.to_sql(table_name, con=engine, if_exists='replace', index=False)
+            if model_type == "historical_exogenous_variables":
+                dataframe.to_sql(table_name, con=engine, if_exists='append', index=False)
+
+            else:
+                dataframe.to_sql(table_name, con=engine, if_exists='replace', index=False)
+
             return "succeed"
 
     else:

@@ -1,4 +1,4 @@
-from ..error import Error
+from ..Error import Error
 from sklearn.linear_model import Lasso
 import pandas as pd
 import numpy as np
@@ -71,7 +71,7 @@ def lasso_regression_predictions(fila, test_periods, prediction_periods, seasona
                                                          'subcategory', 'sku', 'description', 'model'],
                                   columns='date')
 
-    error = Error(dataframe=df_pred_pivot, model_name=model_name, error_method=error_method)
+    error = Error(dataframe=df_pred_pivot, model_name='lasso', error_method=error_method)
     error_calc = error.calculate_error()
 
     for i, future in enumerate(future_dates):

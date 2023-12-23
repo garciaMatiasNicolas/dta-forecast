@@ -1,4 +1,4 @@
-from ..error import Error
+from ..Error import Error
 from statsmodels.tsa.holtwinters import SimpleExpSmoothing
 import pandas as pd
 

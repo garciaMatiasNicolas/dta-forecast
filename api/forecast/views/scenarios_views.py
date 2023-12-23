@@ -25,9 +25,18 @@ class ForecastScenarioViewSet(ModelViewSet):
         scenario = self.get_serializer(data=request.data)
 
         if scenario.is_valid():
+            project_id = scenario.validated_data['project']
+            scenario_name = scenario.validated_data['scenario_name']
+
+            search_scenario_name = ForecastScenario.objects.filter(project_id=project_id, scenario_name=scenario_name)
+
+            if search_scenario_name.exists():
+                return Response({'error': 'scenario_name_already_exists'}, status=status.HTTP_400_BAD_REQUEST)
+
             scenario = scenario.save()
 
-            return Response({'message': 'scenario_saved', 'scenario_id': scenario.id}, status=status.HTTP_201_CREATED)
+            return Response({'message': 'scenario_saved', 'scenario_id': scenario.id},
+                            status=status.HTTP_201_CREATED)
 
         else:
             return Response({'error': 'bad_request', 'logs': scenario.errors},

@@ -5,11 +5,10 @@ from rest_framework.response import Response
 from rest_framework import status
 from rest_framework.views import APIView
 from ..serializer import FilterData
-from projects.models import ProjectsModel
 from ..models import ForecastScenario
 from django.db import connection
+from ..Graphic import Graphic
 import pandas as pd
-from ..graphic_predictions_per_year import graphic_predictions_per_year
 
 
 class FilterDataViews(APIView):
@@ -39,8 +38,8 @@ class FilterDataViews(APIView):
                     SELECT COLUMN_NAME
                     FROM INFORMATION_SCHEMA.COLUMNS
                     WHERE TABLE_SCHEMA = 'database_name' AND TABLE_NAME = 'table_name';
-
                 """
+
                 df_pred = pd.DataFrame(data=data_rows, columns=columns)
                 df_pred = df_pred.drop(columns=[(error_method,)])
                 actual_rows = df_pred[df_pred[('model',)] == 'actual']
@@ -62,7 +61,7 @@ class FilterDataViews(APIView):
                 actual_data['y'] = values
 
                 final_data = {'actual_data': actual_data, 'other_data': other_data}
-                data_per_year = graphic_predictions_per_year(final_data, max_date=scenario.max_historical_date)
+                data_per_year = Graphic.graphic_predictions_per_year(final_data, max_date=scenario.max_historical_date)
 
                 return Response({"full_data": final_data, "year_data": data_per_year},
                                 status=status.HTTP_200_OK)

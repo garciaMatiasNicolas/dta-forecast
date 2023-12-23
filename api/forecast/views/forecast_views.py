@@ -1,5 +1,4 @@
 from rest_framework.decorators import authentication_classes, permission_classes
-from ..graphic_predictions_per_year import graphic_predictions_per_year
 from ..model_selection import best_model, get_historical_data
 from rest_framework.authentication import TokenAuthentication
 from rest_framework.permissions import IsAuthenticated
@@ -13,7 +12,8 @@ from rest_framework import status
 from django.conf import settings
 from django.db import connection
 from database.db_engine import engine
-from ..error import Error
+from ..Graphic import Graphic
+from ..Error import Error
 import pandas as pd
 import numpy as np
 import os
@@ -22,42 +22,6 @@ import traceback
 
 
 class RunModelsViews(APIView):
-    @staticmethod
-    def graphic_predictions(file_path, max_date, pred_p, error_method):
-        try:
-            df_pred = pd.read_excel(file_path)
-        except pd.errors.ParserError:
-            return {'error': 'file_not_exists'}
-
-        error = df_pred[error_method]
-        error = np.mean(error)
-        error = round(error, 2)
-        max_date = pd.to_datetime(max_date)
-        df_pred = df_pred.drop(columns=[error_method])
-        date_columns = df_pred.columns[9:]
-
-        actual_rows = df_pred[df_pred['model'] == 'actual']
-        other_rows = df_pred[df_pred['model'] != 'actual']
-
-        actual_sum = actual_rows[date_columns].sum()
-
-        other_sum = other_rows[date_columns].sum()
-
-        actual_data = {'x': date_columns.tolist(), 'y': actual_sum.tolist()}
-
-        dates = actual_data['x'][:-pred_p]
-        values = actual_data['y'][:-pred_p]
-
-        actual_data['x'] = dates
-        actual_data['y'] = values
-
-        other_data = {'x': date_columns.tolist(), 'y': other_sum.tolist()}
-
-        final_data = {'actual_data': actual_data, 'other_data': other_data}
-        data_per_year = graphic_predictions_per_year(data=final_data, max_date=max_date)
-
-        return final_data, data_per_year, error
-
     @authentication_classes([TokenAuthentication])
     @permission_classes([IsAuthenticated])
     def post(self, request):
@@ -162,13 +126,18 @@ class RunModelsViews(APIView):
                                                    len(column)) + 2
                                 work_sheet.set_column(i, i, width_column)
 
+                        file_path = os.path.join(settings.MEDIA_ROOT, 'excel_files\\predictions',
+                                                 f'{table_name}_prediction_results_scenario_{scenario_name}.xlsx')
+
                         # Generate graphical predictions
-                        final_data, data_per_year, error = self.graphic_predictions(
-                            file_path=os.path.join(settings.MEDIA_ROOT, 'excel_files\\predictions', f'{table_name}_prediction_results_scenario_{scenario_name}.xlsx'),
+                        graphic = Graphic(
+                            file_path=file_path,
                             max_date=max_historical_data_date,
-                            pred_p=pred_p,
-                            error_method=error_method
+                            error_method=error_method,
+                            pred_p=pred_p
                         )
+
+                        final_data, data_per_year, error = graphic.graphic_predictions()
 
                         # Save the predictions in the scenario
                         scenario.final_data_pred = final_data
