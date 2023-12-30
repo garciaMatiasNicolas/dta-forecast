@@ -3,11 +3,8 @@ import { useState, useContext, useEffect, useRef } from "react";
 import convertData from '../../../../functions/stringFormat';
 import RunModelsVisual from "./RunModelsVisual";
 import { AppContext } from "../../../../context/Context";
-import ParamsHoltsWintersAlert from "../../../other/ParamsHoltsAlert";
-import ParamsArimaAlert from "../../../other/ParamsArimaAlert";
-import {showErrorAlert, showSuccessAlert, showWariningAlert} from "../../../other/Alerts";
-import showToast from "../../../other/Toasts";
-import ParamsProphetAlert from "../../../other/ParamsProphetAlert";
+import {showErrorAlert, showSuccessAlert} from "../../../other/Alerts";
+import { mode } from "crypto-js";
 
 
 const RunModelsLogicContainer = ({apiUrl, token}) => {
@@ -15,8 +12,6 @@ const RunModelsLogicContainer = ({apiUrl, token}) => {
         'Authorization': `Token ${token}`, 
         'Content-Type': 'application/json', 
     };
-  
-    const [selectedError, setSelectedError] = useState('mape');
     
     const initialFormData = {
         user: localStorage.getItem("userPk"),
@@ -42,12 +37,20 @@ const RunModelsLogicContainer = ({apiUrl, token}) => {
 
     const [additionalParams, setAdditionalParams] = useState({});
 
+    const [isSelected, setIsSelected] = useState([]);
+
+    const [lastScenarioRan, setLastScenarioRan] = useState([]);
 
     // USE EFFECT //
     useEffect(() => {
         // Get file types
         axios.get(`${apiUrl}/file-types`, {headers})
         .then(res => setFileTypes(res.data))
+        .catch(err => console.log(err));
+
+        // Get last scenario ran
+        axios.get(`${apiUrl}/scenarios`, {headers})
+        .then(res => {setLastScenarioRan(res.data[res.data.length - 1]);})
         .catch(err => console.log(err));
     }, []);
 
@@ -72,67 +75,60 @@ const RunModelsLogicContainer = ({apiUrl, token}) => {
     
         setFormData({ ...formData, models: updatedModels });
 
-        isChecked ? handleAdditionalParams(modelName) : delete additionalParams[`${modelName}_params`];
+        if(isChecked) {
+            setIsSelected(updatedModels) 
+        } 
+        else {
+            delete additionalParams[`${modelName}_params`];
+            setIsSelected(updatedModels);
+            if (modelName === 'prophet' || modelName === 'arima' || modelName === 'sarima') {
+                document.getElementById(`set${modelName}`).checked = false;
+            }
+        }
     };
 
-    const handleAdditionalParams = async (modelName) => {
-        console.log(additionalParams);
+    const areParamsSetted = (modelName, params, typeOfInsertion) => {
+
         if (modelName === "arima" || modelName === 'sarima'){
-            const { value: result } = await ParamsArimaAlert();
-        
-            if (result !== undefined) {
-                const { pValue, dValue, qValue } = result.value;
-                
+
+            if (typeOfInsertion === 'setParams'){
+                const [ pValue, dValue, qValue ] = params
+            
                 setAdditionalParams(prevState => ({
                     ...prevState,
                     [`${modelName}_params`]:  [ pValue, dValue, qValue ]
                 }));
-
-            } else {
-                setAdditionalParams(prevState => ({
-                    ...prevState,
-                    [`${modelName}_params`]:  [ '0', '0', '0' ]
-                }));
             }
-            
-            showToast("Parametros establecidos exitosamente", "success");
+
+            typeOfInsertion === 'deleteParams' && delete additionalParams[`${modelName}_params`];
         }
         
         else if (modelName === "holtsWinters" || modelName === 'holts'){
-            const { value: result } = await ParamsHoltsWintersAlert(modelName);
-            if (result !== undefined) {
-                const { selectedTrend, selectedSeasonal } = result.value;
-                
+            if (typeOfInsertion === 'setParams'){
+                const [ selectedTrend, selectedSeasonal ] = params
+            
                 setAdditionalParams(prevState => ({
                     ...prevState,
-                    [`${modelName}_params`]: [selectedTrend, selectedSeasonal]
+                    [`${modelName}_params`]:  [ selectedTrend, selectedSeasonal ]
                 }));
-            } else {
-                setAdditionalParams(prevState => ({
-                    ...prevState,
-                    [`${modelName}_params`] : ['add', 'add']
-                }))
             }
-            showToast("Parametros establecidos exitosamente", "success");
+            
+            typeOfInsertion === 'deleteParams' && delete additionalParams[`${modelName}_params`];
         }
 
         else if (modelName === 'prophet'){
-            const { value: result } = await ParamsProphetAlert();
+            if (typeOfInsertion === 'setParams'){
+                const [ seasonality_mode, seasonality_prior_scale,
+                    uncertainty_samples, changepoint_prior_scale ] = params
             
-            if (result !== undefined) {
-                const { seasonality_mode, seasonality_prior_scale, growth, uncertainty_samples, changepoint_prior_scale } = result.value;
-                
                 setAdditionalParams(prevState => ({
                     ...prevState,
-                    [`${modelName}_params`]: [seasonality_mode, seasonality_prior_scale, growth, uncertainty_samples, changepoint_prior_scale]
+                    [`${modelName}_params`]:  [ seasonality_mode, seasonality_prior_scale,
+                        uncertainty_samples, changepoint_prior_scale ]
                 }));
-            } else {
-                setAdditionalParams(prevState => ({
-                    ...prevState,
-                    [`${modelName}_params`] : ['additive', 10.0, 'linear', 1000, 0.05]
-                }))
             }
-            showToast("Parametros establecidos exitosamente", "success");
+            
+            typeOfInsertion === 'deleteParams' && delete additionalParams[`${modelName}_params`];
         }
         
     }
@@ -166,14 +162,11 @@ const RunModelsLogicContainer = ({apiUrl, token}) => {
 
     const handleSubmit = (event) => {
         event.preventDefault();
-        
         const convertedScenarioName = convertData(formData.scenario_name, false);
         const dataToSend = {
             ...formData,
             scenario_name: convertedScenarioName
         };
-
-        console.log(dataToSend);
 
         axios.post(`${apiUrl}/scenarios/`, dataToSend, { headers })
         .then((res)=>{
@@ -186,6 +179,7 @@ const RunModelsLogicContainer = ({apiUrl, token}) => {
 
             axios.post(`${apiUrl}/test-model`, data, {headers})
             .then((res)=>{
+                setBasicModal(false);
                 showSuccessAlert("Predicciones realizadas con exito", "Forecast finalizado");
                 let url = res.data.url;
                 let graphicData = res.data.graphic_data;
@@ -205,10 +199,12 @@ const RunModelsLogicContainer = ({apiUrl, token}) => {
                 .catch(() => {
                     showErrorAlert("Ocurrio un error inesperado, intente mas tarde");
                 });
+                
             })
             .catch((err)=>{
-                if(err.response.data.error === "exogenous_variables_not_found") {
-                    showWariningAlert("Para seleccionar modelos de variables exogenas, debe haber subido anteriormente la plantilla con datos de variables exógenas. Elija otro modelo, o bien, suba la plantilla requerida", "ATENCIÓN");
+                setBasicModal(false);
+                if(err.response.data.error === "not_exog_data") {
+                    showErrorAlert("Para seleccionar modelos de variables exogenas, debe haber subido anteriormente la plantilla con datos de variables exógenas. Elija otro modelo, o bien, suba la plantilla requerida");
                 } else {
                     showErrorAlert(`Ocurrio un error en la corrida de los modelos: ${err.response.data.error}`);
                 }
@@ -217,17 +213,34 @@ const RunModelsLogicContainer = ({apiUrl, token}) => {
             .finally(()=>{setBasicModal(false)}); 
         })
         .catch((err)=>{
-            showErrorAlert("Nombre de escenario ya utilizado");
-            console.log(err.response.data)
-        });
+            if (err.response.data.error = 'scenario_name_already_exists'){
+                showErrorAlert("Nombre de escenario ya utilizado");
+            }
+        })
         
-        formRef.current.reset();
+        formRef.current.reset(); 
         setAdditionalParams({}); 
     };
 
     const isFormValid = () => {
         const { scenario_name, models, test_p, pred_p, file_id } = formData;
-        return scenario_name && models.length > 0 && test_p && pred_p && file_id !== 0;
+        let isFormValid;
+        
+        if (models.includes('sarima')) {
+            isFormValid = scenario_name && models.length > 0 && test_p && pred_p && file_id !== 0 && additionalParams['sarima_params'];
+        } else if (models.includes('arima')) {
+            isFormValid = scenario_name && models.length > 0 && test_p && pred_p && file_id !== 0 && additionalParams['arima_params'];
+        } else if (models.includes('prophet')) {
+            isFormValid = scenario_name && models.length > 0 && test_p && pred_p && file_id !== 0 && additionalParams['prophet_params'];
+        } /* else if (models.includes('holtsExponentialSmoothing')) {
+            isFormValid = scenario_name && models.length > 0 && test_p && pred_p && file_id !== 0 && additionalParams['holts_params'];
+        } else if (models.includes('holtsWintersExponentialSmoothing')) {
+            isFormValid = scenario_name && models.length > 0 && test_p && pred_p && file_id !== 0 && additionalParams['holtsWinters_params']; }*/
+        else {
+            isFormValid = scenario_name && models.length > 0 && test_p && pred_p && file_id !== 0 
+        }
+
+        return isFormValid;
     };
   
     return (
@@ -236,6 +249,7 @@ const RunModelsLogicContainer = ({apiUrl, token}) => {
             fileTypes={fileTypes}
             basicModal={basicModal}
             setBasicModal={setBasicModal}
+            lastScenarioRan={lastScenarioRan}
             results={results}
             scenarios={scenarios}
             additionalParams={additionalParams}
@@ -245,11 +259,12 @@ const RunModelsLogicContainer = ({apiUrl, token}) => {
             handleOptChange={handleOptChange}
             setAdditionalParams={setAdditionalParams}
             handleSubmit={handleSubmit}
-            handleAdditionalParams={handleAdditionalParams}
+            areParamsSetted={areParamsSetted}
             handleCheckboxChange={handleCheckboxChange}
             handleInputChange={handleInputChange}
             handleSelectChange={handleSelectChange}
             isFormValid={isFormValid}
+            isSelected={isSelected}
         />
     )
 }

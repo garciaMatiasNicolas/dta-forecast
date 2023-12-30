@@ -24,6 +24,7 @@ const GroupButtonActions = ({ tableName, path, idFile }) => {
                 showSuccessAlert("Archivo subido exitosamente! Data recibida");
             })
             .catch(err => {
+                console.log(err.response.data)
                 if (err.response.data.error === "bad_request") {
                     setTimeout(showErrorAlert("El archivo no se subió correctamente, intente nuevamente"), 3000);
                 } else if (err.response.data.error === "columns_not_in_date_type") {
@@ -41,6 +42,7 @@ const GroupButtonActions = ({ tableName, path, idFile }) => {
             'Authorization': `Token ${token}`,
             'Content-Type': 'multipart/form-data',
         };
+        
         const file = event.target.files[0];
         const user = localStorage.getItem("userPk");
         const projectName = localStorage.getItem('projectName');
@@ -70,7 +72,7 @@ const GroupButtonActions = ({ tableName, path, idFile }) => {
                     onChange={handleFileUpload}
                 />
                 
-                <MDBBtn disabled={idFile !== 1 && idFile !== 2} color='success' floating onClick={handleButtonClick}>
+                <MDBBtn disabled={idFile !== 1 && idFile !== 2 && idFile !== 3} color='success' floating onClick={handleButtonClick}>
                     <MDBIcon fas icon="upload" />
                 </MDBBtn>
             </div>

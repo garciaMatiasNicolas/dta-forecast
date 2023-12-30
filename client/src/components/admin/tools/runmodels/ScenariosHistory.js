@@ -4,6 +4,7 @@ import { showErrorAlert, showSuccessAlert } from '../../../other/Alerts';
 import Swal from "sweetalert2";
 import ReactPaginate from 'react-paginate';
 import axios from 'axios';
+import ModalOtherInfo from './ModalOtherInfo';
 
 const apiUrl = process.env.REACT_APP_API_URL;
 
@@ -98,7 +99,7 @@ const ScenariosHistory = ({scenarioList}) => {
     };
 
   return (
-    <div className="w-100 ms-5 mb-5 mt-5" style={{"maxWidth": "800px"}}>
+    <div className="w-100 ms-5 mb-5 mt-5" style={{"maxWidth": "900px"}}>
         <p style={{"cursor": "pointer", "color": "#285192"}}>
             <MDBIcon fas icon="history" /> Ver historial de escenarios
         </p>
@@ -117,6 +118,7 @@ const ScenariosHistory = ({scenarioList}) => {
                     <tr>
                     <th scope='row'></th>
                     <td>No hay escenarios</td>
+                    <td></td>
                     <td></td>
                     <td></td>
                     <td></td>
@@ -139,19 +141,20 @@ const ScenariosHistory = ({scenarioList}) => {
                         </td>
                         <td>Historical Data</td>
                         <td>
-                        <span
-                            onClick={() => handleDeleteScenario(scenario.id)}
-                            style={{ cursor: 'pointer' }}
-                            className='me-2'
-                        >
-                            <MDBIcon fas icon='trash-alt' color='danger' />
-                        </span>
-                        <span
-                            onClick={() => handleUpdateScenario(scenario.id)}
-                            style={{ cursor: 'pointer' }}
-                        >
-                            <MDBIcon fas icon='edit' color='success' />
-                        </span>
+                            <span
+                                onClick={() => handleDeleteScenario(scenario.id)}
+                                style={{ cursor: 'pointer' }}
+                                className='me-2'
+                            >
+                                <MDBIcon fas icon='trash-alt' color='danger' />
+                            </span>
+                            <span
+                                onClick={() => handleUpdateScenario(scenario.id)}
+                                style={{ cursor: 'pointer' }}
+                            >
+                                <MDBIcon fas icon='edit' color='success' />
+                            </span>
+                            <ModalOtherInfo scenarioInfo={scenario}/>
                         </td>
                     </tr>
                     ))

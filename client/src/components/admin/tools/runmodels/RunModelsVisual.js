@@ -4,6 +4,11 @@ import ScenariosHistory from "./ScenariosHistory";
 import convertData from '../../../../functions/stringFormat';
 import { ClipLoader } from "react-spinners";
 import { exogModels, machineLearningModels, timeSeriesModels } from "../../../../data/models";
+import ParamsArima from "./ParamsArima";
+import ParamsProphet from "./ParamsProphet";
+import ParamsHolts from "./ParamsHolts";
+
+
 
 const RunModelsVisual = (props) => {
     
@@ -12,14 +17,16 @@ const RunModelsVisual = (props) => {
         basicModal,
         setBasicModal,
         scenarios,
+        lastScenarioRan,
         formRef,
         handleSubmit,
-        handleAdditionalParams,
+        areParamsSetted,
         handleCheckboxChange,
         handleInputChange,
         handleSelectChange,
         isFormValid,
-        handleOptChange
+        handleOptChange,
+        isSelected
     } = props
 
     return (
@@ -48,12 +55,10 @@ const RunModelsVisual = (props) => {
                                         <p className="text-primary mt-5">Modelos Variables Enxógenas</p>
                                         {exogModels.map(item => (
                                             <MDBCheckbox 
-                                                disabled
                                                 name='modelSelection' 
                                                 value={item.value} 
                                                 id={item.value} 
                                                 label={item.label}  
-                                                onClick={()=>{handleAdditionalParams(item.param)}}
                                                 onChange={() => handleCheckboxChange(item.value)}
                                             />
                                         ))}
@@ -64,8 +69,7 @@ const RunModelsVisual = (props) => {
                                                 name='modelSelection' 
                                                 value={item.value} 
                                                 id={item.value} 
-                                                label={item.label}  
-                                                onClick={()=>{handleAdditionalParams(item.param)}}
+                                                label={item.label} 
                                                 onChange={() => handleCheckboxChange(item.value)}
                                             />
                                         ))}
@@ -77,6 +81,7 @@ const RunModelsVisual = (props) => {
                                             label='Prophet' 
                                             onChange={() => handleCheckboxChange('prophet', 'prophet')} 
                                         />
+                                        <ParamsProphet isModelSelected={isSelected} lastScenariosParams={lastScenarioRan} areParamsSetted={areParamsSetted}/>
                                     </MDBCol>
     
                                     <MDBCol size='lg' className="d-flex justify-content-start align-items-center flex-column gap-3">
@@ -104,6 +109,8 @@ const RunModelsVisual = (props) => {
                                             <MDBRadio name='error' id='MAE' label='MAE'  inline
                                             onChange={handleOptChange}/>
                                         </div>
+                                        <ParamsArima isModelSelected={isSelected} lastScenariosParams={lastScenarioRan} setAdditionalParams={areParamsSetted}/>
+                                       {/*  <ParamsHolts isModelSelected={isSelected} areParamsSetted={areParamsSetted}/> */}
                                     </MDBCol>
                                 </MDBRow>
                             </MDBContainer>

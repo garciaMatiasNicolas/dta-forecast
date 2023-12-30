@@ -1,12 +1,12 @@
 import { Chart as ChartJS, CategoryScale, LinearScale, PointElement, LineElement, Title, Tooltip, Legend, BarElement } from 'chart.js';
-import { MDBIcon, MDBContainer, MDBRow, MDBCol } from 'mdb-react-ui-kit';
+import { MDBContainer, MDBRow, MDBCol } from 'mdb-react-ui-kit';
 import { useEffect, useState } from 'react';
 import { Line, Bar } from 'react-chartjs-2';
 import { showErrorAlert } from '../../../other/Alerts';
 import axios from 'axios';
 import EmptyLineChart from './EmptyChartLine';
-import { filters } from '../../../../data/filters';
 import Mape from './Mape';
+import Filters from '../Filters';
 
 const apiUrl = process.env.REACT_APP_API_URL;
 
@@ -44,9 +44,6 @@ const Graph = () => {
 
   // State for set id scenario
   const [scenarioId, setScenarioId] = useState(0);
-
-  // State for get filters from server
-  const [optionsFilter, setOptionsFilter] = useState([]);
 
   // State for MAPES
   const [error, setError] = useState(0);
@@ -100,20 +97,6 @@ const Graph = () => {
       console.log(err);
     })
   }, []);
-  
-  // Function for get filters from server
-  const handleClickFilter = (e) => {
-    const data = {
-      filter_name: e.target.name,
-      scenario_id: scenarioId,
-      project_id: localStorage.getItem("projectId"),
-      filter_value: "x"
-    };
-
-    axios.post(`${apiUrl}/get-filters`, data, { headers })
-    .then(res => setOptionsFilter(res.data))
-    .catch(err => console.log(err));
-  };
 
   // Function for graphic data using filters
   const handleOnChangeFilter = (e) => {
@@ -244,27 +227,7 @@ const Graph = () => {
         <MDBRow>
           <MDBCol size='3' className="d-flex justify-content-start align-items-start gap-3 flex-column">
             <Mape errorType={errorType} mainError={error} errorLastPeriod={errorLastPeriod} errorAbs={errorAbs}/>
-            {filters.map(item => (
-              <div className='w-100'>
-                <div className="d-flex justify-content-start align-items-center gap-3">
-                    <MDBIcon icon={item.icon}/>
-                    <p className="mt-3">{item.label}</p>
-                </div>
-                <select 
-                  onClick={handleClickFilter} onChange={handleOnChangeFilter}  
-                  style={{
-                    minWidth: '200px'
-                  }} 
-                  className="form-select w-100" 
-                  name={item.name}
-                >
-                    <option defaultValue>-----</option>
-                    {optionsFilter.map(item => (
-                      <option key={item} value={item} >{item}</option>
-                    ))}
-                </select>
-              </div>
-            ))}
+            <Filters handleOnChangeFilter={handleOnChangeFilter} scenario={scenarioId}/>
           </MDBCol>
           <MDBCol size='9' className='d-flex justify-content-center align-items-center gap-5 flex-column'>
             <div className='w-75 '>

@@ -7,7 +7,7 @@ import traceback
 
 
 def arima_sarima_arimax_sarimax_predictions(row, test_periods, prediction_periods, seasonal_periods,
-                                            additional_params, model_name: str, error_method, row_exog_data=None):
+                                            additional_params, model_name: str, error_method):
     try:
         df_pred = pd.DataFrame(columns=['family', 'region', 'salesman', 'client', 'category', 'subcategory',
                                         'sku', 'description', 'model', 'date', 'value'])
@@ -23,41 +23,24 @@ def arima_sarima_arimax_sarimax_predictions(row, test_periods, prediction_period
         Pvalue, Dvalue, Qvalue = additional_params[f'{model_name}_params']
         seasonal_order = (int(Pvalue), int(Dvalue), int(Qvalue), int(seasonal_periods))
 
-        ## SARIMA - SARIMAX ##
+        ## SARIMA ##
 
-        if model_name == 'sarima' or model_name == 'sarimax':
-            ## SARIMAX WITH EXOG DATA ##
-            if row_exog_data is not None:
-                exog_data = row_exog_data.iloc[8:].astype('float')
-                model = SARIMAX(train_data, exog=exog_data[:-test_periods], order=arima_order,
-                                seasonal_order=seasonal_order)
-                model.initialize_approximate_diffuse()
-                model_fit = model.fit()
-                train_predictions = model_fit.predict(start=0, end=n_train - 1)
-                test_predictions = model_fit.predict(start=n_train, end=len(time_series) - 1,
-                                                     exog=exog_data[-test_periods:])
+        if model_name == 'sarima':
 
             ## SARIMA WITHOUT EXOG DATA ##
-            else:
-                model = SARIMAX(train_data, order=arima_order, seasonal_order=seasonal_order)
-                model.initialize_approximate_diffuse()
-                model_fit = model.fit()
-                train_predictions = model_fit.predict(start=0, end=n_train - 1)
-                test_predictions = model_fit.predict(start=n_train, end=len(time_series) - 1)
+            model = SARIMAX(train_data, order=arima_order, seasonal_order=(0, 0, 0, int(seasonal_periods)))
+            model.initialize_approximate_diffuse()
+            model_fit = model.fit()
+            train_predictions = model_fit.predict(start=0, end=n_train - 1)
+            test_predictions = model_fit.predict(start=n_train, end=len(time_series) - 1)
 
             start_date = pd.to_datetime(test_data.index[-1])
             next_month = start_date + pd.DateOffset(months=1)
             future_dates = pd.date_range(start=next_month, periods=prediction_periods, freq='MS')
             future_dates = future_dates.strftime('%Y-%m-%d')
+            future_predictions = model_fit.forecast(prediction_periods)
 
-            if row_exog_data is not None:
-                exog_data = row_exog_data.iloc[8:].astype('float')
-                future_predictions = model_fit.forecast(prediction_periods)
-
-            else:
-                future_predictions = model_fit.forecast(prediction_periods)
-
-        ## ARIMA - ARIMAX ##
+        ## ARIMA ##
         else:
             ## ARIMA WITHOUT EXOG DATA ##
             model = ARIMA(train_data, order=arima_order, seasonal_order=seasonal_order)
@@ -138,4 +121,3 @@ def arima_sarima_arimax_sarimax_predictions(row, test_periods, prediction_period
     except Exception as err:
         traceback.print_exc()
         print(f"Error arima : {str(err)}")
-        print(f"Fila con error {row}")

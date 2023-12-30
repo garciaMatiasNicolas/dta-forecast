@@ -10,12 +10,11 @@ from rest_framework.views import APIView
 from ..models import ForecastScenario
 from rest_framework import status
 from django.conf import settings
-from django.db import connection
+from files.file_model import FileRefModel
 from database.db_engine import engine
 from ..Graphic import Graphic
 from ..Error import Error
 import pandas as pd
-import numpy as np
 import os
 import threading
 import traceback
@@ -59,23 +58,16 @@ class RunModelsViews(APIView):
 
                 if 'arimax' in models or 'sarimax' in models:
 
-                    with connection.cursor() as cursor:
-                        '''
-                        QUERY FOR MYSQL = SHOW TABLES LIKE \'{table_name}\' 
-                        '''
+                    exog = FileRefModel.objects.filter(project_id=scenario.project_id, model_type_id=2).first()
+                    exog_projected = FileRefModel.objects.filter(project_id=scenario.project_id, model_type_id=3).first()
 
-                        query = f'''SELECT name FROM sqlite_master 
-                                    WHERE type='table' 
-                                    AND name='Historical_Exogenous_Variables_{project.project_name}_user{user}' '''
-                        cursor.execute(query)
+                    if exog is None:
+                        return Response(data={'error': 'not_exog_data'}, status=status.HTTP_400_BAD_REQUEST)
 
-                        table_exog_vars = cursor.fetchone()
+                    df_exog_data = get_historical_data(table_name=exog.file_name)
 
-                        if table_exog_vars is None:
-                            return Response({'error': 'exogenous_variables_not_found'},
-                                            status=status.HTTP_400_BAD_REQUEST)
-
-                        df_exog_data = get_historical_data(table_name=table_exog_vars[0])
+                    if exog_projected is not None:
+                        df_exog_data_projected = get_historical_data(table_name=exog_projected.file_name)
 
                 # Extract required scenario data
                 test_p = scenario.test_p
@@ -101,13 +93,14 @@ class RunModelsViews(APIView):
                     try:
                         # Run the models and generate predictions
                         if 'arimax' in models or 'sarimax' in models:
-                            result = best_model(df_historical=df_historical,
-                                                test_p=test_p, pred_p=pred_p,
-                                                models=models,
-                                                seasonal_periods=seasonal_periods,
-                                                additional_params=additional_params,
-                                                error_method=error_method,
-                                                exog_dataframe=df_exog_data)
+                            result = best_model(
+                                df_historical=df_historical,
+                                test_p=test_p, pred_p=pred_p, models=models,
+                                seasonal_periods=seasonal_periods,
+                                additional_params=additional_params,
+                                error_method=error_method,
+                                exog_dataframe=df_exog_data,
+                                exog_projected_df=df_exog_data_projected if exog_projected is not None else None)
 
                         else:
                             result = best_model(df_historical=df_historical,
@@ -155,7 +148,8 @@ class RunModelsViews(APIView):
                         # Save the predicted data as a table
                         save_dataframe(route_file=path,
                                        file_name=f'{table_name}_prediction_results_scenario_{scenario_name}',
-                                       model_type="historical_data", wasSaved=True)
+                                       model_type="historical_data",
+                                       wasSaved=True)
 
                         result_holder['result'] = result
 
@@ -186,4 +180,5 @@ class RunModelsViews(APIView):
 
             except Exception as e:
                 # Return a general bad request error for other exceptions
+                traceback.print_exc()
                 return Response({'error': str(e)}, status=status.HTTP_400_BAD_REQUEST)

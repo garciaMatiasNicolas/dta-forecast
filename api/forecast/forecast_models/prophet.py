@@ -16,7 +16,7 @@ def prophet_predictions(row, test_periods, prediction_periods, seasonal_periods,
 
         df_prophet = pd.DataFrame({'ds': train_data.index, 'y': train_data.values})
 
-        (seasonality_mode, seasonality_prior_scale, growth,
+        (seasonality_mode, seasonality_prior_scale,
          uncertainty_samples, changepoint_prior_scale) = additional_params["prophet_params"]
 
         model = Prophet(
@@ -25,7 +25,6 @@ def prophet_predictions(row, test_periods, prediction_periods, seasonal_periods,
             seasonality_prior_scale=float(seasonality_prior_scale),
             changepoint_prior_scale=float(changepoint_prior_scale),
             uncertainty_samples=float(uncertainty_samples),
-            growth=growth
         )
         model.fit(df_prophet)
 
@@ -76,7 +75,7 @@ def prophet_predictions(row, test_periods, prediction_periods, seasonal_periods,
                 'client': row.iloc[3],
                 'category': row.iloc[4], 'subcategory': row.iloc[5],
                 'sku': row.iloc[6], 'description': row.iloc[7], 'model': 'prophet',
-                'date': test_date, 'value': test
+                'date': test_date, 'value': (0.0 if test < 0.0 else test)
             }, ignore_index=True)
 
         df_pred_pivot = df_pred.pivot_table(values='value', index=['family', 'region', 'salesman', 'client', 'category',

@@ -2,32 +2,32 @@ export const filters = [
     {
         icon: "users",
         label: "Familia",
-        name: "family"
+        name: "Family"
     },
     {
         icon: "handshake",
         label: "Vendedor",
-        name: "salesman"
+        name: "Salesman"
     },
     {
         icon: "globe-americas",
         label: "Region",
-        name: "region"
+        name: "Region"
     },
     {
         icon: "globe-americas",
         label: "Categoria",
-        name: "category"
+        name: "Category"
     },
     {
         icon: "key",
         label: "SKU",
-        name: "sku"
+        name: "SKU"
     },
     {
         icon: "key",
         label: "Subcategoria",
-        name: "subcategory"
+        name: "Subcategory"
     },
 
 ]
