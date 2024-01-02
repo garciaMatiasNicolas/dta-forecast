@@ -100,6 +100,7 @@ class RunModelsViews(APIView):
                                 additional_params=additional_params,
                                 error_method=error_method,
                                 exog_dataframe=df_exog_data,
+                                scenario_name=scenario_name,
                                 exog_projected_df=df_exog_data_projected if exog_projected is not None else None)
 
                         else:
@@ -108,7 +109,8 @@ class RunModelsViews(APIView):
                                                 seasonal_periods=seasonal_periods,
                                                 additional_params=additional_params,
                                                 models=models,
-                                                error_method=error_method
+                                                error_method=error_method,
+                                                scenario_name=scenario_name
                             )
 
                         with pd.ExcelWriter(path, engine='xlsxwriter') as excel_writer:

@@ -1,4 +1,4 @@
-import axios from "axios";
+import axios, { all } from "axios";
 import { MDBBtn, MDBIcon, MDBInput, MDBTable, MDBTableHead, MDBTableBody } from "mdb-react-ui-kit";
 import { useEffect, useState } from "react";
 import { showErrorAlert } from "../../../other/Alerts";
@@ -17,6 +17,10 @@ const Outliers = () => {
     const [sku, setSku] = useState("");
 
     useEffect(() => {
+        getAllOutliers();
+    }, []);
+
+    const getAllOutliers = () => {
         const data = {
             'project': localStorage.getItem('projectId'),
             'threshold': 2
@@ -29,7 +33,7 @@ const Outliers = () => {
                 showErrorAlert('No hay datos históricos');
             }
         });
-    }, []);
+    }
 
     // Verificar si dataGraph contiene valores antes de usar sus propiedades
     if (!dataGraph || Object.keys(dataGraph).length === 0) {
@@ -52,10 +56,48 @@ const Outliers = () => {
                 showErrorAlert('No se encontro el sku');
             }
         }); 
-        setSku("");
+        setSku("");   
     }
 
     const { dates, sales, outliers, table_rows } = dataGraph;
+
+    const handleExportExcel = () => {
+        const staticColumns = ['Family', 'Region', 'Salesman', 'Client', 'Category', 'Subcategory', 'SKU', 'Description']
+        const dynamicColumns = outliers.map(date => date);
+        const allColumns = staticColumns.concat(dynamicColumns);
+
+        const dataToSend = {
+            "columns":  allColumns,
+            "rows": table_rows,
+            "file_name": `Outliers`,
+            "project_pk": parseInt(localStorage.getItem("projectId"))
+        };
+        
+        axios.post(`${apiUrl}/export_excel`, dataToSend, {
+            headers: headers,
+            responseType: 'blob'
+        })
+        .then(res => {
+            // Crear un blob a partir de la respuesta
+            const file = new Blob([res.data], { type: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet' });
+            
+            // Crear una URL para el blob
+            const fileURL = URL.createObjectURL(file);
+
+            // Crear un enlace y simular un clic para iniciar la descarga
+            const a = document.createElement('a');
+            a.href = fileURL;
+            a.download = 'Outliers.xlsx'; // Nombre del archivo que se descargará
+            document.body.appendChild(a);
+            a.click();
+
+            // Limpiar el enlace y el blob después de la descarga
+            window.URL.revokeObjectURL(fileURL);
+            document.body.removeChild(a);
+        })
+        .catch(err => console.log(err)) 
+        
+    }
 
     return (
         <div className="d-flex flex-column justify-content-start align-items-start gap-3 mt-5 w-100">
@@ -69,6 +111,7 @@ const Outliers = () => {
                     onChange={(e)=>{setSku(e.target.value)}}
                 />
                 <MDBBtn color="primary" className="d-flex justify-content-center align-items-center" onClick={handleClickSku}><MDBIcon icon="search" color="white"/></MDBBtn>
+                <p className="text-primary mt-3" onClick={getAllOutliers} style={{cursor: "pointer"}}>Reestablecer</p>
             </div>
 
             <div className="w-100 position-relative">
@@ -93,7 +136,11 @@ const Outliers = () => {
             </div>
 
             <h5 className='text-primary mb-3'>Tabla de fechas con Valores Atípicos</h5>
-            <div className="w-100" style={{ overflow: 'auto', maxWidth: '1000px', maxHeight:'800px' }}>
+            <MDBBtn className="w-auto mb-4" onClick={handleExportExcel} style={{ backgroundColor: '#25d366' }}>
+                Exportar como Excel
+                <MDBIcon className="ms-2" fas icon="file-export" />
+            </MDBBtn> 
+            <div className="w-100" style={{ overflow: 'auto', maxHeight:'800px' }}>
                 <MDBTable hover  style={{ width: 'max-content', height: 'max-content' }}>
                     <MDBTableHead className="bg-primary">
                         <tr>

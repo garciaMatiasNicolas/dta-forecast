@@ -19,15 +19,15 @@ def holts_winters_holts_ema(row, test_periods, prediction_periods, model_name, s
         model = ''
 
         if model_name == 'holt_winters':
-            trend, seasonal = additional_params['holtsWinters_params']
+            #trend, seasonal = additional_params['holtsWinters_params']
 
             model = ExponentialSmoothing(train_data, seasonal_periods=int(seasonal_periods),
-                                         trend=trend, seasonal=seasonal)
+                                         trend='add', seasonal='add')
 
         if model_name == 'holt':
-            trend = additional_params['holts_params']
+            #trend = additional_params['holts_params']
 
-            model = ExponentialSmoothing(train_data, trend=trend[0])
+            model = ExponentialSmoothing(train_data,trend='add')
 
         if model_name == 'exponential_moving_average':
             model = ExponentialSmoothing(train_data, trend=None, seasonal=None)  # EMA config

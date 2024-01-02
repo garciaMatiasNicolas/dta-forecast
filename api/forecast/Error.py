@@ -33,7 +33,7 @@ class Error:
                     col_errors.append(0)
 
                 elif actual_col[i] == 0.0 or actual_col[i] < 0.0:
-                    col_errors.append(100)
+                    col_errors.append(200)
 
                 else:
                     if self.error_method == 'SMAPE':

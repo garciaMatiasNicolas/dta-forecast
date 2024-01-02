@@ -187,7 +187,6 @@ const MetricsByDateContainer = () => {
         "file_name": `ReportePorFecha`,
         "project_pk": parseInt(localStorage.getItem("projectId"))
       }
-      console.log(dataToSend);
       
       axios.post(`${apiUrl}/export_excel`, dataToSend, {
         headers: headers,
@@ -211,7 +210,7 @@ const MetricsByDateContainer = () => {
         window.URL.revokeObjectURL(fileURL);
         document.body.removeChild(a);
       })
-      .catch(err => console.log(err.response.data)) 
+      .catch(err => console.log(err)) 
     }
   }
 

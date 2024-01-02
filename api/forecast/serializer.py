@@ -32,7 +32,7 @@ class FilterData(serializers.Serializer):
         project_id = data.get('project_id')
         filter_value = data.get('filter_value')
 
-        filters = ['family', 'subcategory', 'category', 'sku', 'salesman', 'region', 'date', 'client']
+        filters = ['Family', 'Subcategory', 'Category', 'SKU', 'Salesman', 'Region', 'date', 'client']
 
         if not filter_name:
             raise serializers.ValidationError({'error': 'filter_not_provided'})

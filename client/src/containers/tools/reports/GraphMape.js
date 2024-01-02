@@ -24,14 +24,16 @@ const GraphMape = ({errorName, scenario, graphicData}) => {
         },
     };
 
+    const reversedX = Array.isArray(graphicData.x) ? graphicData.x.reverse() : [];
+    const reversedY = Array.isArray(graphicData.y) ? graphicData.y.reverse() : [];
 
     // Graph data
     const dataBar = {
-        labels: graphicData.x,
+        labels: reversedX,
         datasets: [
             {
                 label: `${errorName} por mes`,
-                data: graphicData.y,
+                data: reversedY,
                 backgroundColor: 'rgba(53, 162, 235, 0.5)',
             }
         ],
@@ -42,7 +44,6 @@ const GraphMape = ({errorName, scenario, graphicData}) => {
         <div className='w-50 mt-5'>
             <p className="text-primary w-auto m-0 p-0">{errorName} último año</p>
             {scenario === 0 ? <EmptyLineChart/> : <Bar options={options} data={dataBar} />}
-            {console.log(graphicData)}
         </div>
     )
 }

@@ -24,14 +24,13 @@ class ExportExcelAPIView(APIView):
 
         if serializer.is_valid():
             project = ProjectsModel.objects.filter(id=serializer.validated_data['project_pk']).first()
-
             try:
                 dataframe = self.create_excel(rows=serializer.validated_data['rows'],
                                               columns=serializer.validated_data['columns'])
 
             except ValueError as ve:
                 return Response({'error': 'error_creating_dataframe', 'logs': str(ve)},
-                                status=status.HTTP_500_INTERNAL_SERVER_ERROR)
+                                status=status.HTTP_400_BAD_REQUEST)
 
             file_name = serializer.validated_data['file_name']
             path = f'media/excel_files/exported_files/{file_name}_project_{project.project_name}.xlsx'

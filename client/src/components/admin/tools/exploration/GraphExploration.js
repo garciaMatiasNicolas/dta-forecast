@@ -19,13 +19,17 @@ const GraphExploration = () => {
     const [draggedFilter, setDraggedFilter] = useState(null);
     
     useEffect(() => {
+        getFirstGraph();
+    }, []);
+
+    const getFirstGraph = () => {
         const graphicData = {
-          project_id: localStorage.getItem("projectId"),
-          filter_name: "all"
+            project_id: localStorage.getItem("projectId"),
+            filter_name: "all"
         }
-    
+      
         axios.post(`${apiUrl}/graphic-data`, graphicData, {
-          headers: headers
+            headers: headers
         })
         .then(res => {
             setDataGraph(res.data);
@@ -33,9 +37,8 @@ const GraphExploration = () => {
         .catch(err => {
             console.log(err);
         })
-    }, []);
+    }
     
-
     // Manejar el evento de inicio de arrastre
     const handleDragStart = (event, filterName) => {
         event.dataTransfer.setData('text/plain', filterName);
@@ -125,6 +128,7 @@ const GraphExploration = () => {
                         </div>
                     </div>
                 ))}
+                <p className="text-primary mt-3" onClick={getFirstGraph} style={{cursor: "pointer"}}>Reestablecer</p>
             </div>
 
   
@@ -164,6 +168,11 @@ const GraphExploration = () => {
                                 suggestedMin: 0,
                             },
                         },
+                        elements: {
+                            point: {
+                                radius: 2.5, // Set the point radius to 0 to hide points
+                            }
+                        }
                     }}
                 />
             </div>

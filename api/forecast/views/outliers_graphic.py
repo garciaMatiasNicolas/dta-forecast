@@ -1,5 +1,3 @@
-import datetime
-
 from rest_framework.views import APIView
 from rest_framework.decorators import permission_classes, authentication_classes
 from rest_framework.authentication import TokenAuthentication
@@ -67,11 +65,21 @@ class GraphicOutliersView(APIView):
         for col, row in table_report.iterrows():
             rows.append(row.to_list())
 
-        data = {
-            'dates': date_columns_hsd,
-            'sales': sales_for_each_date,
-            'outliers': dates_with_outliers,
-            'table_rows': rows
-        }
+        if sku is not None:
+            table_rows_filtered = [row for row in rows if row[6] == sku]
+            data = {
+                'dates': date_columns_hsd,
+                'sales': sales_for_each_date,
+                'outliers': dates_with_outliers,
+                'table_rows': table_rows_filtered
+            }
+
+        else:
+            data = {
+                'dates': date_columns_hsd,
+                'sales': sales_for_each_date,
+                'outliers': dates_with_outliers,
+                'table_rows': rows
+            }
 
         return Response(data=data, status=status.HTTP_200_OK)
