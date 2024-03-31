@@ -14,8 +14,6 @@ const ProfileDataContainer = ({dataProfile}) => {
     
     const [update, setUpdate] = useState(false);
 
-    console.log(dataProfile);
-
     return (
       <MDBCard className='text-center w-75' style={{"maxWidth": "900px"}}>
         <MDBCardHeader>

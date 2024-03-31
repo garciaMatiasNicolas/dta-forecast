@@ -1,5 +1,6 @@
 import { useNavigate } from "react-router-dom";
 import Tools from "../Tools";
+import NavInventory from "../../../navs/NavInventory";
 
 
 
@@ -33,14 +34,16 @@ const InventoryTools = () => {
     };
     
     return(
-        <div className="w-100 h-100">
-          
+ 
+        <div className="d-flex w-auto justify-content-center align-items-start gap-3 flex-column">
+            <NavInventory/>
+
             <div className="d-flex w-auto justify-content-center align-items-center gap-1 flex-wrap">
                 <Tools props={safetyStock}/>
                 <Tools props={stockByProduct}/>
             </div>
-
         </div>
+
     )
 };
 

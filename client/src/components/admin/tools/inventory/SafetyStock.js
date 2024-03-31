@@ -66,7 +66,13 @@ const SafetyStock = () => {
             project_id: localStorage.getItem("projectId"), 
             order: "", 
             filters: "", 
-            type: "safety stock"
+            type: "safety stock",
+            params: {
+                next_buy: "15",
+                forecast_or_historical: "historical",
+                forecast_periods: "0", 
+                scenario_id: false,
+            }
         }, {headers})
         .then(res => setData(res.data.data))
         .catch(err => {err.response.data.error === "historical_data_none" ? showErrorAlert("No hay datos históricos") : showErrorAlert("Ocurrio un error inesperado");})

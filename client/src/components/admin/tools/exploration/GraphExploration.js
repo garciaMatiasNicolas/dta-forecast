@@ -57,7 +57,7 @@ const GraphExploration = () => {
                 filter_name: filterName,
             };
 
-            axios.post(`${apiUrl}/graphic-data`, data, { headers: headers })
+            axios.post(`${apiUrl}/forecast/graphic-data`, data, { headers: headers })
             .then((res) => setDataGraph(res.data))
             .catch((err) => console.log(err));
         }

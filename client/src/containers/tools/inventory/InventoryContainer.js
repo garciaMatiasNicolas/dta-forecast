@@ -7,6 +7,7 @@ import FiltersNested from '../../../components/admin/tools/inventory/FiltersNest
 import { MDBBtn, MDBInput, MDBRadio } from 'mdb-react-ui-kit';
 import TrafficLightContainer from './TrafficLightContainer';
 import Navbar from '../../../components/navs/Navbar';
+import NavInventory from '../../../components/navs/NavInventory';
 
 const apiUrl = process.env.REACT_APP_API_URL;
 
@@ -15,8 +16,12 @@ const InventoryContainer = () => {
     const [trafficLight, setTrafficLight] = useState([]);
     const [stockData, setStockData] = useState(false);
     const [loader, setLoader] = useState(false);
-    const [stockParams, setStockParams] = useState([]);
-    const [showInput, setShowInput] = useState(false);
+    const [stockParams, setStockParams] = useState({
+        next_buy: "15",
+        forecast_or_historical: "historical",
+        forecast_periods: "0", 
+        scenario_id: false,
+    });
     const [scenarios, setScenarios] = useState([]);
 
     const fetchData = (headers, type, params) => {
@@ -74,8 +79,6 @@ const InventoryContainer = () => {
     const handleRadioChange = (e) => {
         let { id } = e.target;
 
-        id === "forecast" ? setShowInput(true) : setShowInput(false);
-
         setStockParams((prev) => ({
             ...prev,
             forecast_or_historical: id
@@ -83,17 +86,10 @@ const InventoryContainer = () => {
     };
 
     const handleForecastPeriods = (e) => {
-        if(stockParams.forecast_or_historical === "forecast") {
-            setStockParams((prev) => ({
-                ...prev,
-                forecast_periods: e.target.value
-            }));
-        } else {
-            setStockParams((prev) => ({
-                ...prev,
-                forecast_periods: ""
-            }));
-        }
+        setStockParams((prev) => ({
+            ...prev,
+            forecast_periods: e.target.value
+        }));
     };
 
     const handleNextBuy = (e) => {
@@ -110,14 +106,24 @@ const InventoryContainer = () => {
             'Content-Type': 'application/json', 
         };
         
-        setLoader(true);
-        fetchData(headers, "stock by product", stockParams);
+        if (stockParams["forecast_or_historical"] === "forecast" ){
+            if (stockParams["scenario_id"] === false) { showErrorAlert("Si elige predecido, debe seleccionar un escenario"); }
+            else if (stockParams["forecast_periods"] === "0") { showErrorAlert("Si elige predecido, los periodos de forecast no pueden ser cero"); }
+            else {
+                setLoader(true);
+                fetchData(headers, "stock by product", stockParams);
+            };
+        } else {
+            setLoader(true);
+            fetchData(headers, "stock by product", stockParams);
+        }
     };
 
     const handleOnChange = (event) => {
+        let value = event.target.value === "false" ? false : event.target.value;
         setStockParams((prev) => ({
             ...prev,
-            scenario_id: event.target.value
+            scenario_id: value
         }));
     }; 
         
@@ -125,6 +131,7 @@ const InventoryContainer = () => {
         <div>
             <Navbar/>
             <main style={{"minHeight": "100vh"}} className="d-flex flex-column justify-content-center gap-3 align-items-start p-5 bg-white w-100">
+                <NavInventory/>
                 <div className="d-flex flex-column justify-content-start align-items-start gap-3 w-100">
 
                     {/* <h5 className='text-primary'>Gráfico de Stock por producto</h5>
@@ -140,31 +147,29 @@ const InventoryContainer = () => {
                         <h5 className="text-primary text-center">Parámetros calculo de stock</h5>
                         <div className="w-75 d-flex justify-content-start align-items-center" style={{maxWidth: "500px"}} >    
                             <p className="text-primary mt-3 w-50">Próxima compra:</p>
-                            <MDBInput onChange={handleNextBuy} type="text" label="Días" id="next_buy_days"/>
+                            <MDBInput onChange={handleNextBuy} type="text" label="Días" id="next_buy_days" defaultValue={15}/>
                         </div>
 
 
                         <div className="w-50 d-flex justify-content-start align-items-center gap-3">
                             <p className="text-primary mt-3">Data a utilizar:</p>
-                            <MDBRadio name="historical_or_forecast" id="historical" label="Histórico" onChange={handleRadioChange}/>
+                            <MDBRadio name="historical_or_forecast" id="historical" label="Histórico" onChange={handleRadioChange} defaultChecked/>
                             <MDBRadio name="historical_or_forecast" id="forecast" label="Predecido"  onChange={handleRadioChange}/>
                         </div>
 
-                        {showInput &&
-                            <div>
-                                <select className="form-select w-auto" onChange={handleOnChange}>
-                                    <option value={false}>Elegir escenario</option>
-                                    {scenarios.map((scenario) => (
-                                        <option key={scenario.id} value={scenario.id}>{scenario.scenario_name}</option>
-                                    ))}
-                                </select>
-                            </div>
-                        }
+                        <div>
+                            <select className="form-select w-auto" onChange={handleOnChange}>
+                                <option value={false}>Elegir escenario</option>
+                                {scenarios.map((scenario) => (
+                                    <option key={scenario.id} value={scenario.id}>{scenario.scenario_name}</option>
+                                ))}
+                            </select>
+                        </div>
                         
-                        {showInput && <div className="w-75 d-flex justify-content-start align-items-center" style={{maxWidth: "500px"}} >    
+                        <div className="w-75 d-flex justify-content-start align-items-center" style={{maxWidth: "500px"}} >    
                             <p className="text-primary mt-3 w-50">Periodos de forecast:</p>
-                            <MDBInput onChange={handleForecastPeriods} type="text" label="Periodos" id="forecast_periods"/>
-                        </div>}
+                            <MDBInput onChange={handleForecastPeriods} type="text" label="Periodos" id="forecast_periods" defaultValue={0}/>
+                        </div>
 
                         <MDBBtn onClick={handleOnClick} color="primary" type="button">CALCULAR</MDBBtn>
                     </div>

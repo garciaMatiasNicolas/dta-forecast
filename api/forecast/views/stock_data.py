@@ -14,108 +14,132 @@ import numpy as np
 from scipy.special import erfinv
 from datetime import datetime, timedelta
 from collections import defaultdict
+import traceback
 
 
 class StockDataView(APIView):
 
     # -- METHODS FOR GET DATA FROM DB -- #
     @staticmethod
-    def get_data(project_pk: int, is_forecast: bool, scenario: int = None) -> tuple[pd.DataFrame, pd.DataFrame] | tuple[pd.DataFrame, str]:
-        if is_forecast:
-            data = ForecastScenario.objects.get(pk=scenario)
-            if data is None:
-                raise ValueError("Data_not_found")
+    def get_data(project_pk: int, scenario: int = None):
+        if scenario:
+            forecast_data = ForecastScenario.objects.get(pk=scenario)
             
-            query = f"SELECT * FROM {data.predictions_table_name} WHERE model != 'actual'"
-            table = pd.read_sql_query(query, engine)
-
+            if forecast_data is None:
+                table_forecast = None
+        
+            else:
+                query = f"SELECT * FROM {forecast_data.predictions_table_name} WHERE model != 'actual'"
+                table_forecast = pd.read_sql_query(query, engine)
+        
         else:
-            data = FileRefModel.objects.filter(project_id=project_pk, model_type_id=1).first()
-            if data is None:
-                raise ValueError("Data_not_found")
+            table_forecast = None
 
-            table = pd.read_sql_table(table_name=data.file_name, con=engine)
+        historical_data = FileRefModel.objects.filter(project_id=project_pk, model_type_id=1).first()
+        if historical_data is None:
+            raise ValueError("Historical_not_found")
+
+        table_historical = pd.read_sql_table(table_name=historical_data.file_name, con=engine)
 
         stock_data = FileRefModel.objects.filter(project_id=project_pk, model_type_id=4).first()
         if stock_data is None:
             raise ValueError("Stock_data_not_found")
 
-        stock_data_table = pd.read_sql_table(table_name=stock_data.file_name, con=engine)
+        table_stock = pd.read_sql_table(table_name=stock_data.file_name, con=engine)
 
-        return table, stock_data_table
+        tables = {"historical": table_historical, "stock": table_stock, "forecast": table_forecast}
 
-    @staticmethod
-    def get_filtered_data(project_pk: int, filters: list, is_forecast: bool, scenario: int = None):
-        conditions = [
-            f"{filter_name} = '{filter_value}'"
-            for filter_dict in filters
-            for filter_name, filter_value in filter_dict.items()
-        ]
-
-        if is_forecast:
-            data = ForecastScenario.objects.get(pk=scenario)
-            query_for_data = f"SELECT * FROM {data.predictions_table_name} WHERE " + " AND ".join(conditions)
-            
-        else:
-            data = FileRefModel.objects.filter(project_id=project_pk, model_type_id=1).first()
-            query_for_data = f"SELECT * FROM {data.file_name} WHERE " + " AND ".join(conditions)
-
-        stock_data = FileRefModel.objects.filter(project_id=project_pk, model_type_id=4).first()
-
-        if data is None:
-            raise ValueError("Data_not_found")
-
-        if stock_data is None:
-            raise ValueError("Stock_data_not_found")
-
-
-        query_for_stock = f"SELECT * FROM {stock_data.file_name} WHERE " + " AND ".join(conditions)
-
-        with connection.cursor() as cursor:
-            cursor.execute(query_for_data)
-            historical_rows = cursor.fetchall()
-            columns_historical = [desc[0] for desc in cursor.description]
-            df_historical = pd.DataFrame(historical_rows, columns=columns_historical)
-
-            cursor.execute(query_for_stock)
-            stock_rows = cursor.fetchall()
-            columns_stock = [desc[0] for desc in cursor.description]
-            df_stock = pd.DataFrame(stock_rows, columns=columns_stock)
-
-        return df_historical, df_stock
+        return tables
 
     # --- METHODS FOR CALCULATE STOCK --- #
     @staticmethod
-    def calculate_avg_desv_varcoefficient(historical: pd.DataFrame, stock: pd.DataFrame, is_forecast: bool, forecast_periods: int):
+    def calculate_avg_desv_varcoefficient(historical: pd.DataFrame, stock: pd.DataFrame, forecast_periods: int, forecast):
         results = []
         total_avg_sales = 0
-        iterrows = historical.iloc[:, -forecast_periods:].iterrows() if is_forecast else historical.iloc[:, -12:].iterrows()
+        iterrows_historical = historical.iloc[:, -12:].iterrows()
 
         historical.fillna(0)
-        for _, row in iterrows:
-            total_sales = row.sum()
-            avg_row = np.average(row)
-            avg_sales = round(avg_row / 30,2)
-            desv = round(row.std(), 2)
-            coefficient_of_variation = round(desv / avg_sales, 2) if avg_sales != 0 else 0
-            stock_or_request = 'stock' if coefficient_of_variation > 0.7 else 'request'
-            desv_2 = round(desv / 30, 2)
-            total_avg_sales += avg_sales
+        
+        if forecast is not None:
+            iterrows_forecast = forecast.iloc[:, -forecast_periods:].iterrows() 
+            forecast.fillna(0) 
+            
+            for (_, row_historical), ( _, row_forecast) in zip(iterrows_historical, iterrows_forecast):
+                total_sales_historical = row_historical.sum()
+                total_sales_forecast = row_forecast.sum()
 
-            avg_row = str(avg_row) if not pd.isna(avg_row) else '0.0'
-            desv = str(desv) if not pd.isna(desv) else '0.0'
-            coefficient_of_variation = str(coefficient_of_variation) if not pd.isna(coefficient_of_variation) else '0.0'
+                avg_row_historical = np.average(row_historical)
+                avg_row_forecast = np.average(row_forecast)
 
-            row_with_stats = {
-                'total_sales': total_sales,
-                'avg_row': avg_row,
-                'desv': desv,
-                'coefficient_of_variation': coefficient_of_variation,
-                'stock_or_request': stock_or_request,
-                'avg_sales_per_day': avg_sales,
-                'desv_per_day': desv_2
-            }
-            results.append(row_with_stats)
+                avg_sales_historical = round(avg_row_historical / 30, 2)
+                avg_sales_forecast = round(avg_row_forecast / 30, 2)
+
+                desv_historical = round(row_historical.std(), 2)
+                desv_forecast = round(row_forecast.std(), 2)
+                
+                coefficient_of_variation_historical = round(desv_historical / avg_sales_historical, 2) if avg_sales_historical != 0 else 0
+                coefficient_of_variation_forecast = round(desv_forecast / avg_sales_forecast, 2) if avg_sales_forecast != 0 else 0
+
+                stock_or_request_historical = 'stock' if coefficient_of_variation_historical > 0.7 else 'request'
+                stock_or_request_forecast = 'stock' if coefficient_of_variation_forecast > 0.7 else 'request'
+                
+                desv_2_historical = round(desv_historical / 30, 2)
+                desv_2_forecast = round(desv_forecast / 30, 2)
+
+                avg_row_historical = str(avg_row_historical) if not pd.isna(avg_row_historical) else '0.0'
+                avg_row_forecast = str(avg_row_forecast) if not pd.isna(avg_row_forecast) else '0.0'
+
+                desv_historical = str(desv_historical) if not pd.isna(desv_historical) else '0.0'
+                desv_forecast = str(desv_forecast) if not pd.isna(desv_forecast) else '0.0'
+
+                coefficient_of_variation_historical = str(coefficient_of_variation_historical) if not pd.isna(coefficient_of_variation_historical) else '0.0'
+                coefficient_of_variation_forecast = str(coefficient_of_variation_forecast) if not pd.isna(coefficient_of_variation_forecast) else '0.0'
+
+                row_with_stats = {
+                    'total_sales_historical': total_sales_historical,
+                    'avg_row_historical': avg_row_historical,
+                    'desv_historical': desv_historical,
+                    'coefficient_of_variation_historical': coefficient_of_variation_historical,
+                    'stock_or_request_historical': stock_or_request_historical,
+                    'avg_sales_per_day_historical': avg_sales_historical,
+                    'desv_per_day_historical': desv_2_historical,
+                    'total_sales_forecast': total_sales_forecast,
+                    'avg_row_forecast': avg_row_forecast,
+                    'desv_forecast': desv_forecast,
+                    'coefficient_of_variation_forecast': coefficient_of_variation_forecast,
+                    'stock_or_request_forecast': stock_or_request_forecast,
+                    'avg_sales_per_day_forecast': avg_sales_forecast,
+                    'desv_per_day_forecast': desv_2_forecast
+                }
+
+                results.append(row_with_stats)
+        
+        else:
+            
+            for _, row in iterrows_historical:
+                total_sales = row.sum()
+                avg_row = np.average(row)
+                avg_sales = round(avg_row / 30,2)
+                desv = round(row.std(), 2)
+                coefficient_of_variation = round(desv / avg_sales, 2) if avg_sales != 0 else 0
+                stock_or_request = 'stock' if coefficient_of_variation > 0.7 else 'request'
+                desv_2 = round(desv / 30, 2)
+        
+                avg_row = str(avg_row) if not pd.isna(avg_row) else '0.0'
+                desv = str(desv) if not pd.isna(desv) else '0.0'
+                coefficient_of_variation = str(coefficient_of_variation) if not pd.isna(coefficient_of_variation) else '0.0'
+
+                row_with_stats = {
+                   'total_sales_historical': total_sales,
+                    'avg_row_historical': avg_row,
+                    'desv_historical': desv,
+                    'coefficient_of_variation_historical': coefficient_of_variation,
+                    'stock_or_request_historical': stock_or_request,
+                    'avg_sales_per_day_historical': avg_sales,
+                    'desv_per_day_historical': desv_2
+                }
+                
+                results.append(row_with_stats)
 
         stats_df = pd.DataFrame(results)
 
@@ -125,18 +149,18 @@ class StockDataView(APIView):
         result_df = result_df.drop(labels=['SKU', 'Description'], axis=1)
 
         result_list = result_df.to_dict(orient='records')
-        return result_list, total_avg_sales
+        return result_list
 
     @staticmethod
-    def calculate_abc(products):
-        total = sum(product['total_sales'] for product in products)
-        products.sort(key=lambda x: x['total_sales'], reverse=True)
+    def calculate_abc(products, is_forecast):
+        total = sum(product[f'total_sales_{"forecast" if is_forecast else "historical"}'] for product in products)
+        products.sort(key=lambda x: x[f'total_sales_{"forecast" if is_forecast else "historical"}'], reverse=True)
 
         abc_data = []
         acum = 0
 
         for product in products:
-            acum += product['total_sales']
+            acum += product[f'total_sales_{"forecast" if is_forecast else "historical"}']
             abc_class = 'A' if acum / total <= 0.2 else (
                 'B' if acum / total <= 0.8 else 'C')
 
@@ -145,7 +169,7 @@ class StockDataView(APIView):
 
         return abc_data
 
-    def calculate_stock(self, data: List[Dict[str, Any]], total: float, next_buy_days: int, is_forecast: bool) -> (
+    def calculate_stock(self, data: List[Dict[str, Any]], next_buy_days: int, is_forecast: bool) -> (
             tuple)[list[dict[str | Any, int | str | datetime | Any]], bool]:
 
         def verify_safety_stock_zero(array: List[Dict[str, Any]]):
@@ -159,11 +183,13 @@ class StockDataView(APIView):
 
         results = []
 
-        abc = self.calculate_abc(products=data)
+        abc = self.calculate_abc(products=data, is_forecast=is_forecast)
         abc_dict = {product['Product']: product['ABC'] for product in abc}
 
         for item in data:
-            avg_sales = float(item['avg_sales_per_day'])
+            avg_sales_historical = float(item["avg_sales_per_day_historical"])
+            avg_sales_forecast = float(item["avg_sales_per_day_forecast"]) if is_forecast else "0.0"
+            avg_sales = float(item[f'avg_sales_per_day_{"forecast" if is_forecast else "historical"}'])
             available_stock = float(item['Available Stock'])
             lead_time = int(item['Lead Time'])
             safety_stock = int(item['Safety stock'])
@@ -217,7 +243,8 @@ class StockDataView(APIView):
                 'Cliente': item['Client'],
                 'Producto': str(item['Product']),
                 'Stock': str(available_stock),
-                f'Venta diaria {"(Predecido)" if is_forecast else "(Histórico)"}': str(avg_sales),
+                'Venta diaria histórico': str(avg_sales_historical),
+                'Venta diaria predecido': str(avg_sales_forecast),
                 'Cobertura (días)': str(days_of_coverage),
                 'Cobertura prox. compra (días)': str(next_buy_days-days_of_coverage),
                 'Punto de reorden': str(reorder_point),
@@ -244,8 +271,8 @@ class StockDataView(APIView):
         final_data = []
 
         for product in data:
-            avg_sales_per_day = product['avg_sales_per_day']
-            desv_per_day = product['desv_per_day']
+            avg_sales_per_day = product['avg_sales_per_day_historical']
+            desv_per_day = product['desv_per_day_historical']
             lead_time = product['Lead Time']
             service_level = product['Service Level'] / 100
             desv_est_lt_days = product['Desv Est Lt Days']
@@ -282,13 +309,13 @@ class StockDataView(APIView):
         return final_data
 
     @staticmethod
-    def traffic_light(products, is_forecast: bool):
+    def traffic_light(products):
         count_articles = defaultdict(int)
         sum_sales = defaultdict(float)
         sum_stock = defaultdict(float)
 
         for product in products:
-            avg_sales =  product["Venta diaria (Predecido)" if is_forecast else "Venta diaria (Histórico)"] 
+            avg_sales =  product["Venta diaria histórico"] 
             caracterizacion = product["Caracterización"]
             count_articles[caracterizacion] += 1
             sum_sales[caracterizacion] += float(avg_sales)
@@ -314,53 +341,51 @@ class StockDataView(APIView):
     @permission_classes([IsAuthenticated])
     def post(self, request):
         project_pk = request.data.get('project_id')
-        filters = request.data.get('filters')
-        order = request.data.get('order')
+        # filters = request.data.get('filters')
+        # order = request.data.get('order')
         type_of_stock = request.data.get('type')
         params = request.data.get('params')
         is_forecast = True if params["forecast_or_historical"] == "forecast" else False
-        forecast_periods = int(params["forecast_periods"]) if is_forecast else ""
-        scenario = int(params["scenario_id"]) if is_forecast else ""
+        forecast_periods = int(params["forecast_periods"])
+        scenario = int(params["scenario_id"]) if params["scenario_id"] is not False or params["scenario_id"] else False
 
         try:
             safety_stock_is_zero = False
             traffic_light = ""
+            tables = self.get_data(project_pk=project_pk, scenario=scenario)
 
-            if filters == '':
-                hsd_table, stock_table = self.get_data(project_pk=project_pk, is_forecast=is_forecast, scenario=scenario)
+            # if filters == '':
+            # else:
+            # hsd_table, stock_table = self.get_filtered_data(project_pk=project_pk, filters=filters, is_forecast=is_forecast, scenario=scenario)
 
-            else:
-                hsd_table, stock_table = self.get_filtered_data(project_pk=project_pk, filters=filters, is_forecast=is_forecast, scenario=scenario)
-
-            if len(hsd_table) != len(stock_table):
+            if len(tables["historical"]) != len(tables["stock"]):
                 return Response(data={'error': 'stock_hsd_dif_len'}, status=status.HTTP_400_BAD_REQUEST)
 
-            data, total = self.calculate_avg_desv_varcoefficient(historical=hsd_table, stock=stock_table, is_forecast=is_forecast, forecast_periods=forecast_periods)
+            data = self.calculate_avg_desv_varcoefficient(historical=tables["historical"], stock=tables["stock"], forecast=tables["forecast"], 
+            forecast_periods=forecast_periods)
 
             if type_of_stock == 'stock by product':
-                final_data, safety_stock = self.calculate_stock(data=data, total=total, next_buy_days=int(params["next_buy"]), is_forecast=is_forecast)
+                final_data, safety_stock = self.calculate_stock(data=data, next_buy_days=int(params["next_buy"]), is_forecast=is_forecast)
                 safety_stock_is_zero = safety_stock
+                traffic_light = self.traffic_light(products=final_data)
 
             if type_of_stock == 'safety stock':
                 final_data = self.calculate_safety_stock(data=data)
 
-            if order != "":
-                key = list(order.keys())[0]
-                order_type = order[key]
+            # if order != "":
+                # key = list(order.keys())[0]
+                # order_type = order[key]
 
-                if order_type == 'asc':
-                    final_data = sorted(final_data, key=lambda items: items[key], reverse=False)
-                else:
-                    final_data = sorted(final_data, key=lambda items: items[key], reverse=True)
-
-            if type_of_stock == 'stock by product':
-                traffic_light = self.traffic_light(products=final_data, is_forecast=is_forecast)
+                # if order_type == 'asc':
+                    # final_data = sorted(final_data, key=lambda items: items[key], reverse=False)
+                # else:
+                    # final_data = sorted(final_data, key=lambda items: items[key], reverse=True) 
 
             return Response(data={"data": final_data, "is_zero": safety_stock_is_zero, "traffic_light": traffic_light},
-                            status=status.HTTP_200_OK)
+            status=status.HTTP_200_OK)
 
         except ValueError as err:
-            if str(err) == 'Data_not_found':
+            if str(err) == 'Historical_not_found':
                 return Response(data={'error': 'data_none'}, status=status.HTTP_400_BAD_REQUEST)
             
             if str(err) == 'Stock_data_not_found':
@@ -368,6 +393,7 @@ class StockDataView(APIView):
 
             else:
                 print(str(err))
+                traceback.print_exc()
                 return Response(data={'error': str(err)}, status=status.HTTP_400_BAD_REQUEST)
 
 
@@ -487,3 +513,51 @@ class StockByProduct(APIView):
 
         else:
             return Response(data={'error': 'historical_data_not_found'}, status=status.HTTP_400_BAD_REQUEST)
+
+
+
+
+
+
+
+"""
+@staticmethod
+def get_filtered_data(project_pk: int, filters: list, is_forecast: bool, scenario: int = None):
+    conditions = [
+        f"{filter_name} = '{filter_value}'"
+        for filter_dict in filters
+        for filter_name, filter_value in filter_dict.items()
+    ]
+
+    if is_forecast:
+        data = ForecastScenario.objects.get(pk=scenario)
+        query_for_data = f"SELECT * FROM {data.predictions_table_name} WHERE " + " AND ".join(conditions)
+        
+    else:
+        data = FileRefModel.objects.filter(project_id=project_pk, model_type_id=1).first()
+        query_for_data = f"SELECT * FROM {data.file_name} WHERE " + " AND ".join(conditions)
+
+    stock_data = FileRefModel.objects.filter(project_id=project_pk, model_type_id=4).first()
+
+    if data is None:
+        raise ValueError("Data_not_found")
+
+    if stock_data is None:
+        raise ValueError("Stock_data_not_found")
+
+
+    query_for_stock = f"SELECT * FROM {stock_data.file_name} WHERE " + " AND ".join(conditions)
+
+    with connection.cursor() as cursor:
+        cursor.execute(query_for_data)
+        historical_rows = cursor.fetchall()
+        columns_historical = [desc[0] for desc in cursor.description]
+        df_historical = pd.DataFrame(historical_rows, columns=columns_historical)
+
+        cursor.execute(query_for_stock)
+        stock_rows = cursor.fetchall()
+        columns_stock = [desc[0] for desc in cursor.description]
+        df_stock = pd.DataFrame(stock_rows, columns=columns_stock)
+
+    return df_historical, df_stock 
+"""
