@@ -188,7 +188,7 @@ class StockDataView(APIView):
 
         for item in data:
             avg_sales_historical = float(item["avg_sales_per_day_historical"])
-            avg_sales_forecast = float(item["avg_sales_per_day_forecast"]) if is_forecast else "0.0"
+            avg_sales_forecast = float(item["avg_sales_per_day_forecast"]) 
             avg_sales = float(item[f'avg_sales_per_day_{"forecast" if is_forecast else "historical"}'])
             available_stock = float(item['Available Stock'])
             lead_time = int(item['Lead Time'])

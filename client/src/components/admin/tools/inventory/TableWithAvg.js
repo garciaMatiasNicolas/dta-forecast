@@ -114,7 +114,7 @@ const Table = ({ data, isFilter, isOrdering, setData }) => {
             <tr className='w-auto h-auto border'>
               {Object.keys(data[0]).map((key, index) => (
                 <th className='text-white border text-center' key={index}>
-                  {key !== "Producto" && key !== "Stock seguridad" && key !== "Stock" && key !== "Caracterización" && key !== "Suma venta diaria" && key !== "Cantidad de productos" && key !== "Suma de stock" ? 
+                  {key !== "Producto" && key !== "Stock seguridad" && key !== "Stock" && key !== "Suma venta diaria" && key !== "Cantidad de productos" && key !== "Suma de stock" && key !== "Valorizado" && key !== "Sobrante valorizado" && key !== "Sobrante (unidades)" && key !== "Venta diaria histórico"  && key !== "Venta diaria predecido" && key !== "Cobertura (días)" && key !== "Punto de reorden"  ? 
                     <DropdownFilters key={index} name={key} data={data} setFilterData={setData}/> : 
                     <p>{key}</p>
                   }
