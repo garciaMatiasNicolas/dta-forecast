@@ -188,18 +188,19 @@ class StockDataView(APIView):
 
         for item in data:
             avg_sales_historical = float(item["avg_sales_per_day_historical"])
-            avg_sales_forecast = float(item["avg_sales_per_day_forecast"]) 
+            price = float(item['Price'])
+            avg_sales_forecast = float(item["avg_sales_per_day_forecast"])  if is_forecast else "0.0"
             avg_sales = float(item[f'avg_sales_per_day_{"forecast" if is_forecast else "historical"}'])
             available_stock = float(item['Available Stock'])
             lead_time = int(item['Lead Time'])
             safety_stock = int(item['Safety stock'])
             reorder_point = next_buy_days + lead_time + safety_stock
             days_of_coverage = round(available_stock / avg_sales) if avg_sales != 0 else 9999
-            buy = 'Si' if (days_of_coverage - lead_time) < 1 else 'No'
-            how_much = max(item['Optimal Batch'], (next_buy_days + lead_time-safety_stock - days_of_coverage)) if buy == 'Si' else 0
+            buy = 'Si' if (days_of_coverage - reorder_point) < 1 else 'No'
+            optimal_batch = float(item["Optimal Batch"])
+            how_much = max(optimal_batch, (next_buy_days + lead_time + safety_stock - days_of_coverage) * avg_sales ) if buy == 'Si' else 0
             overflow_units = available_stock if avg_sales == 0 else (0 if days_of_coverage - reorder_point < 0 else round((days_of_coverage - reorder_point)*avg_sales/30)) 
-            overflow_price = round(overflow_units*item['Price'])
-
+            overflow_price = round(overflow_units*price)
             try:
                 next_buy = datetime.now() + timedelta(days=days_of_coverage - lead_time) if days_of_coverage != 0 \
                     else datetime.now()
@@ -246,18 +247,18 @@ class StockDataView(APIView):
                 'Venta diaria histórico': str(avg_sales_historical),
                 'Venta diaria predecido': str(avg_sales_forecast),
                 'Cobertura (días)': str(days_of_coverage),
-                'Cobertura prox. compra (días)': str(next_buy_days-days_of_coverage),
-                'Punto de reorden': str(reorder_point),
-                'Sobrante (unidades)': str(overflow_units),
-                'Sobrante valorizado': f'${str(overflow_price)}', 
-                'Valorizado': f'${str(round(item["Price"]*available_stock, 2))}', 
                 'Stock seguridad en dias': str(safety_stock),
-                'Demora en dias': str(lead_time),
+                'Punto de reorden': str(reorder_point),
                 '¿Compro?': str(buy),
-                '¿Cuanto?': str(how_much),
-                'Fecha próx. compra':  str(next_buy) if days_of_coverage != 9999 else "---",
+                '¿Cuanto?': str(round(how_much)),
                 'Estado': str(stock_status),
+                'Valorizado': f'${str(round(price*available_stock, 2))}',
+                'Demora en dias': str(lead_time),
+                'Fecha próx. compra':  str(next_buy) if days_of_coverage != 9999 else "---",
                 'Caracterización': characterization,
+                'Sobrante (unidades)': str(overflow_units),
+                'Cobertura prox. compra (días)': str( days_of_coverage- next_buy_days ),
+                'Sobrante valorizado': f'${str(overflow_price)}',
                 'ABC': abc_dict.get(item['Product'], ''),
                 'XYZ': item['XYZ']
             }
