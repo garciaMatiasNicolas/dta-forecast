@@ -132,6 +132,7 @@ class StockDataView(APIView):
                 row_with_stats = {
                    'total_sales_historical': total_sales,
                     'avg_row_historical': avg_row,
+                    'avg_row_forecast': "0.0",
                     'desv_historical': desv,
                     'coefficient_of_variation_historical': coefficient_of_variation,
                     'stock_or_request_historical': stock_or_request,
@@ -189,7 +190,7 @@ class StockDataView(APIView):
         for item in data:
             avg_sales_historical = float(item["avg_sales_per_day_historical"])
             price = float(item['Price'])
-            avg_sales_forecast = float(item["avg_sales_per_day_forecast"])  if is_forecast else "0.0"
+            avg_sales_forecast = float(item["avg_sales_per_day_forecast"]) 
             avg_sales = float(item[f'avg_sales_per_day_{"forecast" if is_forecast else "historical"}'])
             available_stock = float(item['Available Stock'])
             lead_time = int(item['Lead Time'])
@@ -242,6 +243,7 @@ class StockDataView(APIView):
                 'Vendedor': item['Salesman'],
                 'Subcategoria': item['Subcategory'],
                 'Cliente': item['Client'],
+                'Región': item['Region'],
                 'Producto': str(item['Product']),
                 'Stock': str(available_stock),
                 'Venta diaria histórico': str(avg_sales_historical),
@@ -286,12 +288,13 @@ class StockDataView(APIView):
             safety_stock_days = round(safety_stock_units / avg_sales_per_day, 2) if avg_sales_per_day != 0 else 0
 
             safety_stock = {
-                'Familia': product['Family'],
-                'Categoria': product['Category'],
-                'Vendedor': product['Salesman'],
-                'Subcategoria': product['Subcategory'],
-                'Cliente': product['Client'],
-                'Producto': product['Product'],
+                'Familia': str(product['Family']),
+                'Categoria': str(product['Category']),
+                'Vendedor': str(product['Salesman']),
+                'Subcategoria': str(product['Subcategory']),
+                'Cliente': (product['Client']),
+                'Región': str(product['Region']),
+                'Producto': str(product['Product']),
                 'Promedio': str(avg_sales_per_day),
                 'Desviacion': str(desv_per_day),
                 'Coeficiente desviacion': str(round(avg_sales_per_day / desv_per_day, 2)) if desv_per_day != 0 else 0,
