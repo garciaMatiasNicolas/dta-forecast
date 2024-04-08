@@ -55,11 +55,10 @@ class StockDataView(APIView):
     @staticmethod
     def calculate_avg_desv_varcoefficient(historical: pd.DataFrame, stock: pd.DataFrame, forecast_periods: int, forecast):
         results = []
-        total_avg_sales = 0
         iterrows_historical = historical.iloc[:, -12:].iterrows()
 
         historical.fillna(0)
-        
+
         if forecast is not None:
             iterrows_forecast = forecast.iloc[:, -forecast_periods:].iterrows() 
             forecast.fillna(0) 
@@ -115,7 +114,6 @@ class StockDataView(APIView):
                 results.append(row_with_stats)
         
         else:
-            
             for _, row in iterrows_historical:
                 total_sales = row.sum()
                 avg_row = np.average(row)
@@ -137,6 +135,7 @@ class StockDataView(APIView):
                     'coefficient_of_variation_historical': coefficient_of_variation,
                     'stock_or_request_historical': stock_or_request,
                     'avg_sales_per_day_historical': avg_sales,
+                    "avg_sales_per_day_forecast": "0.0",
                     'desv_per_day_historical': desv_2
                 }
                 
@@ -144,12 +143,10 @@ class StockDataView(APIView):
 
         stats_df = pd.DataFrame(results)
 
-        result_df = pd.concat(objs=[historical[['SKU', 'Description']], stats_df], axis=1)
-        result_df = pd.merge(result_df, stock, on=['SKU', 'Description'])
-        result_df['Product'] = historical['SKU'] + ' - ' + historical['Description']
-        result_df = result_df.drop(labels=['SKU', 'Description'], axis=1)
-
+        result_df = pd.concat(objs=[historical[['SKU', 'Description', 'Family', 'Region', 'Client', 'Salesman', 'Category', 'Subcategory']], stats_df], axis=1)
+        result_df = pd.merge(result_df, stock, on=['SKU', 'Description', 'SKU', 'Description', 'Family', 'Region', 'Client', 'Salesman', 'Category', 'Subcategory'])
         result_list = result_df.to_dict(orient='records')
+
         return result_list
 
     @staticmethod
@@ -165,7 +162,7 @@ class StockDataView(APIView):
             abc_class = 'A' if acum / total <= 0.2 else (
                 'B' if acum / total <= 0.8 else 'C')
 
-            abc = {"Product": product['Product'], "ABC": abc_class}
+            abc = {"SKU": product['SKU'], "ABC": abc_class}
             abc_data.append(abc)
 
         return abc_data
@@ -185,7 +182,7 @@ class StockDataView(APIView):
         results = []
 
         abc = self.calculate_abc(products=data, is_forecast=is_forecast)
-        abc_dict = {product['Product']: product['ABC'] for product in abc}
+        abc_dict = {product['SKU']: product['SKU'] for product in abc}
 
         for item in data:
             avg_sales_historical = float(item["avg_sales_per_day_historical"])
@@ -244,7 +241,8 @@ class StockDataView(APIView):
                 'Subcategoria': item['Subcategory'],
                 'Cliente': item['Client'],
                 'Región': item['Region'],
-                'Producto': str(item['Product']),
+                'SKU': str(item['SKU']),
+                'Descripción': str(item['Description']),
                 'Stock': str(available_stock),
                 'Venta diaria histórico': str(avg_sales_historical),
                 'Venta diaria predecido': str(avg_sales_forecast),
@@ -261,7 +259,7 @@ class StockDataView(APIView):
                 'Sobrante (unidades)': str(overflow_units),
                 'Cobertura prox. compra (días)': str( days_of_coverage- next_buy_days ),
                 'Sobrante valorizado': f'${str(overflow_price)}',
-                'ABC': abc_dict.get(item['Product'], ''),
+                'ABC': abc_dict.get(item['SKU'], ''),
                 'XYZ': item['XYZ']
             }
 
@@ -294,7 +292,8 @@ class StockDataView(APIView):
                 'Subcategoria': str(product['Subcategory']),
                 'Cliente': (product['Client']),
                 'Región': str(product['Region']),
-                'Producto': str(product['Product']),
+                'SKU': str(product['SKU']),
+                'Descripción': str(product['Description']),
                 'Promedio': str(avg_sales_per_day),
                 'Desviacion': str(desv_per_day),
                 'Coeficiente desviacion': str(round(avg_sales_per_day / desv_per_day, 2)) if desv_per_day != 0 else 0,

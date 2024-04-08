@@ -9,7 +9,7 @@ def linear_regression_predictions(fila, test_periods, prediction_periods, season
                                   error_periods):
     try:
 
-        df_pred = pd.DataFrame(columns=['Family', 'region', 'Salesman', 'Client', 'Category', 'Subcategory',
+        df_pred = pd.DataFrame(columns=['Family', ' Region', 'Salesman', 'Client', 'Category', 'Subcategory',
                                         'SKU', 'Description', 'model', 'date', 'value'])
 
         df_pred_fc = df_pred.copy()
@@ -41,14 +41,14 @@ def linear_regression_predictions(fila, test_periods, prediction_periods, season
             og_date = train_data.index[i]
 
             df_pred = df_pred._append(
-                {'Family': fila.iloc[0], 'region': fila.iloc[1], 'Salesman': fila.iloc[2],
+                {'Family': fila.iloc[0], 'Region': fila.iloc[1], 'Salesman': fila.iloc[2],
                  'Client': fila.iloc[3],
                  'Category': fila.iloc[4], 'Subcategory': fila.iloc[5],
                  'SKU': fila.iloc[6], 'Description': fila.iloc[7], 'model': 'actual',
                  'date': og_date, 'value': fila[og_date]}, ignore_index=True)
 
             df_pred = df_pred._append(
-                {'Family': fila.iloc[0], 'region': fila.iloc[1], 'Salesman': fila.iloc[2],
+                {'Family': fila.iloc[0], 'Region': fila.iloc[1], 'Salesman': fila.iloc[2],
                  'Client': fila.iloc[3],
                  'Category': fila.iloc[4], 'Subcategory': fila.iloc[5],
                  'SKU': fila.iloc[6], 'Description': fila.iloc[7], 'model': 'linear',
@@ -57,20 +57,20 @@ def linear_regression_predictions(fila, test_periods, prediction_periods, season
         for i, test in enumerate(test_predictions):
             test_date = test_data.index[i]
             df_pred = df_pred._append(
-                {'Family': fila.iloc[0], 'region': fila.iloc[1], 'Salesman': fila.iloc[2],
+                {'Family': fila.iloc[0], 'Region': fila.iloc[1], 'Salesman': fila.iloc[2],
                  'Client': fila.iloc[3],
                  'Category': fila.iloc[4], 'Subcategory': fila.iloc[5],
                  'SKU': fila.iloc[6], 'Description': fila.iloc[7], 'model': 'actual',
                  'date': test_date, 'value': fila[test_date]}, ignore_index=True)
 
             df_pred = df_pred._append(
-                {'Family': fila.iloc[0], 'region': fila.iloc[1], 'Salesman': fila.iloc[2],
+                {'Family': fila.iloc[0], 'Region': fila.iloc[1], 'Salesman': fila.iloc[2],
                  'Client': fila.iloc[3],
                  'Category': fila.iloc[4], 'Subcategory': fila.iloc[5],
                  'SKU': fila.iloc[6], 'Description': fila.iloc[7], 'model': 'linear',
                  'date': test_date, 'value': test}, ignore_index=True)
 
-        df_pred_pivot = df_pred.pivot(values='value', index=['Family', 'region', 'Salesman', 'Client', 'Category',
+        df_pred_pivot = df_pred.pivot(values='value', index=['Family', 'Region', 'Salesman', 'Client', 'Category',
                                                              'Subcategory', 'SKU', 'Description', 'model'],
                                       columns='date')
 
@@ -82,20 +82,20 @@ def linear_regression_predictions(fila, test_periods, prediction_periods, season
         for i, future in enumerate(future_dates):
             fut_date = future_dates[i]
             df_pred_fc = df_pred_fc._append(
-                {'Family': fila.iloc[0], 'region': fila.iloc[1], 'Salesman': fila.iloc[2],
+                {'Family': fila.iloc[0], 'Region': fila.iloc[1], 'Salesman': fila.iloc[2],
                  'Client': fila.iloc[3],
                  'Category': fila.iloc[4], 'Subcategory': fila.iloc[5],
                  'SKU': fila.iloc[6], 'Description': fila.iloc[7], 'model': 'actual',
                  'date': fut_date, 'value': None}, ignore_index=True)
 
             df_pred_fc = df_pred_fc._append(
-                {'Family': fila.iloc[0], 'region': fila.iloc[1], 'Salesman': fila.iloc[2],
+                {'Family': fila.iloc[0], 'Region': fila.iloc[1], 'Salesman': fila.iloc[2],
                  'Client': fila.iloc[3],
                  'Category': fila.iloc[4], 'Subcategory': fila.iloc[5],
                  'SKU': fila.iloc[6], 'Description': fila.iloc[7], 'model': 'linear',
                  'date': fut_date, 'value':  (0 if future_predictions[i] < 0 else future_predictions[i])}, ignore_index=True)
 
-        df_pred_fc_pivot = df_pred_fc.pivot(values='value', index=['Family', 'region', 'Salesman', 'Client', 'Category',
+        df_pred_fc_pivot = df_pred_fc.pivot(values='value', index=['Family', 'Region', 'Salesman', 'Client', 'Category',
                                                                    'Subcategory', 'SKU', 'Description', 'model'],
                                             columns='date')
 
