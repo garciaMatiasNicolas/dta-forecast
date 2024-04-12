@@ -107,7 +107,7 @@ const SafetyStock = () => {
 
     const handleSearchProduct = (event) => {
         const inputValue = event.target.value.toLowerCase(); 
-        const filteredData = data.filter(item => item.Producto.toLowerCase().includes(inputValue));
+        const filteredData = data.filter(item => item.SKU.toLowerCase().includes(inputValue));
         setData(filteredData);
     };
 
