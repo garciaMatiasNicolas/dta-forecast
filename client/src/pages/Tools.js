@@ -46,6 +46,14 @@ const ToolsPage = () => {
     handleClick: handleOnclickChange
   };
 
+  
+  const manualComponent = {
+    title: "Manual DTA F&IO",
+    text: "Aprende todo sobre nuestra app",
+    icon: "book",
+    handleClick: console.log("Download Manual")
+  };
+
   return (
     <div> 
       <Navbar/>
@@ -62,6 +70,7 @@ const ToolsPage = () => {
               <Tools props={uploadFilesComponent} />
               <Tools props={forecastComponent}/> 
               <Tools props={inventoryComponent}/>
+              <Tools props={manualComponent}/>
             </div>
           }
         </main> 
