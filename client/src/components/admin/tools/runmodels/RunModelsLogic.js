@@ -40,6 +40,8 @@ const RunModelsLogicContainer = ({apiUrl, token}) => {
 
     const [lastScenarioRan, setLastScenarioRan] = useState([]);
 
+    const [isExpert, setIsExpert] = useState(false);
+
     // USE EFFECT //
     useEffect(() => {
         // Get file types
@@ -90,6 +92,33 @@ const RunModelsLogicContainer = ({apiUrl, token}) => {
         }
     };
 
+    const setExpertModel = (e) => {
+        if(e.target.checked){
+            setIsExpert(true);
+            formData.models = ['prophet', 'arima', 'holtsWintersExponentialSmoothing', 'linearRegression'];
+            formData.error_p = "0";
+            formData.test_p = "1";
+            formData.pred_p = "12";
+            setAdditionalParams({
+                'prophet_params': ["additive", 10, 1000, 0.05],
+                'arima_params':[1, 1, 0]
+            })
+
+        } else {
+            setFormData(
+                prevState => ({
+                    ...prevState,
+                    models: [],
+                    test_p: "",
+                    pred_p: "",
+                    error_p: ""
+                })
+            );
+            setIsExpert(false);
+            setAdditionalParams({});
+        }
+    }
+
     const areParamsSetted = (modelName, params, typeOfInsertion) => {
 
         if (modelName === "arima" || modelName === 'sarima'){
@@ -122,7 +151,7 @@ const RunModelsLogicContainer = ({apiUrl, token}) => {
         else if (modelName === 'prophet'){
             if (typeOfInsertion === 'setParams'){
                 const [ seasonality_mode, seasonality_prior_scale,
-                    uncertainty_samples, changepoint_prior_scale ] = params
+                uncertainty_samples, changepoint_prior_scale ] = params
             
                 setAdditionalParams(prevState => ({
                     ...prevState,
@@ -243,6 +272,10 @@ const RunModelsLogicContainer = ({apiUrl, token}) => {
         else {
             isFormValid = scenario_name && models.length > 0 && test_p && pred_p && file_id !== 0 
         }
+        
+        console.log('IS VALID: ', isFormValid);
+        console.log('FORM DATA: ', formData);
+        console.log('ADD PARAMS: ', additionalParams);
 
         return isFormValid;
     };
@@ -269,6 +302,8 @@ const RunModelsLogicContainer = ({apiUrl, token}) => {
             handleSelectChange={handleSelectChange}
             isFormValid={isFormValid}
             isSelected={isSelected}
+            setExpertModel={setExpertModel}
+            isExpert={isExpert}
         />
     )
 }

@@ -46,7 +46,6 @@ const ToolsPage = () => {
     handleClick: handleOnclickChange
   };
 
-  
   const manualComponent = {
     title: "Manual DTA F&IO",
     text: "Aprende todo sobre nuestra app",

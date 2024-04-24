@@ -1,7 +1,6 @@
 import { useEffect, useState } from 'react';
 import axios from 'axios';
 import { showErrorAlert, } from '../../../components/other/Alerts';
-import FilterProductsInventory from '../../../components/admin/tools/inventory/FilterProduct';
 import { ClipLoader } from 'react-spinners';
 import FiltersNested from '../../../components/admin/tools/inventory/FiltersNested';
 import { MDBBtn, MDBInput, MDBRadio } from 'mdb-react-ui-kit';
@@ -14,12 +13,12 @@ const apiUrl = process.env.REACT_APP_API_URL;
 const InventoryContainer = () => {
     const [data, setData] = useState([]);
     const [trafficLight, setTrafficLight] = useState([]);
-    const [stockData, setStockData] = useState(false);
     const [loader, setLoader] = useState(false);
     const [stockParams, setStockParams] = useState({
         next_buy: "15",
         forecast_or_historical: "historical",
         forecast_periods: "0", 
+        historical_periods: "12",
         scenario_id: false,
     });
     const [scenarios, setScenarios] = useState([]);
@@ -56,10 +55,8 @@ const InventoryContainer = () => {
         };
 
         axios.get(`${apiUrl}/forecast/stock-product/?project_id=${localStorage.getItem("projectId")}`, {headers})
-        .then(res => res.data.message === 'stock_data_uploaded' && setStockData(true))
         .catch((err) => {
             err.response.data.error === 'stock_data_not_found' ? showErrorAlert("Debe subir datos de su stock en la plantilla Stock Data"): showErrorAlert(`Error: ${err.response.data.error}`);
-            setStockData(false) 
         });
 
         // Get all scenarios and set state on first render
@@ -85,11 +82,18 @@ const InventoryContainer = () => {
         }));
     };
 
-    const handleForecastPeriods = (e) => {
-        setStockParams((prev) => ({
-            ...prev,
-            forecast_periods: e.target.value
-        }));
+    const handlePeriods = (e, type) => {
+        if(type === "forecast") {
+            setStockParams((prev) => ({
+                ...prev,
+                forecast_periods: e.target.value
+            }));
+        } else {
+            setStockParams((prev) => ({
+                ...prev,
+                historical_periods: e.target.value
+            }));
+        }
     };
 
     const handleNextBuy = (e) => {
@@ -167,8 +171,13 @@ const InventoryContainer = () => {
                         </div>
                         
                         <div className="w-75 d-flex justify-content-start align-items-center" style={{maxWidth: "500px"}} >    
+                            <p className="text-primary mt-3 w-50">Periodos históricos:</p>
+                            <MDBInput onChange={(e) => handlePeriods(e, "historical")} type="text" label="Periodos" id="historical_periods" defaultValue={0}/>
+                        </div>
+                        
+                        <div className="w-75 d-flex justify-content-start align-items-center" style={{maxWidth: "500px"}} >    
                             <p className="text-primary mt-3 w-50">Periodos de forecast:</p>
-                            <MDBInput onChange={handleForecastPeriods} type="text" label="Periodos" id="forecast_periods" defaultValue={0}/>
+                            <MDBInput onChange={(e) => handlePeriods(e, "forecast")} type="text" label="Periodos" id="forecast_periods" defaultValue={0}/>
                         </div>
 
                         <MDBBtn onClick={handleOnClick} color="primary" type="button">CALCULAR</MDBBtn>

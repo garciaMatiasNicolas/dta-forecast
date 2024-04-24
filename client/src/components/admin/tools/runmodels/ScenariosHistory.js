@@ -91,7 +91,7 @@ const ScenariosHistory = ({scenarioList}) => {
     // Function for download excel
     const handleDownload = (scenarioName, urlPath) => {
         const link = document.createElement("a");
-        link.href = `http://localhost:8000/${urlPath}`;
+        link.href = `${apiUrl}/${urlPath}`;
         link.download = `predicciones_${scenarioName}.xlsx`;
         document.body.appendChild(link);
         link.click();

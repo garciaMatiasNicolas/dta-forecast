@@ -127,7 +127,8 @@ class ReportDataViews(APIView):
                     ROUND({reports_data["dates_d"]}),
                     ROUND(SUM("{dates_e}"))
                 FROM {predictions_table_name}
-                WHERE model = 'actual';
+                WHERE model = 'actual'
+                ;
             '''
 
             predicted_dates = f'''
@@ -140,9 +141,9 @@ class ReportDataViews(APIView):
                 WHERE model != 'actual'
                 GROUP BY {filter_name} UNION
                 SELECT  'TOTAL',
-                    ROUND({reports_data["next_year_since_last_date"]}),
-                    ROUND({reports_data["next_quarter_since_last_date"]}),
-                    ROUND({reports_data["next_month_since_last_date"]})
+                        ROUND({reports_data["next_year_since_last_date"]}),
+                        ROUND({reports_data["next_quarter_since_last_date"]}),
+                        ROUND({reports_data["next_month_since_last_date"]})
                 FROM {predictions_table_name}
                 WHERE model != 'actual';
             '''
@@ -150,15 +151,12 @@ class ReportDataViews(APIView):
             '''
                 MYSQL = WITH ROLLUP
             '''
-            print(actual_dates)
-            print(predicted_dates)
 
             cursor.execute(sql=actual_dates)
             actual_dates = cursor.fetchall()
 
             cursor.execute(sql=predicted_dates)
             predicted_dates = cursor.fetchall()
-
 
             for i in range(len(actual_dates)):
                 category, *actual_values = actual_dates[i]
@@ -178,8 +176,6 @@ class ReportDataViews(APIView):
 
                 final_data.append([item[0], ytd, qtd, mtd, ytg, qtg, mtg])
 
-            print(final_data[-1])
- 
             return final_data
 
     @authentication_classes([TokenAuthentication])

@@ -1,23 +1,15 @@
 from pathlib import Path
 import os
 
-# Build paths inside the project like this: BASE_DIR / 'subdir'.
 BASE_DIR = Path(__file__).resolve().parent.parent
 BASE_URL = os.getenv('BASE_URL', 'http://localhost:8000')
 
+SECRET_KEY = os.environ.get('SECRET_KEY')
 
-# Quick-start development settings - unsuitable for production
-# See https://docs.djangoproject.com/en/4.2/howto/deployment/checklist/
+DEBUG = os.environ.get('DEBUG')
 
-# SECURITY WARNING: keep the secret key used in production secret!
-SECRET_KEY = 'django-insecure-#(jseq=+!xdmpzdbusw_3vbu_v8#*u3c4@(+ywc(bbx0drle$c'
+ALLOWED_HOSTS = ['dtaforecast.vercel.app', 'apifio.dtalogistica.com']
 
-# SECURITY WARNING: don't run with debug turned on in production!
-DEBUG = True
-
-ALLOWED_HOSTS = []
-
-# Application definition
 BASE_APPS = [
     'django.contrib.admin',
     'django.contrib.auth',
@@ -97,32 +89,33 @@ DATABASES = {
     }
 }
 
-"""DATABASES = {
-    'default': {
-        'ENGINE': 'django.db.backends.mysql',
-        'NAME': 'dtaforecast',
-        'USER': 'root',
-        'PASSWORD': 'Riverplate09.',
-        'HOST': 'localhost', 
-        'PORT': '3360',
-    }
-}"""
-
 EMAIL_BACKEND = 'django.core.mail.backends.smtp.EmailBackend'
 EMAIL_HOST = 'smtp.gmail.com'
 EMAIL_PORT = 587
 EMAIL_USE_TLS = True
-EMAIL_HOST_USER = 'matiasngarcia2002@gmail.com'
-EMAIL_HOST_PASSWORD = 'bcpn dezp ycqw ubsg'
+EMAIL_HOST_USER = os.environ.get('EMAIL_HOST_USER')
+EMAIL_HOST_PASSWORD = os.environ.get('EMAIL_HOST_PASSWORD')
 
-CORS_ALLOW_ALL_ORIGINS = True
+CORS_ALLOW_ALL_ORIGINS = False
 
 CORS_ALLOWED_ORIGINS = [
-    "http://localhost:3000",
+    "https://dtaforecast.vercel.app",
 ]
 
-# Password validation
-# https://docs.djangoproject.com/en/4.2/ref/settings/#auth-password-validators
+CORS_ALLOW_METHODS = [
+    'GET',
+    'POST',
+    'OPTIONS',  
+    'DELETE',
+    'PUT'
+]
+
+CORS_ALLOW_CREDENTIALS = True
+
+CORS_ALLOW_HEADERS = [
+    'Content-Type',  
+    'Authorization',  
+]
 
 AUTH_PASSWORD_VALIDATORS = [
     {
@@ -143,9 +136,6 @@ AUTH_USER_MODEL = 'users.User'
 
 TOKEN_EXPIRES_IN = 10
 
-# Internationalization
-# https://docs.djangoproject.com/en/4.2/topics/i18n/
-
 LANGUAGE_CODE = 'en-us'
 
 TIME_ZONE = 'UTC'
@@ -154,15 +144,10 @@ USE_I18N = True
 
 USE_TZ = True
 
-
-# Static files (CSS, JavaScript, Images)
-# https://docs.djangoproject.com/en/4.2/howto/static-files/
-
 STATIC_URL = 'static/'
 MEDIA_URL = '/media/'
 MEDIA_ROOT = os.path.join(BASE_DIR, 'media')
 
-# Default primary key field type
-# https://docs.djangoproject.com/en/4.2/ref/settings/#default-auto-field
+
 
 DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'

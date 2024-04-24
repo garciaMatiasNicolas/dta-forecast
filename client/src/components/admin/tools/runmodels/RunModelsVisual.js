@@ -23,7 +23,9 @@ const RunModelsVisual = (props) => {
         handleSelectChange,
         isFormValid,
         handleOptChange,
-        isSelected
+        isSelected,
+        isExpert,
+        setExpertModel
     } = props
 
     return (
@@ -31,14 +33,22 @@ const RunModelsVisual = (props) => {
             <ToolsNav/>
             <ScenariosHistory scenarioList={scenarios}/>
             <h2 style={{"color": "black"}} className='mb-2 ms-5'>Seleccion de modelos de corrida</h2>
-            <MDBContainer className="mt-4 ms-4">
+            <MDBContainer className="mt-2 ms-4">
                 <MDBRow>
                     <MDBCol size='12'>
                         <form ref={formRef} className='p-5 border rounded' onSubmit={handleSubmit}>
                             <MDBContainer>
                                 <MDBRow>
                                     <MDBCol size='lg'>
-                                        <p className="text-primary">Modelos Series Temporales</p>
+                                        <p className="text-primary">Escenario default</p>
+                                        <MDBCheckbox 
+                                            name="expertModel"
+                                            value="expertModel"
+                                            label="Modelo experto"
+                                            onChange={setExpertModel}
+                                        />
+
+                                        <p className="text-primary mt-5">Modelos Series Temporales</p>
                                         {timeSeriesModels.map(item => (
                                             <MDBCheckbox 
                                                 name='modelSelection' 
@@ -46,6 +56,7 @@ const RunModelsVisual = (props) => {
                                                 id={item.value} 
                                                 label={item.label}  
                                                 onChange={() => handleCheckboxChange(item.value, item.param)}
+                                                disabled={isExpert}
                                             />
                                         ))}
     
@@ -57,6 +68,7 @@ const RunModelsVisual = (props) => {
                                                 id={item.value} 
                                                 label={item.label}  
                                                 onChange={() => handleCheckboxChange(item.value)}
+                                                disabled={isExpert}
                                             />
                                         ))}
     
@@ -68,6 +80,7 @@ const RunModelsVisual = (props) => {
                                                 id={item.value} 
                                                 label={item.label} 
                                                 onChange={() => handleCheckboxChange(item.value)}
+                                                disabled={isExpert}
                                             />
                                         ))}
     
@@ -77,16 +90,17 @@ const RunModelsVisual = (props) => {
                                             value='prophet' id='prophet' 
                                             label='Prophet' 
                                             onChange={() => handleCheckboxChange('prophet', 'prophet')} 
+                                            disabled={isExpert}
                                         />
                                         <ParamsProphet isModelSelected={isSelected} lastScenariosParams={lastScenarioRan} areParamsSetted={areParamsSetted}/>
                                     </MDBCol>
     
                                     <MDBCol size='lg' className="d-flex justify-content-start align-items-center flex-column gap-3">
                                         <MDBInput label="Nombre de escenario" type="text" name="scenario_name" onChange={handleInputChange}/>
-                                        <MDBInput label="Periodos de entrenamiento de modelo" name="test_p" type="number" onChange={handleInputChange}/>
-                                        <MDBInput label="Periodos de forecast" name="pred_p" type="number" onChange={handleInputChange}/>
-                                        <MDBInput label="Periodos para calculo de error (recomendado 0 = todos)" name="error_p" type="number" onChange={handleInputChange}/>
-                                        <select onChange={handleSelectChange} class="form-select" aria-label="Default select example">
+                                        <MDBInput label="Periodos sin entrenamiento de modelo" name="test_p" type="number" onChange={handleInputChange} disabled={isExpert} />
+                                        <MDBInput label="Periodos de forecast" name="pred_p" type="number" onChange={handleInputChange} disabled={isExpert} />
+                                        <MDBInput label="Periodos para calculo de error (recomendado 0 = todos)" name="error_p" type="number" onChange={handleInputChange} disabled={isExpert} />
+                                        <select onChange={handleSelectChange} class="form-select" aria-label="Seleccionar archivo para la corrida">
                                             <option selected>Selecciona tipo de archivo</option>
                                             {fileTypes.map((fileType) => (
                                                 <option value={fileType.id}>{convertData(fileType.model_type, true)}</option>

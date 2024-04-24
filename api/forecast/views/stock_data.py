@@ -22,8 +22,11 @@ class StockDataView(APIView):
     # -- METHODS FOR GET DATA FROM DB -- #
     @staticmethod
     def get_data(project_pk: int, scenario: int = None):
+        max_historical_date = ""
+
         if scenario:
             forecast_data = ForecastScenario.objects.get(pk=scenario)
+            max_historical_date = forecast_data.max_historical_date.strftime('%Y-%m-%d')
             
             if forecast_data is None:
                 table_forecast = None
@@ -49,18 +52,19 @@ class StockDataView(APIView):
 
         tables = {"historical": table_historical, "stock": table_stock, "forecast": table_forecast}
 
-        return tables
+        return tables, max_historical_date
 
     # --- METHODS FOR CALCULATE STOCK --- #
     @staticmethod
-    def calculate_avg_desv_varcoefficient(historical: pd.DataFrame, stock: pd.DataFrame, forecast_periods: int, forecast):
+    def calculate_avg_desv_varcoefficient(historical: pd.DataFrame, stock: pd.DataFrame, forecast_periods: int, historical_periods: int, forecast, max_hsd):
         results = []
-        iterrows_historical = historical.iloc[:, -12:].iterrows()
+        iterrows_historical = historical.iloc[:, -historical_periods:].iterrows()
 
         historical.fillna(0)
 
         if forecast is not None:
-            iterrows_forecast = forecast.iloc[:, -forecast_periods:].iterrows() 
+            date_index = forecast.columns.get_loc(max_hsd)
+            iterrows_forecast = forecast.iloc[:, date_index:-forecast_periods].iterrows() 
             forecast.fillna(0) 
             
             for (_, row_historical), ( _, row_forecast) in zip(iterrows_historical, iterrows_forecast):
@@ -348,14 +352,16 @@ class StockDataView(APIView):
         # order = request.data.get('order')
         type_of_stock = request.data.get('type')
         params = request.data.get('params')
+        historical_periods = int(params["historical_periods"])
         is_forecast = True if params["forecast_or_historical"] == "forecast" else False
         forecast_periods = int(params["forecast_periods"])
         scenario = int(params["scenario_id"]) if params["scenario_id"] is not False or params["scenario_id"] else False
 
         try:
+
             safety_stock_is_zero = False
             traffic_light = ""
-            tables = self.get_data(project_pk=project_pk, scenario=scenario)
+            tables, max_historical_date = self.get_data(project_pk=project_pk, scenario=scenario)
 
             # if filters == '':
             # else:
@@ -365,7 +371,7 @@ class StockDataView(APIView):
                 return Response(data={'error': 'stock_hsd_dif_len'}, status=status.HTTP_400_BAD_REQUEST)
 
             data = self.calculate_avg_desv_varcoefficient(historical=tables["historical"], stock=tables["stock"], forecast=tables["forecast"], 
-            forecast_periods=forecast_periods)
+            forecast_periods=forecast_periods, historical_periods=historical_periods, max_hsd=max_historical_date)
 
             if type_of_stock == 'stock by product':
                 final_data, safety_stock = self.calculate_stock(data=data, next_buy_days=int(params["next_buy"]), is_forecast=is_forecast)

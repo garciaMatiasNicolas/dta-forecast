@@ -35,7 +35,7 @@ const Home = (props) => {
                 </a>
               </div>
               <div className="home-menu-item-default4">
-                <span className="home-text03 BodyRegularBody2">
+                <span className="home-text04 BodyRegularBody2">
                   <span>FAQ</span>
                 </span>
               </div>

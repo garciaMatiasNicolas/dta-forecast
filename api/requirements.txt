@@ -26,5 +26,3 @@ XlsxWriter==3.1.4
 sqlalchemy
 plotly
 prophet
-keras
-tensorflow

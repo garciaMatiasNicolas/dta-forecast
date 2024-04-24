@@ -60,7 +60,6 @@ const TableComponent = ({ props, data, itemsPerPage = 7 }) => {
           activeClassName={'active text-decoration-underline'}
         />
       }
-      {console.log(data)}
     </div>
   );
 };

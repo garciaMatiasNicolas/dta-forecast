@@ -150,7 +150,7 @@ class AllocationMatrixView(APIView):
 
                 if product_name not in data:
                     data[product_name] = correlations
-            
+
             return Response(data=data, status=status.HTTP_200_OK)
 
         except ValueError as e:
@@ -171,7 +171,6 @@ class GetExogVars(APIView):
 
         with connection.cursor() as cursor:
             query = f'SELECT DISTINCT(Variable) FROM {exog.file_name}'
-            print(query)
             cursor.execute(query)
             data = cursor.fetchall()
             for i in data:

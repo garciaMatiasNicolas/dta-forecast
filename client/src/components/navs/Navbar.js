@@ -35,7 +35,7 @@ const Navbar = () => {
         <MDBContainer className="w-100 justify-content-between align-items-center">
             <Link to='/dashboard/'> 
                 <MDBNavbarBrand  className="w-auto">
-                    <h5 className="text-white fw-bold">DTA-F&IO</h5>
+                    <h5 className="text-white fw-bold">DTA-FORECAST</h5>
                 </MDBNavbarBrand>
             </Link>
 

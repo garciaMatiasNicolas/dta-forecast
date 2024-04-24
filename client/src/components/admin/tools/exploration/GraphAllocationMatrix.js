@@ -105,7 +105,6 @@ const GraphAllocationMatrix = () => {
                 {variablesNames.map(item=>(<th scope='col' className="text-white" key={item}>{item}</th>))}
               </tr>
             </MDBTableHead>
-            {console.log(variablesNames)}
             <MDBTableBody>
               { loader ? <ClipLoader color="#2b9eb3" className='mt-2 ms-2'/> :
                 Object.entries(dataAllocationMatrix).map(([product, correlations]) => (

@@ -26,8 +26,8 @@ const InventoryTools = () => {
     };
 
     const stockByProduct = {
-        title: "Stock & Semáforo",
-        text: "Cálculo de Stock y Semáforo",
+        title: "Reapro & Semáforo",
+        text: "Cálculo de Reapro y Semáforo",
         icon: "traffic-light",
         handleClick: handleNavigateStock 
        
