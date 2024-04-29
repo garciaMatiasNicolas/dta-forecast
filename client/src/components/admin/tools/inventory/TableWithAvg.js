@@ -1,10 +1,9 @@
 import React, { useState } from 'react';
 import { MDBTable, MDBTableHead, MDBTableBody, MDBIcon } from 'mdb-react-ui-kit';
 import ReactPaginate from 'react-paginate';
-import { ClipLoader } from 'react-spinners';
 import DropdownFilters from './DropdownFilters';
 
-const Table = ({ data, isFilter, isOrdering, setData }) => {
+const Table = ({ data, setData }) => {
     
   const itemsPerPage = 10;  // Número de ítems por página
   const [currentPage, setCurrentPage] = useState(0);
@@ -87,35 +86,14 @@ const Table = ({ data, isFilter, isOrdering, setData }) => {
   return (
     <>
     
-      <div style={(isOrdering || isFilter) ? {position: "relative"} : { overflowX: 'auto', whiteSpace: 'nowrap' }} className='d-flex justify-content-start align-items-start flex-column w-100'>
-        {(isOrdering || isFilter) && (
-          <div
-            style={{
-              position: 'absolute',
-              top: 0,
-              left: 0,
-              width: '100%',
-              height: '100%',
-              backgroundColor: 'rgba(192, 192, 192, 0.5)', // Fondo gris semitransparente
-              display: 'flex',
-              justifyContent: 'center',
-              alignItems: 'center',
-            }}
-          >
-            <div className='d-flex w-auto gap-3 justify-content-center align-items-center'>
-              <p className='mt-3'>{isFilter && "Filtrando "} {isOrdering && "Ordenando "} </p>
-              <ClipLoader size={30} />
-            </div>
-          </div>
-        )}
-
+      <div style={{ overflowX: 'auto', whiteSpace: 'nowrap' }} className='d-flex justify-content-start align-items-start flex-column w-100'>
         <MDBTable hover className='w-auto'>
           <MDBTableHead className='bg-primary'>
             <tr className='w-auto h-auto border'>
               {Object.keys(data[0]).map((key, index) => (
                 <th className='text-white border text-center' key={index}>
-                  {key !== "Producto" && key !== "Stock seguridad" && key !== "Stock" && key !== "Suma venta diaria" && key !== "Cantidad de productos" && key !== "Suma de stock" && key !== "Valorizado" && key !== "Sobrante valorizado" && key !== "Sobrante (unidades)" && key !== "Venta diaria histórico"  && key !== "Venta diaria predecido" && key !== "Cobertura (días)" && key !== "Punto de reorden"  ? 
-                    <DropdownFilters key={index} name={key} data={data} setFilterData={setData}/> : 
+                  {key !== "Producto" && key !== "Stock seguridad" && key !== "Stock" && key !== "Suma venta diaria" && key !== "Cantidad de productos" && key !== "Suma de stock" &&  key !== "Venta diaria histórico"  && key !== "Venta diaria predecido" && key !== "Cobertura (días)" && key !== "Punto de reorden"  ? 
+                    <DropdownFilters key={index} name={key} data={data} setFilterData={setData} isOrderBy={key === "Valorizado" || key === "Sobrante valorizado" || key === "Sobrante (unidades)"}/> : 
                     <p>{key}</p>
                   }
                 </th>

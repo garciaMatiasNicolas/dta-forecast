@@ -24,7 +24,7 @@ const InventoryContainer = () => {
     const [scenarios, setScenarios] = useState([]);
 
     const fetchData = (headers, type, params) => {
-        axios.post(`${apiUrl}/forecast/stock-data`, 
+        axios.post(`${apiUrl}/forecast/stock-data/`, 
         {
             project_id: localStorage.getItem("projectId"), 
             order: "", 
