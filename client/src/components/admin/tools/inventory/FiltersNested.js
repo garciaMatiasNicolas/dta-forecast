@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useContext } from "react";
 import axios from "axios";
 import { showErrorAlert } from "../../../other/Alerts";
 import {
@@ -7,17 +7,30 @@ import {
     MDBInput,
 } from 'mdb-react-ui-kit';
 import Table from "./TableWithAvg";
+import { AppContext } from '../../../../context/Context';
+import TotalTable from "./TotalTable";
 
 const apiUrl = process.env.REACT_APP_API_URL;
 
 const FiltersNested = ({data}) => {
     const [orderedData, setOrderedData] = useState(data);
+    const {optionsFilterTable, setOptionsFilterTable} = useContext(AppContext);
+
+    // Function for download excel
+    const handleDownload = (urlPath) => {
+        const link = document.createElement("a");
+        link.href = `${apiUrl}/${urlPath}`;
+        link.download = `Reapro.xlsx`;
+        document.body.appendChild(link);
+        link.click();
+        document.body.removeChild(link);
+    };
 
     const handleExport = () => {
         const dataToSend = {
             "columns": Object.keys(data[0]),
             "rows": orderedData.map(obj => Object.values(obj)),
-            "file_name": `StockPorProducto`,
+            "file_name": `Reapro`,
             "project_pk": parseInt(localStorage.getItem("projectId"))
         };
           
@@ -25,35 +38,25 @@ const FiltersNested = ({data}) => {
             headers: {
                 'Authorization': `Token ${localStorage.getItem("userToken")}`, 
                 'Content-Type': 'application/json'
-            },
-            responseType: 'blob'
+            }
         })
         .then(res => {
-            // Crear un blob a partir de la respuesta
-            const file = new Blob([res.data], { type: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet' });
-    
-            // Crear una URL para el blob
-            const fileURL = URL.createObjectURL(file);
-    
-            // Crear un enlace y simular un clic para iniciar la descarga
-            const a = document.createElement('a');
-            a.href = fileURL;
-            a.download = 'StockData'; // Nombre del archivo que se descargará
-            document.body.appendChild(a);
-            a.click();
-    
-            // Limpiar el enlace y el blob después de la descarga
-            window.URL.revokeObjectURL(fileURL);
-            document.body.removeChild(a);
+            let file_path = res.data.file_url
+            handleDownload(file_path);
         })
         .catch(err => {showErrorAlert(err.response.data); console.log(err)});  
     };
 
     const handleSearchProduct = (event) => {
         const inputValue = event.target.value.toLowerCase(); 
-        const filteredData = data.filter(item => item.Producto.toLowerCase().includes(inputValue));
+        const filteredData = data.filter(item => item.SKU.toLowerCase().includes(inputValue));
         setOrderedData(filteredData);
     };
+
+    const handleSetFilters = () => {
+        setOrderedData(data);
+        setOptionsFilterTable([]);
+    }
 
     if (!data || data.length === 0) {
         return <div></div>;
@@ -85,8 +88,22 @@ const FiltersNested = ({data}) => {
                 </div>
             
             </div>
-            
+
+            <div className="d-flex w-100 justify-content-between align-items-center">
+                <div className='d-flex justify-content-start align-items-center gap-5 w-auto'>
+                    {optionsFilterTable.map((opt, index) => (
+                        Object.entries(opt).map(([key, value]) => (
+                            <p key={index} className='text-primary'>{`${key}: ${value}`}</p>
+                        ))
+                    ))}
+                </div>
+
+                <p style={{"cursor": "pointer"}} onClick={handleSetFilters}>Reestablecer filtros</p>
+            </div>
+
             <Table data={orderedData} setData={setOrderedData}/>
+
+            <TotalTable data={orderedData}/>
         </div>
     );
 }

@@ -11,11 +11,14 @@ from database.db_engine import engine
 from django.db import connection
 import pandas as pd
 import numpy as np
+import math
 from scipy.special import erfinv
 from datetime import datetime, timedelta
 from collections import defaultdict
 import traceback
+import locale
 
+locale.setlocale(locale.LC_ALL, 'es_ES.utf8')
 
 class StockDataView(APIView):
 
@@ -54,6 +57,8 @@ class StockDataView(APIView):
         table_stock = pd.read_sql_table(table_name=stock_data.file_name, con=engine)
 
         if only_traffic_light:
+            print(filter_name)
+            print(filter_value)
             table_historical = table_historical[table_historical[filter_name] == filter_value]
             table_stock = table_stock[table_stock[filter_name] == filter_value]
 
@@ -68,6 +73,7 @@ class StockDataView(APIView):
         iterrows_historical = historical.iloc[:, -historical_periods:].iterrows()
 
         historical.fillna(0)
+        stock.fillna(0)
 
         if forecast is not None:
             date_index = forecast.columns.get_loc(max_hsd)
@@ -96,14 +102,14 @@ class StockDataView(APIView):
                 desv_2_historical = round(desv_historical / 30, 2)
                 desv_2_forecast = round(desv_forecast / 30, 2)
 
-                avg_row_historical = str(avg_row_historical) if not pd.isna(avg_row_historical) else '0.0'
-                avg_row_forecast = str(avg_row_forecast) if not pd.isna(avg_row_forecast) else '0.0'
+                avg_row_historical = str(avg_row_historical) if not pd.isna(avg_row_historical) else '0'
+                avg_row_forecast = str(avg_row_forecast) if not pd.isna(avg_row_forecast) else '0'
 
-                desv_historical = str(desv_historical) if not pd.isna(desv_historical) else '0.0'
-                desv_forecast = str(desv_forecast) if not pd.isna(desv_forecast) else '0.0'
+                desv_historical = str(desv_historical) if not pd.isna(desv_historical) else '0'
+                desv_forecast = str(desv_forecast) if not pd.isna(desv_forecast) else '0'
 
-                coefficient_of_variation_historical = str(coefficient_of_variation_historical) if not pd.isna(coefficient_of_variation_historical) else '0.0'
-                coefficient_of_variation_forecast = str(coefficient_of_variation_forecast) if not pd.isna(coefficient_of_variation_forecast) else '0.0'
+                coefficient_of_variation_historical = str(coefficient_of_variation_historical) if not pd.isna(coefficient_of_variation_historical) else '0'
+                coefficient_of_variation_forecast = str(coefficient_of_variation_forecast) if not pd.isna(coefficient_of_variation_forecast) else '0'
 
                 row_with_stats = {
                     'total_sales_historical': total_sales_historical,
@@ -134,9 +140,9 @@ class StockDataView(APIView):
                 stock_or_request = 'stock' if coefficient_of_variation > 0.7 else 'request'
                 desv_2 = round(desv / 30, 2)
         
-                avg_row = str(avg_row) if not pd.isna(avg_row) else '0.0'
-                desv = str(desv) if not pd.isna(desv) else '0.0'
-                coefficient_of_variation = str(coefficient_of_variation) if not pd.isna(coefficient_of_variation) else '0.0'
+                avg_row = str(avg_row) if not pd.isna(avg_row) else '0'
+                desv = str(desv) if not pd.isna(desv) else '0'
+                coefficient_of_variation = str(coefficient_of_variation) if not pd.isna(coefficient_of_variation) else '0'
 
                 row_with_stats = {
                    'total_sales_historical': total_sales,
@@ -155,7 +161,7 @@ class StockDataView(APIView):
         stats_df = pd.DataFrame(results)
 
         result_df = pd.concat(objs=[historical[['SKU', 'Description', 'Family', 'Region', 'Client', 'Salesman', 'Category', 'Subcategory']], stats_df], axis=1)
-        result_df = pd.merge(result_df, stock, on=['SKU', 'Description', 'SKU', 'Description', 'Family', 'Region', 'Client', 'Salesman', 'Category', 'Subcategory'])
+        result_df = pd.merge(result_df, stock, on=['SKU', 'Description', 'Family', 'Region', 'Client', 'Salesman', 'Category', 'Subcategory'], how='inner')
         result_list = result_df.to_dict(orient='records')
 
         return result_list
@@ -187,6 +193,11 @@ class StockDataView(APIView):
                     return False
 
             return True
+        
+        def round_up(n, dec):
+            factor = n / dec
+            factor = round(factor)
+            return factor * dec
 
         safety_stock_is_zero = verify_safety_stock_zero(data)
 
@@ -211,6 +222,13 @@ class StockDataView(APIView):
             how_much = max(optimal_batch, (next_buy_days + lead_time + safety_stock - days_of_coverage) * avg_sales ) if buy == 'Si' else 0
             overflow_units = available_stock if avg_sales == 0 else (0 if days_of_coverage - reorder_point < 0 else round((days_of_coverage - reorder_point)*avg_sales/30)) 
             overflow_price = round(overflow_units*price)
+            lot_sizing = float(item['Lot Sizing'])
+            purchase_order = float(item['Purchase Order'])
+            sales_order = float(item['Sales Order Pending Deliverys'])
+            is_obs = str(item['Slow moving'])
+            purchase_unit = float(item['Purchase unit'])
+            make_to_order = str(item['Make to order'])
+            
             try:
                 next_buy = datetime.now() + timedelta(days=days_of_coverage - lead_time) if days_of_coverage != 0 \
                     else datetime.now()
@@ -243,9 +261,13 @@ class StockDataView(APIView):
             else:
                 stock_status = 'Stock negativo'
                 characterization = "Sin stock"
-
+   
             next_buy = next_buy.strftime('%Y-%m-%d') if isinstance(next_buy, datetime) else next_buy
-
+            how_much_vs_lot_sizing = round_up(how_much, int(lot_sizing)) if int(lot_sizing) != 0.0 else how_much
+            how_much_vs_lot_sizing = max(how_much_vs_lot_sizing, optimal_batch)
+            final_how_much = available_stock - sales_order + purchase_order if make_to_order == 'MTO' else round(how_much_vs_lot_sizing) if buy == 'Si' else 0
+            final_buy = ('Si' if available_stock - sales_order + purchase_order < 0 else 'No') if make_to_order == 'MTO' else buy
+            
             stock = {
                 'Familia': item['Family'],
                 'Categoria': item['Category'],
@@ -255,22 +277,31 @@ class StockDataView(APIView):
                 'Región': item['Region'],
                 'SKU': str(item['SKU']),
                 'Descripción': str(item['Description']),
-                'Stock': str(available_stock),
-                'Venta diaria histórico': str(avg_sales_historical),
-                'Venta diaria predecido': str(avg_sales_forecast),
+                'Stock': locale.format_string("%d", int(round(available_stock)), grouping=True),
+                'Ordenes de venta pendientes': sales_order,
+                'Ordenes de compra': purchase_order,
+                'Venta diaria histórico': locale.format_string("%d", int(round(avg_sales_historical)), grouping=True),
+                'Venta diaria predecido': locale.format_string("%d", int(round(avg_sales_forecast)), grouping=True),
                 'Cobertura (días)': str(days_of_coverage),
-                'Stock seguridad en dias': str(safety_stock),
                 'Punto de reorden': str(reorder_point),
-                '¿Compro?': str(buy),
-                '¿Cuanto?': str(round(how_much)),
+                '¿Compro?': str(final_buy) if is_obs != 'OB' else 'No',
+                '¿Cuanto?': locale.format_string("%d", round(how_much), grouping=True) if buy == 'Si' and is_obs != 'OB' else "0" ,
+                '¿Cuanto? (Lot Sizing)': locale.format_string("%d", round(final_how_much), grouping=True) if buy == 'Si' and is_obs != 'OB' else "0",
+                '¿Cuanto? (Purchase Unit)': locale.format_string("%d", round(final_how_much * purchase_unit), grouping=True) if buy == 'Si' and is_obs != 'OB' else "0",
                 'Estado': str(stock_status),
-                'Valorizado': round(price*available_stock),
+                'Valorizado': locale.format_string("%d", round(price * available_stock), grouping=True),
                 'Demora en dias': str(lead_time),
-                'Fecha próx. compra':  str(next_buy) if days_of_coverage != 9999 else "---",
+                'Fecha próx. compra': str(next_buy) if days_of_coverage != 9999 else "---",
                 'Caracterización': characterization,
-                'Sobrante (unidades)': overflow_units,
-                'Cobertura prox. compra (días)': str( days_of_coverage- next_buy_days ),
-                'Sobrante valorizado': overflow_price,
+                'Sobrante (unidades)': locale.format_string("%d", overflow_units, grouping=True),
+                'Cobertura prox. compra (días)': str(days_of_coverage - next_buy_days),
+                'Sobrante valorizado': locale.format_string("%d", round(overflow_price), grouping=True),
+                'Lote optimo de compra': optimal_batch,
+                'Stock seguridad en dias': str(safety_stock),
+                'Unidad de compra': purchase_unit,
+                'Lote de compra': lot_sizing,
+                'MTO': make_to_order if make_to_order == 'MTO' else '',
+                'OB': is_obs if is_obs == 'OB' else '',
                 'ABC': abc_class,
                 'XYZ': item['XYZ']
             }
@@ -356,8 +387,6 @@ class StockDataView(APIView):
     @permission_classes([IsAuthenticated])
     def post(self, request):
         project_pk = request.data.get('project_id')
-        # filters = request.data.get('filters')
-        # order = request.data.get('order')
         type_of_stock = request.data.get('type')
         params = request.data.get('params')
         historical_periods = int(params["historical_periods"])

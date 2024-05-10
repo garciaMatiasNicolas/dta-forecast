@@ -115,6 +115,16 @@ const DetailReportPage = () => {
         });
     };
 
+    // Function for download excel
+    const handleDownload = (urlPath) => {
+        const link = document.createElement("a");
+        link.href = `${apiUrl}/${urlPath}`;
+        link.download = `StockDeSeguridad.xlsx`;
+        document.body.appendChild(link);
+        link.click();
+        document.body.removeChild(link);
+    };
+
     const handleExport = () => {
         const dataToSend = {
             "columns": [group, "YTD", "MTD", "QTD","YTG", "MTG", "QTG"],
@@ -128,25 +138,10 @@ const DetailReportPage = () => {
                 'Authorization': `Token ${localStorage.getItem("userToken")}`, 
                 'Content-Type': 'application/json'
             },
-            responseType: 'blob'
         })
         .then(res => {
-            // Crear un blob a partir de la respuesta
-            const file = new Blob([res.data], { type: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet' });
-    
-            // Crear una URL para el blob
-            const fileURL = URL.createObjectURL(file);
-    
-            // Crear un enlace y simular un clic para iniciar la descarga
-            const a = document.createElement('a');
-            a.href = fileURL;
-            a.download = 'ReportForecast'; // Nombre del archivo que se descargará
-            document.body.appendChild(a);
-            a.click();
-    
-            // Limpiar el enlace y el blob después de la descarga
-            window.URL.revokeObjectURL(fileURL);
-            document.body.removeChild(a);
+            let file_path = res.data.file_url
+            handleDownload(file_path);
         })
         .catch(err => {showErrorAlert(err.response.data); console.log(err)});  
     }

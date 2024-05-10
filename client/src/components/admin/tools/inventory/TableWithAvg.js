@@ -5,7 +5,7 @@ import DropdownFilters from './DropdownFilters';
 
 const Table = ({ data, setData }) => {
     
-  const itemsPerPage = 10;  // Número de ítems por página
+  const itemsPerPage = 20;  // Número de ítems por página
   const [currentPage, setCurrentPage] = useState(0);
   
   const handlePageChange = ({ selected }) => {

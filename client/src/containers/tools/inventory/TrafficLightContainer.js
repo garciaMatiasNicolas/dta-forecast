@@ -3,29 +3,65 @@ import Table from "../../../components/admin/tools/inventory/TableWithAvg";
 import TrafficLightChart from "../../../components/admin/tools/inventory/TrafficLightChart";
 import { MDBBtn } from "mdb-react-ui-kit";
 import axios from "axios";
+import { showErrorAlert } from "../../../components/other/Alerts";
 
 const apiUrl = process.env.REACT_APP_API_URL;
 
-const TrafficLightContainer = ({data}) => {
+const TrafficLightContainer = ({data, params}) => {
     const [dataSeted, setData] = useState(data);
     const [filterName, setFilterName] = useState("");
     const [filterValue, setFilterValue] = useState("");
+    const [options, setOptionsFilter] = useState([]);
+    const [isOnlyTL, setIsOnlyTl] = useState(false);
 
     if (!data || data.length === 0) {
         return <div></div>;
     };
 
-  
-    const handleFilterTrafficLight = () => {
+    // AUTHORIZATION HEADERS //
+    const token = localStorage.getItem("userToken");
+    const headers = {
+        'Authorization': `Token ${token}`, 
+        'Content-Type': 'application/json', 
+    };
 
+    const handleFilterTrafficLight = () => {
+        setIsOnlyTl(true);
         axios.post(`${apiUrl}/forecast/stock-data/?only_traffic_light=true&filter_name=${filterName}&filter_value=${filterValue}`, 
         {
             project_id: localStorage.getItem("projectId"), 
             order: "", 
             filters: "", 
-            type: "",
-            params: ""
-        }, {})
+            type: "stock by product",
+            params: params
+        }, {headers})
+        .then(res => setData(res.data))
+        .catch(err => showErrorAlert("Ocurrio un error al filtrar el semaforo"))
+    };
+
+    const handleFilterChange = (event) => {
+        const selectedFilter = event.target.value;
+        setFilterName(selectedFilter);
+    };
+
+    // Function for get filters from server
+    const handleClickFilter = (e) => {
+        const data = {
+            filter_name: e.target.value,
+            scenario_id: params["scenario_id"],
+            project_id: localStorage.getItem("projectId") ,
+            filter_value: "x"
+        };
+
+        axios.post(`${apiUrl}/forecast/get-filters`, data, { headers })
+        .then(res => setOptionsFilter(res.data))
+        .catch(err => console.log(err));
+    };
+
+    const handleOnChangeFilterValue = (e) => {
+        const selectedFilter = e.target.value;
+        console.log(selectedFilter)
+        setFilterValue(selectedFilter);
     };
 
     return (
@@ -33,22 +69,29 @@ const TrafficLightContainer = ({data}) => {
             <h5 className='text-primary mt-5'>Semáforo de stock</h5>
             
             <div className="d-flex justify-content-center align-items-center w-auto gap-3">
-                <select className="form-select w-auto border border-0">
-                    <option>Familia</option>
-                    <option>Region</option>
-                    <option>Categoria</option>
-                    <option>Subcategoria</option>
-                    <option>Cliente</option>
-                    <option>Vendedor</option>
+                <select className="form-select w-auto border border-0" onChange={handleFilterChange} onClick={handleClickFilter}>
+                    <option value="Family">Familia</option>
+                    <option value="Region">Region</option>
+                    <option value="Category">Categoria</option>
+                    <option value="Subcategory">Subcategoria</option>
+                    <option value="Client">Cliente</option>
+                    <option value="Salesman">Vendedor</option>
                 </select>
 
-                <MDBBtn onClick={handleFilterTrafficLight}>Filtrar</MDBBtn>
+                <select className="form-select w-auto border border-0" onChange={handleOnChangeFilterValue}>
+                    <option>-----</option>
+                    {options.map(opt => 
+                        <option value={opt} key={opt}>{opt}</option>
+                    )}
+                </select>
+
+                <MDBBtn disabled onClick={handleFilterTrafficLight}>Filtrar</MDBBtn>
             </div>
 
 
-            <Table data={data} />
+            <Table data={dataSeted} />
             <div style={{ width: '800px', height: '400px' }} className="mb-5">
-                <TrafficLightChart data={dataSeted} />
+                <TrafficLightChart data={dataSeted} isOnlyTL={isOnlyTL}/>
             </div>
         </>
     )

@@ -27,14 +27,11 @@ const InventoryContainer = () => {
         axios.post(`${apiUrl}/forecast/stock-data/`, 
         {
             project_id: localStorage.getItem("projectId"), 
-            order: "", 
-            filters: "", 
             type: type,
             params: params
         }, {headers})
         .then(res => {
             setData(res.data.data); 
-            //res.data.is_zero && showWariningAlert("El calculo no será preciso, calcule primero el stock de seguridad y vuelva a subir su data", "No hay stock de seguridad");
             setTrafficLight(res.data.traffic_light);
         })
         .catch(err => {
@@ -193,7 +190,7 @@ const InventoryContainer = () => {
                     }
 
                     {!loader ? 
-                        <TrafficLightContainer data={trafficLight} /> 
+                        <TrafficLightContainer data={trafficLight} params={stockParams}/> 
                         : 
                         <div className='d-flex flex-column justify-content-start align-items-start w-auto gap-2'>  
                             <h5 className='text-primary'>Tabla de stock por producto</h5>

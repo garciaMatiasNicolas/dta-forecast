@@ -176,6 +176,16 @@ const MetricsByDateContainer = () => {
     .catch(err => {console.log(err);})
   }, []);
 
+  // Function for download excel
+  const handleDownload = (urlPath) => {
+    const link = document.createElement("a");
+    link.href = `${apiUrl}/${urlPath}`;
+    link.download = `StockDeSeguridad.xlsx`;
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+  };
+
   const handleExportExcel = () => {
     if(data === null || selectedDate === "-----" || selectedDate === null){
       showErrorAlert("Debe elegirse una fecha");
@@ -190,25 +200,10 @@ const MetricsByDateContainer = () => {
       
       axios.post(`${apiUrl}/export_excel`, dataToSend, {
         headers: headers,
-        responseType: 'blob'
       })
       .then(res => {
-        // Crear un blob a partir de la respuesta
-        const file = new Blob([res.data], { type: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet' });
-        
-        // Crear una URL para el blob
-        const fileURL = URL.createObjectURL(file);
-
-        // Crear un enlace y simular un clic para iniciar la descarga
-        const a = document.createElement('a');
-        a.href = fileURL;
-        a.download = 'ReportePorFecha.xlsx'; // Nombre del archivo que se descargará
-        document.body.appendChild(a);
-        a.click();
-
-        // Limpiar el enlace y el blob después de la descarga
-        window.URL.revokeObjectURL(fileURL);
-        document.body.removeChild(a);
+        let file_path = res.data.file_url
+        handleDownload(file_path);
       })
       .catch(err => console.log(err)) 
     }

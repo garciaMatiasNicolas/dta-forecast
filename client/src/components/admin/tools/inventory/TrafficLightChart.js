@@ -1,9 +1,13 @@
 import React from 'react';
 import { Bar } from 'react-chartjs-2';
 
-const TrafficLightChart = ({ data }) => {
+const TrafficLightChart = ({ data, isOnlyTL }) => {
 
-  const dataFiltered = data.slice(0, -1)
+  let dataFiltered = data;
+
+  if (!isOnlyTL) {
+    dataFiltered = data.slice(0, -1);  
+  };
 
   const labels = dataFiltered.map(item => item['Caracterización']);
   const counts = dataFiltered.map(item => item['Cantidad de productos']);

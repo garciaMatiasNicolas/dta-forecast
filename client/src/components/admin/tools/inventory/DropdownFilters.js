@@ -1,4 +1,4 @@
-import React, {useEffect, useState} from 'react';
+import React, {useContext, useEffect, useState} from 'react';
 import {
     MDBBtn,
     MDBModal,
@@ -12,12 +12,15 @@ import {
     MDBInput,
 } from 'mdb-react-ui-kit';
 import { ClipLoader } from 'react-spinners';
+import { AppContext } from '../../../../context/Context';
+import { showErrorAlert } from '../../../other/Alerts';
 
 const DropdownFilters = ({name, data, setFilterData, isOrderBy}) => {
+  
+  const {optionsFilterTable, setOptionsFilterTable} = useContext(AppContext);
   const [basicModal, setBasicModal] = useState(false);
   const [loadingData, setLoadingData] = useState(false);
   const [options, setOptions] = useState([]);
-  const [selectedOptions, setSelectedOptions] = useState([]);
   const [firstData, setFirstData] = useState(data);
   const [searchTerm, setSearchTerm] = useState('');
   const [orderType, setOrderType] = useState(null);
@@ -60,30 +63,61 @@ const DropdownFilters = ({name, data, setFilterData, isOrderBy}) => {
     
   };
 
-  const handleCheckBoxChange = (event) => {
+  const handleCheckBoxChange = (event, key) => {
     const option = event.target.value;
+    const name = key;
+
     if (event.target.checked) {
-      setSelectedOptions(prevSelectedOptions => [...prevSelectedOptions, option]);
+      const existingOptionIndex = optionsFilterTable.findIndex(item => Object.keys(item)[0] === name);
+      
+      if (existingOptionIndex !== -1) {
+        setOptionsFilterTable(prevSelectedOptions => {
+          const updatedOptions = [...prevSelectedOptions];
+          updatedOptions[existingOptionIndex][name].push(option);
+          return updatedOptions;
+        });
+      } else {
+        setOptionsFilterTable(prevSelectedOptions => [...prevSelectedOptions, {[name]: [option]}]);
+      }
+
     } else {
-      setSelectedOptions(prevSelectedOptions => prevSelectedOptions.filter(item => item !== option));
-    };
+      setOptionsFilterTable(prevSelectedOptions => {
+        const updatedOptions = prevSelectedOptions.map(item => {
+          if (Object.keys(item)[0] === name) {
+            return {[name]: item[name].filter(value => value !== option)};
+          }
+          return item;
+        });
+        return updatedOptions.filter(item => item[name].length > 0);
+      });
+    }
   };
 
-  const handleOnClickFilterButton = (key) => {
-    if ( selectedOptions.length > 0 ) {
-      const filteredData = firstData.filter(row => {
-        if (row.hasOwnProperty(key)) {
-          return selectedOptions.includes(row[key]);
-        }
-        return true;
-      });
+  const handleOnClickFilterButton = () => {
+    if (optionsFilterTable.length > 0) {
+      
+      let filteredData = data.filter(item => {
+        
+        return optionsFilterTable.every(option => {
+           
+          return Object.entries(option).every(([key, values]) => {
+            return values.includes(item[key]);
+          });
 
+        });
+
+      });
+      
+      filteredData.length <= 0 && showErrorAlert("No hubo data que coincida con los filtros seleccionados");
       setFilterData(filteredData);
     } else {
       setFilterData(firstData);
     }
+
     toggleOpen();
+
   };
+
 
   const handleSearchOption = (e) => {
     setSearchTerm(e.target.value);
@@ -137,8 +171,7 @@ const DropdownFilters = ({name, data, setFilterData, isOrderBy}) => {
                       type="checkbox"
                       className="form-check-input"
                       id={opt}
-                      onChange={handleCheckBoxChange}
-                      checked={selectedOptions.includes(opt)}
+                      onChange={(e)=>{handleCheckBoxChange(e, name)}}
                       value={opt}
                     />
                     <label className="form-check-label text-black" htmlFor={opt}>{opt}</label>

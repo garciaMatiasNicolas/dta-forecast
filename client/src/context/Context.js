@@ -6,13 +6,16 @@ const AppContextProvider = ( {children} )=> {
     
     const [dataGraphic, setDataGraphic] = useState(null);
     const [forecastPage, setForecastPage] = useState(false);
+    const [optionsFilterTable, setOptionsFilterTable] = useState([]);
     
     // EXPORT DE ESTADOS Y FUNCIONES DEL CONTEXTO
     const context = {
         dataGraphic,
         setDataGraphic,
         forecastPage, 
-        setForecastPage
+        setForecastPage,
+        optionsFilterTable,
+        setOptionsFilterTable
     }
     
     return(
