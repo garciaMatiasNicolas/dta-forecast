@@ -2,22 +2,22 @@ const templates = [
     {
         id : 1,
         name : "Historical Data.xlsx",
-        tableName : "Historical_Data"
+        tableName : "historical_data"
     },
     {
         id : 2,
         name : "Historical Exogenous Variables.xlsx",
-        tableName : "Historical_Exogenous_Variables"
+        tableName : "historical_exogenous_variables"
     },
     {
         id : 3,
         name : "Projected Exogenous Variables.xlsx",
-        tableName : "Projected_Exogenous_Variables"
+        tableName : "projected_exogenous_variables"
     },
     {
         id : 4,
         name : "Stock Data.xlsx",
-        tableName : "Stock_Data"
+        tableName : "stock_data"
     },
     {
         id : 5,
