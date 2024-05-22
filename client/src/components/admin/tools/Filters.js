@@ -5,7 +5,7 @@ import { MDBIcon } from "mdb-react-ui-kit";
 
 const apiUrl = process.env.REACT_APP_API_URL;
 
-const Filters = ({handleOnChangeFilter, scenario}) => {
+const Filters = ({handleOnChangeFilter, scenario, conditions}) => {
   // AUTHORIZATION HEADERS //
   const token = localStorage.getItem("userToken");
   const headers = {
@@ -16,16 +16,15 @@ const Filters = ({handleOnChangeFilter, scenario}) => {
   // State for get filters from server
   const [optionsFilter, setOptionsFilter] = useState([]);
 
-
   // Function for get filters from server
   const handleClickFilter = (e) => {
     const data = {
       filter_name: e.target.name,
       scenario_id: scenario,
       project_id: localStorage.getItem("projectId") ,
-      filter_value: "x"
+      filter_value: "x", 
+      conditions: conditions
     };
-  
 
     axios.post(`${apiUrl}/forecast/get-filters`, data, { headers })
     .then(res => setOptionsFilter(res.data))

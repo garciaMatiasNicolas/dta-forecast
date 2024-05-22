@@ -66,7 +66,6 @@ const TrafficLightContainer = ({data, params}) => {
 
     return (
         <> 
-            <h5 className='text-primary mt-5'>Semáforo de stock</h5>
             
             <div className="d-flex justify-content-center align-items-center w-auto gap-3">
                 <select className="form-select w-auto border border-0" onChange={handleFilterChange} onClick={handleClickFilter}>

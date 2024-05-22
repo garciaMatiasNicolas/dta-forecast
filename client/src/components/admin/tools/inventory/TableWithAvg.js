@@ -83,6 +83,8 @@ const Table = ({ data, setData }) => {
     ));
   };
 
+  const keys = ["Familia", 'Categoria', 'Vendedor', 'Subcategoria', 'Cliente', 'Región', '¿Compro?', 'MTO', 'OB', 'ABC', 'XYZ', 'Estado', 'Caracterización']
+
   return (
     <>
     
@@ -92,7 +94,7 @@ const Table = ({ data, setData }) => {
             <tr className='w-auto h-auto border'>
               {Object.keys(data[0]).map((key, index) => (
                 <th className='text-white border text-center' key={index}>
-                  {key !== "Producto" && key !== "Stock seguridad" && key !== "Stock" && key !== "Suma venta diaria" && key !== "Cantidad de productos" && key !== "Suma de stock" &&  key !== "Venta diaria histórico"  && key !== "Venta diaria predecido" && key !== "Cobertura (días)" && key !== "Punto de reorden"  ? 
+                  {keys.includes(key) ? 
                     <DropdownFilters key={index} name={key} data={data} setFilterData={setData} isOrderBy={key === "Valorizado" || key === "Sobrante valorizado" || key === "Sobrante (unidades)"}/> : 
                     <p>{key}</p>
                   }
@@ -122,4 +124,3 @@ const Table = ({ data, setData }) => {
 };
 
 export default Table;
-

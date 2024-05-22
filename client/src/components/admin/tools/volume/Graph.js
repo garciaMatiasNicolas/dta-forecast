@@ -50,6 +50,9 @@ const Graph = () => {
   // State for SKU
   const skuInputRef = useRef(null);
   
+  // State for filters nested
+  const [conditions, setConditions] = useState([]);
+  
   // State for MAPES
   const [error, setError] = useState(0);
   const [errorLastPeriod, setErrorLastPeriod] = useState(0);
@@ -143,13 +146,27 @@ const Graph = () => {
     setDataYear(dataBar);
   }
 
+  const resetFilters = () => {
+    getFirstGraphs(scenarioId);
+    setConditions([]);
+  }
+
   // Function for graphic data using filters
   const handleOnChangeFilter = (e) => {
+    setConditions((prevConditions) => {
+      const updatedConditions = prevConditions.filter(
+        (condition) => !condition.hasOwnProperty(e.target.name)
+      );
+      updatedConditions.push({ [e.target.name]: e.target.value });
+      return updatedConditions;
+    });
+
     const dataFilter = {
       filter_name: e.target.name,
       scenario_id: scenarioId,
       project_id: localStorage.getItem("projectId"),
-      filter_value: e.target.value
+      filter_value: e.target.value,
+      conditions: [...conditions, { [e.target.name]: e.target.value }]
     };
 
     axios.post(`${apiUrl}/forecast/filter-data`, dataFilter,{ headers })
@@ -160,7 +177,7 @@ const Graph = () => {
       setDataInGraphs(graphicBarData.other_data.x, graphicLineData.other_data.x, graphicBarData.other_data.y, graphicLineData.other_data.y, graphicBarData.actual_data.y, graphicLineData.actual_data.y);
       
     })
-    .catch(err => showErrorAlert(`Ocurrio un error inesperado: ${err.response.error}`));
+    .catch(err => {showErrorAlert(`Ocurrio un error inesperado: ${err.response.error}`); console.log(err)});
   };
 
   // Function to get graph by SKU
@@ -219,6 +236,7 @@ const Graph = () => {
     let scenarioId = e.target.value;
     setScenarioId(scenarioId);
     getFirstGraphs(scenarioId);
+    setConditions([]);
   }
 
   // DRAG GRAPH BY GROUPS //
@@ -314,14 +332,22 @@ const Graph = () => {
         <MDBRow>
           <MDBCol size='3' className="d-flex justify-content-start align-items-start gap-3 flex-column">
             <Mape errorType={errorType} mainError={error} errorLastPeriod={errorLastPeriod} errorAbs={errorAbs}/>
-            <Filters handleOnChangeFilter={handleOnChangeFilter} scenario={scenarioId}/> 
+            <Filters handleOnChangeFilter={handleOnChangeFilter} scenario={scenarioId} conditions={conditions}/> 
             <SkuSearch setSku={setDataInGraphs} scenarioId={scenarioId}/>
           </MDBCol>
           <MDBCol size='9' className='d-flex justify-content-center align-items-center gap-5 flex-column'>
+          
             <div className='w-75 '>
               { !data ? <EmptyLineChart/> : <Bar options={optionsBar} data={dataYear} />}
             </div>
-            { !data ? <EmptyLineChart/> : <Line options={options} data={data}/> }
+            { !data ? <EmptyLineChart/> : <Line options={options} data={data} conditions={conditions}/> }
+            <div className='d-flex justify-content-start align-items-center w-auto gap-3 mt-5'>
+              <p className="text-primary">Filtros anidados:</p>
+              {conditions.map((item, index) => (
+                <p key={index} className="text-primary">{Object.keys(item)[0]}: {Object.values(item)[0]}</p>
+              ))}
+              <p style={{cursor: "pointer"}} onClick={resetFilters}>Reestablecer</p>
+            </div>
           </MDBCol>
         </MDBRow>
       </MDBContainer>

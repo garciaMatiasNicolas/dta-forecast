@@ -9,12 +9,14 @@ import {
 import Table from "./TableWithAvg";
 import { AppContext } from '../../../../context/Context';
 import TotalTable from "./TotalTable";
+import TrafficLightContainer from "../../../../containers/tools/inventory/TrafficLightContainer";
 
 const apiUrl = process.env.REACT_APP_API_URL;
 
-const FiltersNested = ({data}) => {
+const FiltersNested = ({data, trafficLight, stockParams}) => {
     const [orderedData, setOrderedData] = useState(data);
     const {optionsFilterTable, setOptionsFilterTable} = useContext(AppContext);
+    const [viewTrafficLight, setViewTrafficLight] = useState(false);
 
     // Function for download excel
     const handleDownload = (urlPath) => {
@@ -64,46 +66,55 @@ const FiltersNested = ({data}) => {
     
     return (
         <div className="w-100 gap-4 d-flex justify-content-start align-items-start flex-column">
-            <h5 className='text-primary'>Tabla de stock por producto</h5>
+            <h5 className='text-primary'>{!viewTrafficLight ? "Tabla de stock por producto" : "Semáforo de stock"}</h5>
+            <p style={{'cursor': 'pointer'}} onClick={() => setViewTrafficLight(!viewTrafficLight)} className='text-primary'>{!viewTrafficLight ? "Ver semáforo" : "Ver reapro"}</p>
 
-            <MDBBtn 
-                className="w-auto" 
-                style={{ backgroundColor: '#25d366' }} 
-                onClick={handleExport}
-                disabled={orderedData.length === 0}
-                > Exportar como Excel
-                <MDBIcon className="ms-2" fas icon="file-export" />
-            </MDBBtn> 
-
-            <div className="w-100 d-flex justify-content-between align-items-center">
-                
-                <div className="w-auto d-flex justify-content-between align-items-center gap-2">
-                    <MDBInput
-                        type="text"
-                        label="SKU"
-                        className="w-auto"
-                        onChange={handleSearchProduct}
-                    />
+            {
+                viewTrafficLight ?  <TrafficLightContainer data={trafficLight} params={stockParams}/> 
+                :
+                <>
+                    <MDBBtn 
+                        className="w-auto" 
+                        style={{ backgroundColor: '#25d366' }} 
+                        onClick={handleExport}
+                        disabled={orderedData.length === 0}
+                        > Exportar como Excel
+                        <MDBIcon className="ms-2" fas icon="file-export" />
+                    </MDBBtn> 
+        
+                    <div className="w-100 d-flex justify-content-between align-items-center">
+                        
+                        <div className="w-auto d-flex justify-content-between align-items-center gap-2">
+                            <MDBInput
+                                type="text"
+                                label="SKU"
+                                className="w-auto"
+                                onChange={handleSearchProduct}
+                            />
+                            
+                        </div>
                     
-                </div>
-            
-            </div>
+                    </div>
+        
+                    <div className="d-flex w-100 justify-content-between align-items-center">
+                        <div className='d-flex justify-content-start align-items-center gap-5 w-auto'>
+                            {optionsFilterTable.map((opt, index) => (
+                                Object.entries(opt).map(([key, value]) => (
+                                    <p key={index} className='text-primary'>{`${key}: ${value}`}</p>
+                                ))
+                            ))}
+                        </div>
+        
+                        <p style={{"cursor": "pointer"}} onClick={handleSetFilters}>Reestablecer filtros</p>
+                    </div>
+        
+                    <Table data={orderedData} setData={setOrderedData}/>
+        
+                    <TotalTable data={orderedData}/>
+                
+                </>
+            }
 
-            <div className="d-flex w-100 justify-content-between align-items-center">
-                <div className='d-flex justify-content-start align-items-center gap-5 w-auto'>
-                    {optionsFilterTable.map((opt, index) => (
-                        Object.entries(opt).map(([key, value]) => (
-                            <p key={index} className='text-primary'>{`${key}: ${value}`}</p>
-                        ))
-                    ))}
-                </div>
-
-                <p style={{"cursor": "pointer"}} onClick={handleSetFilters}>Reestablecer filtros</p>
-            </div>
-
-            <Table data={orderedData} setData={setOrderedData}/>
-
-            <TotalTable data={orderedData}/>
         </div>
     );
 }

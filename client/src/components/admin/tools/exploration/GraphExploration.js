@@ -24,7 +24,8 @@ const GraphExploration = () => {
     const getFirstGraph = () => {
         const graphicData = {
             project_id: localStorage.getItem("projectId"),
-            filter_name: "all"
+            filter_name: "all", 
+            component: "graph"
         }
       
         axios.post(`${apiUrl}/forecast/graphic-data`, graphicData, {
@@ -55,6 +56,7 @@ const GraphExploration = () => {
             const data = {
                 project_id: localStorage.getItem('projectId'),
                 filter_name: filterName,
+                component: "graph"
             };
 
             axios.post(`${apiUrl}/forecast/graphic-data`, data, { headers: headers })

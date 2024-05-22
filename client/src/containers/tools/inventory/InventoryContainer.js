@@ -4,7 +4,6 @@ import { showErrorAlert, } from '../../../components/other/Alerts';
 import { ClipLoader } from 'react-spinners';
 import FiltersNested from '../../../components/admin/tools/inventory/FiltersNested';
 import { MDBBtn, MDBInput, MDBRadio } from 'mdb-react-ui-kit';
-import TrafficLightContainer from './TrafficLightContainer';
 import Navbar from '../../../components/navs/Navbar';
 import NavInventory from '../../../components/navs/NavInventory';
 
@@ -14,6 +13,7 @@ const InventoryContainer = () => {
     const [data, setData] = useState([]);
     const [trafficLight, setTrafficLight] = useState([]);
     const [loader, setLoader] = useState(false);
+    
     const [stockParams, setStockParams] = useState({
         next_buy: "15",
         forecast_or_historical: "historical",
@@ -135,15 +135,6 @@ const InventoryContainer = () => {
                 <NavInventory/>
                 <div className="d-flex flex-column justify-content-start align-items-start gap-3 w-100">
 
-                    {/* <h5 className='text-primary'>Gráfico de Stock por producto</h5>
-                    <FilterProductsInventory stock={stockData}/>
-                    {!stockData && <p>No hay datos de Stock para este proyecto</p>} */}
-
-                    {/* <div className='d-flex justify-content-center align-items-center w-auto gap-2 mt-5'>
-                        <MDBIcon fas icon="angle-double-right" color='primary' />
-                        <p style={{'cursor':'pointer'}} onClick={navigateComponents} className='mt-3 text-primary text-decoration-underline'>{!showComponent ? "Calcular stock de seguridad" : "Tabla de stock por producto"}</p>
-                    </div> */}
-
                     <div className="w-100 d-flex justify-content-start align-items-start flex-column gap-3 mb-5 border ps-5 pt-5 pb-5" style={{maxWidth: "800px"}}>
                         <h5 className="text-primary text-center">Parámetros calculo de stock</h5>
                         <div className="w-75 d-flex justify-content-start align-items-center" style={{maxWidth: "500px"}} >    
@@ -181,28 +172,12 @@ const InventoryContainer = () => {
                     </div>
                     
                     {!loader ? 
-                        <FiltersNested data={data} params={stockParams} /> 
+                        <FiltersNested data={data} params={stockParams} trafficLight={trafficLight} /> 
                         : 
                         <div className='d-flex flex-column justify-content-start align-items-start w-auto gap-2'>  
-                            <h5 className='text-primary'>Tabla de stock por producto</h5>
                             <ClipLoader/>
                         </div>
                     }
-
-                    {!loader ? 
-                        <TrafficLightContainer data={trafficLight} params={stockParams}/> 
-                        : 
-                        <div className='d-flex flex-column justify-content-start align-items-start w-auto gap-2'>  
-                            <h5 className='text-primary'>Tabla de stock por producto</h5>
-                            <ClipLoader/>
-                        </div>
-                    }
-                        
-                    {/*   :  
-                    <>
-                        <h5 className='text-primary'>Calcular stock de seguridad</h5>
-                        <SafetyStock fetchData={fetchData}/> 
-                    </> */}
                     
                 </div>
             </main>
