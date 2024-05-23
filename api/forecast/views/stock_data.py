@@ -223,6 +223,7 @@ class StockDataView(APIView):
                 price = float(item['Price'])
                 avg_sales_forecast = float(item["avg_sales_per_day_forecast"]) 
                 avg_sales = float(item[f'avg_sales_per_day_{"forecast" if is_forecast else "historical"}'])
+                stock = float(item["Stock"])
                 available_stock = float(item['Stock']) - float(item['Sales Order Pending Deliverys'])# float(item["Available Stock"]) 
                 lead_time = int(item['Lead Time'])
                 safety_stock = int(item['Safety stock (days)'])
@@ -231,7 +232,7 @@ class StockDataView(APIView):
                 buy = 'Si' if (days_of_coverage - reorder_point) < 1 else 'No'
                 optimal_batch = float(item["EOQ (Economical order quantity)"])
                 how_much = max(optimal_batch, (next_buy_days + lead_time + safety_stock - days_of_coverage) * avg_sales ) if buy == 'Si' else 0
-                overflow_units = available_stock if avg_sales == 0 else (0 if days_of_coverage - reorder_point < 0 else round((days_of_coverage - reorder_point)*avg_sales/30)) 
+                overflow_units = stock if avg_sales == 0 else (0 if days_of_coverage - reorder_point < 0 else round((days_of_coverage - reorder_point)*avg_sales/30)) 
                 overflow_price = round(overflow_units*price)
                 lot_sizing = float(item['Lot Sizing'])
                 purchase_order = float(item['Purchase Order'])
@@ -289,7 +290,8 @@ class StockDataView(APIView):
                     'Región': item['Region'],
                     'SKU': str(item['SKU']),
                     'Descripción': str(item['Description']),
-                    'Stock': locale.format_string("%d", int(round(available_stock)), grouping=True),
+                    'Stock': locale.format_string("%d", int(round(stock)), grouping=True),
+                    'Stock menos OVP': locale.format_string("%d", int(round(available_stock)), grouping=True),
                     'Ordenes de venta pendientes': sales_order,
                     'Ordenes de compra': purchase_order,
                     'Venta diaria histórico': locale.format_string("%d", int(round(avg_sales_historical)), grouping=True),
@@ -302,7 +304,7 @@ class StockDataView(APIView):
                     '¿Cuanto? (Purchase Unit)': locale.format_string("%d", round(final_how_much * purchase_unit), grouping=True) if buy == 'Si' and is_obs != 'OB' else "0",
                     'Estado': str(stock_status),
                     'Venta valorizada': locale.format_string("%d", int(round(price * avg_sales)), grouping=True),
-                    'Valorizado': locale.format_string("%d", int(round(price * available_stock)), grouping=True),
+                    'Valorizado': locale.format_string("%d", int(round(price * stock)), grouping=True),
                     'Demora en dias': str(lead_time),
                     'Fecha próx. compra': str(next_buy) if days_of_coverage != 9999 else "---",
                     'Caracterización': characterization if merge == 'both' else ('No encontrado en Stock Data' if merge == 'left_only' else 'No encontrado en Historical Data'),
