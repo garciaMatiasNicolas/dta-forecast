@@ -24,7 +24,6 @@ const GroupButtonActions = ({ tableName, path, idFile }) => {
                 showSuccessAlert("Archivo subido exitosamente! Data recibida");
             })
             .catch(err => {
-                console.log(err.response.data)
                 if (err.response.data.error === "bad_request") {
                     showErrorAlert("El archivo no se subió correctamente, intente nuevamente");
                 } else if (err.response.data.error === "columns_not_in_date_type") {
@@ -33,7 +32,7 @@ const GroupButtonActions = ({ tableName, path, idFile }) => {
                     data.model_type === 2 && showErrorAlert("Las fechas de su data exógena no coinciden con las que ya subio de su data histórica");
                     data.model_type === 1 && showErrorAlert("Las fechas de su data histórica no coinciden con las que ya subio de su data exógena");
                 } else {
-                    showErrorAlert("Error en el servidor")
+                    showErrorAlert(`Error en el servidor: ${err.response.data.log}`);
                 }
             })
             .finally(() => {
