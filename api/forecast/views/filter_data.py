@@ -44,11 +44,17 @@ class FilterDataViews(APIView):
 
                     cursor.execute(query)
                     data_rows = cursor.fetchall()
-
-                    cursor.execute(f"SELECT COLUMN_NAME FROM INFORMATION_SCHEMA.COLUMNS WHERE TABLE_SCHEMA = 'dtafio' AND TABLE_NAME = '{table_name}';")
+    
+                    cursor.execute(f"SHOW COLUMNS FROM {table_name} FROM dtafio;")
                     columns = cursor.fetchall()
+                    cols = []
 
-                    df_pred = pd.DataFrame(data=data_rows, columns=columns)
+                    for col in columns:
+                        cols.append((col[0],))
+                    
+                    cols = tuple(cols)
+
+                    df_pred = pd.DataFrame(data=data_rows, columns=cols)
                     df_pred = df_pred.drop(columns=[(error_method,)])
                     actual_rows = df_pred[df_pred[('model',)] == 'actual']
                     other_rows = df_pred[df_pred[('model',)] != 'actual']
@@ -69,6 +75,7 @@ class FilterDataViews(APIView):
                     actual_data['y'] = values
 
                     final_data = {'actual_data': actual_data, 'other_data': other_data}
+                    print(final_data)
                     data_per_year = Graphic.graphic_predictions_per_year(final_data, max_date=scenario.max_historical_date)
 
                     return Response({"full_data": final_data, "year_data": data_per_year},
@@ -127,8 +134,6 @@ class GetFiltersView(APIView):
                                 {'CONCAT(SKU, " ", DESCRIPTION)' if filter_name == "SKU" else f'DISTINCT({filter_name})'} 
                             FROM {table_name} {where_clause if len(conditions) > 0 else None}
                         '''
-                        print(query)
-
                         cursor.execute(query)
                         rows = cursor.fetchall()
                         filter_names = []
