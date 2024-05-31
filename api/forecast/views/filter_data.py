@@ -40,8 +40,6 @@ class FilterDataViews(APIView):
                     else:
                         query = f"SELECT * FROM {table_name} WHERE {query_conditions}"
 
-                    print(query)
-
                     cursor.execute(query)
                     data_rows = cursor.fetchall()
     
@@ -75,7 +73,7 @@ class FilterDataViews(APIView):
                     actual_data['y'] = values
 
                     final_data = {'actual_data': actual_data, 'other_data': other_data}
-                    print(final_data)
+
                     data_per_year = Graphic.graphic_predictions_per_year(final_data, max_date=scenario.max_historical_date)
 
                     return Response({"full_data": final_data, "year_data": data_per_year},
