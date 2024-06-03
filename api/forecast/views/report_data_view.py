@@ -64,7 +64,11 @@ class ReportDataViews(APIView):
                 next_quarter_since_last_date = list_date_columns[last_date_index + 1:last_date_index + 5]
                 next_month_since_last_date = list_date_columns[last_date_index + 1:last_date_index + 2]
 
-                dates_a = list_date_columns[last_date_index - 23:last_date_index - 11]
+                if last_date_index - 23 >= 0:
+                    dates_a = list_date_columns[last_date_index - 23:last_date_index - 11]
+                else:
+                    dates_a = list_date_columns[:last_date_index - 11]
+                    
                 dates_b = dates_a[-4:]
                 dates_c = dates_a[-1]
 
@@ -104,6 +108,7 @@ class ReportDataViews(APIView):
                 for date_range, date_name in zip(date_ranges, reports_name):
                     dates_report = self.join_dates(list_dates=date_range, for_report=True)
                     reports_data[date_name] = dates_report
+                
 
                 actual_dates = f'''
                     SELECT
@@ -153,7 +158,6 @@ class ReportDataViews(APIView):
                     WHERE model != 'actual';
                 '''
 
-
                 cursor.execute(sql=actual_dates)
                 actual_dates = cursor.fetchall()
 
@@ -202,7 +206,6 @@ class ReportDataViews(APIView):
                     SELECT COLUMN_NAME 
                     FROM INFORMATION_SCHEMA.COLUMNS 
                     WHERE TABLE_SCHEMA = 'dtafio' AND TABLE_NAME = '{predictions_table_name}' AND COLUMN_NAME LIKE '%-%';
-                 ;
                 ''')
                 date_columns = cursor.fetchall()
 
@@ -223,17 +226,17 @@ class ReportDataViews(APIView):
 
                 # Handle reports and get data
                 final_data = self.handle_reports(filter_name, predictions_table_name,
-                                                 last_date_index, list_date_columns, product)
+                                                last_date_index, list_date_columns, product)
 
                 past_dates, future_dates = self.filter_dates_by_month(last_date=last_date,
-                                                                      date_list=list_date_columns,
-                                                                      target_month=int(month))
+                                                                    date_list=list_date_columns,
+                                                                    target_month=int(month))
 
                 past_cols = self.join_dates(list_dates=past_dates, for_report=False)
                 future_cols = self.join_dates(list_dates=future_dates, for_report=False)
 
                 query_for_past_dates = f'''
-                    SELECT {'SKU || " " ||DESCRIPTION' if filter_name == "SKU" else filter_name},
+                    SELECT {'SKU || " " || DESCRIPTION' if filter_name == "SKU" else filter_name},
                         {past_cols}
                     FROM {predictions_table_name}
                     WHERE model = 'actual'
@@ -241,34 +244,59 @@ class ReportDataViews(APIView):
                     GROUP BY {filter_name};
                 '''
 
-                query_for_future_dates = f'''
-                    SELECT {'SKU || " " ||DESCRIPTION' if filter_name == "SKU" else filter_name},
-                        {future_cols}
-                    FROM {predictions_table_name}
-                    WHERE model != 'actual'
-                    {'AND SKU = ' + f"'{str(product)}'" if product else ''}
-                    GROUP BY {filter_name};
-                '''
-
                 cursor.execute(sql=query_for_past_dates)
                 past_data = cursor.fetchall()
+                print(past_dates)
 
-                cursor.execute(sql=query_for_future_dates)
-                future_data = cursor.fetchall()
+                if len(future_dates) > 0:
+                    query_for_future_dates = f'''
+                        SELECT {'SKU || " " || DESCRIPTION' if filter_name == "SKU" else filter_name},
+                            {future_cols}
+                        FROM {predictions_table_name}
+                        WHERE model != 'actual'
+                        {'AND SKU = ' + f"'{str(product)}'" if product else ''}
+                        GROUP BY {filter_name};
+                    '''
+            
+                    cursor.execute(sql=query_for_past_dates)
+                    past_data = cursor.fetchall()
 
-                dict_values = {tupla[0]: tupla[1] for tupla in future_data}
+                    cursor.execute(sql=query_for_future_dates)
+                    future_data = cursor.fetchall()
 
-                rounded_data = [[elem[0]] + [round(val) for val in elem[1:]] +
-                                [round(dict_values[elem[0]])] for elem in past_data]
+                    dict_values = {tupla[0]: tupla[1] for tupla in future_data}
 
-                num_sublist = [sublist[1:] for sublist in rounded_data if
-                               all(isinstance(item, (int, float)) for item in sublist[1:])]
+                    rounded_data = [[elem[0]] + [round(val) for val in elem[1:]] +
+                                    [round(dict_values[elem[0]])] for elem in past_data]
 
-                total = ['TOTAL'] + [sum(item) for item in zip(*num_sublist)]
+                else:
+                    cursor.execute(sql=query_for_past_dates)
+                    past_data = cursor.fetchall()
 
-                rounded_data.append(total)
+                    rounded_data = [[elem[0]] + [round(val) for val in elem[1:]] for elem in past_data]
 
-                json_data = dict(columns=years, data=rounded_data)
+                # Create a dictionary to organize data by year
+                data_by_year = {year: 0 for year in years}
+
+                final_rounded_data = []
+                for row in rounded_data:
+                    entry = {year: 0 for year in years}
+                    entry['name'] = row[0]
+                    for i, date in enumerate(past_dates):
+                        year = date.split('-')[0]
+                        entry[year] = row[i + 1]
+                    final_rounded_data.append(entry)
+
+                num_sublist = [sublist for sublist in final_rounded_data if
+                            all(isinstance(sublist[year], (int, float)) for year in years)]
+
+                total = {'name': 'TOTAL'}
+                for year in years:
+                    total[year] = sum(sublist[year] for sublist in num_sublist)
+
+                final_rounded_data.append(total)
+
+                json_data = dict(columns=years, data=final_rounded_data)
 
                 return Response({"data_per_month": json_data, "reports": final_data},
                                 status=status.HTTP_200_OK)

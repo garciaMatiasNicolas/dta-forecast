@@ -95,7 +95,7 @@ const RunModelsLogicContainer = ({apiUrl, token}) => {
     const setExpertModel = (e) => {
         if(e.target.checked){
             setIsExpert(true);
-            formData.models = ['prophet', 'arima', 'holtsWintersExponentialSmoothing', 'linearRegression'];
+            formData.models = ['prophet', 'arima', 'holtsWintersExponentialSmoothing'];
             formData.error_p = "0";
             formData.test_p = "1";
             formData.pred_p = "12";

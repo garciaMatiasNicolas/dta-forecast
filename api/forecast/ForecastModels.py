@@ -12,34 +12,26 @@ import numpy as np
 class ForecastModels:
 
     @staticmethod
-    def holt_holtwinters_ema(idx, row, test_periods, prediction_periods, model_name):
+    def holt_holtwinters_ema(idx, row, test_periods, prediction_periods, model_name, seasonal_periods):
         time_series = pd.Series(row).astype(dtype='float')
-        train_data = time_series[:-test_periods]
-        test_data = time_series.iloc[-test_periods:]
 
         model = ''
 
         if model_name == 'holtsWintersExponentialSmoothing':
-            model = ExponentialSmoothing(train_data, seasonal_periods=12, trend='add', seasonal='add')
+            model = ExponentialSmoothing(time_series, seasonal_periods=int(seasonal_periods), trend='add', seasonal='add')
 
         if model_name == 'holtsExponentialSmoothing':
-            model = ExponentialSmoothing(train_data, trend='add')
+            model = ExponentialSmoothing(time_series, trend='add')
 
         if model_name == 'exponential_moving_average':
-            model = ExponentialSmoothing(train_data, trend=None, seasonal=None)
+            model = ExponentialSmoothing(time_series, trend=None, seasonal=None)
 
         model_fit = model.fit()
 
-        test_predictions = model_fit.forecast(test_periods)
-        train_predictions = model_fit.fittedvalues
+        train_pred = model_fit.predict(0)
+        forecast = model_fit.forecast(prediction_periods)
 
-        start_date = pd.to_datetime(test_data.index[-1])
-        next_month = start_date + pd.DateOffset(months=1)
-        future_dates = pd.date_range(start=next_month, periods=prediction_periods, freq='MS')
-        future_dates = future_dates.strftime('%Y-%m-%d')
-        future_predictions = model_fit.forecast(prediction_periods)
-
-        return idx, list(train_predictions.values) + list(test_predictions.values) + list(future_predictions.values)
+        return idx, forecast.tolist() + train_pred.tolist()
 
     @staticmethod
     def exponential_smoothing(idx, row, test_periods, prediction_periods):
@@ -87,7 +79,7 @@ class ForecastModels:
     def sarima(idx, row, test_periods, prediction_periods, additional_params):
 
         if additional_params is not None:
-            p, d, q = additional_params[f'arima_params']
+            p, d, q = additional_params[f'sarima_params']
             sarima_order = (int(p), int(d), int(q))
 
         else:
@@ -127,6 +119,7 @@ class ForecastModels:
 
         model = Prophet(weekly_seasonality=False,
                         yearly_seasonality=seasonal_periods,
+                        seasonality_mode = "additive"
                         )
 
         model.add_seasonality(name='monthly', period=30.5, fourier_order=5)
@@ -218,23 +211,27 @@ class ForecastModels:
 
     @staticmethod
     def linear(idx, row, test_periods, prediction_periods):
-        time_series = pd.Series(row).astype(dtype='float')
-        train_data = time_series[:-test_periods]
-        test_data = time_series.iloc[-test_periods:]
+        try:
+            time_series = pd.Series(row).astype(dtype='float')
+            train_data = time_series[:-test_periods]
+            test_data = time_series.iloc[-test_periods:]
 
-        model = LinearRegression()
-        x_train = pd.DataFrame(pd.to_numeric(pd.to_datetime(train_data.index))).astype(int).values.reshape(-1, 1)
-        y_train = train_data.values.reshape(-1, 1)
-        model.fit(x_train, y_train)
+            model = LinearRegression()
+            x_train = pd.DataFrame(pd.to_numeric(pd.to_datetime(train_data.index))).astype(int).values.reshape(-1, 1)
+            y_train = train_data.values.reshape(-1, 1)
+            model.fit(x_train, y_train)
 
-        x_test = pd.DataFrame(pd.to_numeric(pd.to_datetime(test_data.index))).astype(int).values.reshape(-1, 1)
+            x_test = pd.DataFrame(pd.to_numeric(pd.to_datetime(test_data.index))).astype(int).values.reshape(-1, 1)
 
-        test_predictions = np.squeeze(model.predict(x_test))
-        train_predictions = np.squeeze(model.predict(x_train))
+            test_predictions = np.squeeze(model.predict(x_test))
+            train_predictions = np.squeeze(model.predict(x_train))
 
-        last_date = pd.to_datetime(time_series.index[-1])
-        future_dates = [last_date + pd.DateOffset(days=i) for i in range(1, prediction_periods + 1)]
-        x_future = pd.DataFrame(pd.to_numeric(pd.to_datetime(future_dates))).astype(int).values.reshape(-1, 1)
-        future_predictions = np.squeeze(model.predict(x_future))
+            last_date = pd.to_datetime(time_series.index[-1])
+            future_dates = [last_date + pd.DateOffset(days=i) for i in range(1, prediction_periods + 1)]
+            x_future = pd.DataFrame(pd.to_numeric(pd.to_datetime(future_dates))).astype(int).values.reshape(-1, 1)
+            future_predictions = np.squeeze(model.predict(x_future))
 
-        return idx, list(train_predictions) + list(test_predictions) + list(future_predictions)
+            return idx, list(train_predictions) + list(test_predictions) + list(future_predictions)
+        
+        except Exception as err:
+            print(err)

@@ -95,7 +95,7 @@ class RunModelsViews(APIView):
                 path_all_models = f'{path}_all.xlsx'
 
                 forecast = Forecast(df=df_historical, prediction_periods=pred_p, error_periods=error_periods,
-                                    test_periods=test_p, error_method=error_method, models=models,
+                                    test_periods=test_p, error_method=error_method, seasonal_periods=seasonal_periods, models=models,
                                     additional_params=additional_params)
 
                 all_predictions = forecast.run_forecast()

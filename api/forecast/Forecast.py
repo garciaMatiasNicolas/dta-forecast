@@ -10,7 +10,7 @@ warnings.filterwarnings("ignore")
 
 class Forecast(object):
 
-    def __init__(self, df: pd.DataFrame, prediction_periods: int, test_periods: int, error_periods: int, error_method: str,
+    def __init__(self, df: pd.DataFrame, prediction_periods: int, test_periods: int, error_periods: int, error_method: str, seasonal_periods: int, 
                  models: list = None, additional_params=None):
 
         self.initial_data = df
@@ -21,6 +21,7 @@ class Forecast(object):
         self.additional_params = additional_params
         self.error_periods = error_periods
         self.error_method = error_method
+        self.seasonal_periods = seasonal_periods
         self.models = models
         self.date_columns = []
         self.future_dates = []
@@ -73,7 +74,7 @@ class Forecast(object):
         if model_name in ["holtsWintersExponentialSmoothing", "holtsExponentialSmoothing", "exponential_moving_average"]:
             results = Parallel(n_jobs=round(num_cores))(
                 delayed(ForecastModels.holt_holtwinters_ema)(idx, row, self.test_periods, self.prediction_periods,
-                                                             model_name) for idx, row in enumerate(data_list, 1))
+                                                             model_name, self.seasonal_periods) for idx, row in enumerate(data_list, 1))
 
         if model_name == "arima":
             results = Parallel(n_jobs=round(num_cores))(
