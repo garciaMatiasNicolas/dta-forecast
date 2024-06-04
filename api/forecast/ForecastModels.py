@@ -104,6 +104,14 @@ class ForecastModels:
     @staticmethod
     def prophet(idx, row, prediction_periods, additional_params, seasonal_periods, dates):
         df = pd.DataFrame({'ds': pd.to_datetime(dates), 'y': row})
+        df['floor'] = 0
+        avg_historical = df['y'].mean()
+        # Establecer el techo máximo como el 50% más del promedio histórico
+        max_cap = avg_historical * 1.5
+
+        # Añadir la columna 'cap' al DataFrame con el valor del techo máximo
+        df['cap'] = max_cap
+
 
         """if additional_params is not None:
             seasonality_mode = additional_params.get("seasonality_mode")
@@ -126,6 +134,9 @@ class ForecastModels:
         model.fit(df)
 
         future = model.make_future_dataframe(periods=prediction_periods, freq='MS')
+        future['floor'] = 0
+        future['cap'] = max_cap
+
         forecast = model.predict(future)
 
         train_predictions_df = model.predict(df)
@@ -135,6 +146,8 @@ class ForecastModels:
         train_predictions = train_predictions_df['yhat'].tail(len(dates)).values
 
         future_predictions = forecast['yhat'].tail(prediction_periods).values
+
+        future_predictions = [max(pred, 0) for pred in future_predictions]
 
         return idx, list(train_predictions) + list(future_predictions)
 
