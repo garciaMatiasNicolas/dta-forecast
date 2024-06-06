@@ -92,14 +92,14 @@ class Forecast(object):
                 for idx, row in enumerate(data_list, 1))
 
         elif model_name == "prophet":
+            additional_params = self.additional_params.get("prophet_params", None)
             results = Parallel(n_jobs=round(num_cores))(
-                delayed(ForecastModels.prophet)(idx, row, self.prediction_periods, self.additional_params,
-                                                12, self.initial_dates)
+                delayed(ForecastModels.prophet)(idx, row, self.prediction_periods, additional_params, 12, self.initial_dates)
                 for idx, row in enumerate(data_list, 1))
 
         elif model_name == "decisionTree":
             results = Parallel(n_jobs=round(num_cores))(
-                delayed(ForecastModels.decision_tree)(idx, row, self.test_periods, self.prediction_periods)
+                delayed(ForecastModels.decision_tree)(idx, row, self.test_periods, self.prediction_periods, self.initial_dates)
                 for idx, row in enumerate(data_list, 1))
 
         elif model_name == "lasso":
@@ -109,12 +109,12 @@ class Forecast(object):
 
         elif model_name == "linearRegression":
             results = Parallel(n_jobs=round(num_cores))(
-                delayed(ForecastModels.linear)(idx, row, self.test_periods, self.prediction_periods)
+                delayed(ForecastModels.linear)(idx, row, self.test_periods, self.prediction_periods, self.initial_dates)
                 for idx, row in enumerate(data_list, 1))
 
         elif model_name == "bayesian":
             results = Parallel(n_jobs=round(num_cores))(
-                delayed(ForecastModels.bayesian)(idx, row, self.test_periods, self.prediction_periods)
+                delayed(ForecastModels.bayesian)(idx, row, self.test_periods, self.prediction_periods, self.initial_dates)
                 for idx, row in enumerate(data_list, 1))
 
         predicted = {}

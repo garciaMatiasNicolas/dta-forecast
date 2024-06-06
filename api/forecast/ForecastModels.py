@@ -4,6 +4,7 @@ from statsmodels.tsa.statespace.sarimax import SARIMAX
 from statsmodels.tsa.holtwinters import SimpleExpSmoothing
 from sklearn.linear_model import Lasso, LinearRegression, BayesianRidge
 from statsmodels.tsa.holtwinters import ExponentialSmoothing
+from sklearn.preprocessing import MinMaxScaler
 from sklearn.tree import DecisionTreeRegressor
 from prophet import Prophet
 import numpy as np
@@ -106,28 +107,28 @@ class ForecastModels:
         df = pd.DataFrame({'ds': pd.to_datetime(dates), 'y': row})
         df['floor'] = 0
         avg_historical = df['y'].mean()
-        # Establecer el techo máximo como el 50% más del promedio histórico
         max_cap = avg_historical * 1.5
 
-        # Añadir la columna 'cap' al DataFrame con el valor del techo máximo
         df['cap'] = max_cap
 
-
-        """if additional_params is not None:
-            seasonality_mode = additional_params.get("seasonality_mode")
-            seasonality_prior_scale = float(additional_params.get("seasonality_prior_scale"))
-            uncertainty_samples = float(additional_params.get("uncertainty_samples"))
-            changepoint_prior_scale = float(additional_params.get("changepoint_prior_scale"))
+        if additional_params is not None:
+            seasonality_mode = additional_params[0]
+            seasonality_prior_scale = float(additional_params[1])
+            uncertainty_samples = int(additional_params[2])
+            changepoint_prior_scale = float(additional_params[3])
 
         else:
             seasonality_mode = "additive"
             seasonality_prior_scale = 10.0
             uncertainty_samples = 1000
-            changepoint_prior_scale = 0.05"""
+            changepoint_prior_scale = 0.05
 
         model = Prophet(weekly_seasonality=False,
                         yearly_seasonality=seasonal_periods,
-                        seasonality_mode = "additive"
+                        seasonality_mode=seasonality_mode,
+                        seasonality_prior_scale=seasonality_prior_scale,
+                        changepoint_prior_scale=changepoint_prior_scale,
+                        uncertainty_samples=uncertainty_samples
                         )
 
         model.add_seasonality(name='monthly', period=30.5, fourier_order=5)
@@ -145,7 +146,7 @@ class ForecastModels:
         train_predictions_df = model.predict(df)
         train_predictions = train_predictions_df['yhat'].tail(len(dates)).values
 
-        future_predictions = forecast['yhat'].tail(prediction_periods).values
+        future_predictions = forecast['yhat_lower'].tail(prediction_periods).values
 
         future_predictions = [max(pred, 0) for pred in future_predictions]
 
@@ -174,75 +175,149 @@ class ForecastModels:
         return idx, list(train_predictions) + list(test_predictions) + list(future_predictions)
 
     @staticmethod
-    def decision_tree(idx, row, test_periods, prediction_periods):
+    def decision_tree(idx, row, test_periods, prediction_periods, dates):
         try:
-            time_series = pd.Series(row).astype(dtype='float')
+            # Crear una serie de tiempo con índices de fecha
+            dates = pd.date_range(start=dates[0], periods=len(row), freq='MS')
+            time_series = pd.Series(row, index=dates).astype(dtype='float')
+            
+            # Dividir en datos de entrenamiento y prueba
             train_data = time_series[:-test_periods]
             test_data = time_series.iloc[-test_periods:]
 
-            model = DecisionTreeRegressor(random_state=42)
-            x_train = pd.DataFrame(pd.to_numeric(pd.to_datetime(train_data.index))).astype(int).values.reshape(-1, 1)
-            y_train = train_data.values
-            model.fit(x_train, y_train)
+            # Crear características adicionales
+            def create_features(index):
+                features = pd.DataFrame(index=index)
+                features['month'] = index.month
+                features['timestamp'] = pd.to_numeric(index)
+                return features
 
-            x_test = pd.DataFrame(pd.to_numeric(pd.to_datetime(test_data.index))).astype(int).values.reshape(-1, 1)
-            test_predictions = model.predict(x_test)
-            train_predictions = model.predict(x_train)
+            # Normalizar los datos
+            scaler_y = MinMaxScaler()
+            y_train = train_data.values.reshape(-1, 1)
+            y_train_scaled = scaler_y.fit_transform(y_train)
+
+            x_train = create_features(train_data.index)
+            x_test = create_features(test_data.index)
+
+            scaler_x = MinMaxScaler()
+            x_train_scaled = scaler_x.fit_transform(x_train)
+            x_test_scaled = scaler_x.transform(x_test)
+
+            model = DecisionTreeRegressor(random_state=42, max_depth=5)
+            model.fit(x_train_scaled, y_train_scaled)
+
+            test_predictions_scaled = model.predict(x_test_scaled)
+            test_predictions = np.squeeze(scaler_y.inverse_transform(test_predictions_scaled.reshape(-1, 1)))
+            train_predictions_scaled = model.predict(x_train_scaled)
+            train_predictions = np.squeeze(scaler_y.inverse_transform(train_predictions_scaled.reshape(-1, 1)))
 
             last_date = pd.to_datetime(time_series.index[-1])
-            future_dates = [last_date + pd.DateOffset(days=i) for i in range(1, prediction_periods + 1)]
-            x_future = pd.DataFrame(pd.to_numeric(pd.to_datetime(future_dates))).astype(int).values.reshape(-1, 1)
-            future_predictions = model.predict(x_future)
+            future_dates = pd.date_range(start=last_date + pd.DateOffset(months=1), periods=prediction_periods, freq='MS')
+            x_future = create_features(future_dates)
+            x_future_scaled = scaler_x.transform(x_future)
+            
+            future_predictions_scaled = model.predict(x_future_scaled)
+            future_predictions = np.squeeze(scaler_y.inverse_transform(future_predictions_scaled.reshape(-1, 1)))
+            
+            # Evitar predicciones negativas
+            future_predictions = [max(pred, 0) for pred in future_predictions]
 
             return idx, list(train_predictions) + list(test_predictions) + list(future_predictions)
 
         except Exception as err:
-            return err
+            return str(err)
+       
 
     @staticmethod
-    def bayesian(idx, row, test_periods, prediction_periods):
-        time_series = pd.Series(row).astype(dtype='float')
-        train_data = time_series[:-test_periods]
-        test_data = time_series.iloc[-test_periods:]
-
-        model = BayesianRidge()
-        x_train = pd.DataFrame(pd.to_numeric(pd.to_datetime(train_data.index))).astype(int).values.reshape(-1, 1)
-        y_train = train_data.values
-        model.fit(x_train, y_train)
-
-        x_test = pd.DataFrame(pd.to_numeric(pd.to_datetime(test_data.index))).astype(int).values.reshape(-1, 1)
-
-        test_predictions = np.squeeze(model.predict(x_test))
-        train_predictions = np.squeeze(model.predict(x_train))
-
-        last_date = pd.to_datetime(time_series.index[-1])
-        future_dates = [last_date + pd.DateOffset(days=i) for i in range(1, prediction_periods + 1)]
-        x_future = pd.DataFrame(pd.to_numeric(pd.to_datetime(future_dates))).astype(int).values.reshape(-1, 1)
-        future_predictions = np.squeeze(model.predict(x_future))
-
-        return idx, list(train_predictions) + list(test_predictions) + list(future_predictions)
-
-    @staticmethod
-    def linear(idx, row, test_periods, prediction_periods):
+    def bayesian(idx, row, test_periods, prediction_periods, dates):
         try:
-            time_series = pd.Series(row).astype(dtype='float')
+            # Crear una serie de tiempo con índices de fecha
+            dates = pd.date_range(start=dates[0], periods=len(row), freq='MS')
+            time_series = pd.Series(row, index=dates).astype(dtype='float')
+            
+            # Dividir en datos de entrenamiento y prueba
             train_data = time_series[:-test_periods]
             test_data = time_series.iloc[-test_periods:]
 
-            model = LinearRegression()
-            x_train = pd.DataFrame(pd.to_numeric(pd.to_datetime(train_data.index))).astype(int).values.reshape(-1, 1)
+            # Normalizar las fechas y los datos
+            scaler_x = MinMaxScaler()
+            scaler_y = MinMaxScaler()
+
+            x_train = pd.to_numeric(pd.to_datetime(train_data.index)).values.reshape(-1, 1)
             y_train = train_data.values.reshape(-1, 1)
-            model.fit(x_train, y_train)
+            
+            x_train_scaled = scaler_x.fit_transform(x_train)
+            y_train_scaled = scaler_y.fit_transform(y_train)
 
-            x_test = pd.DataFrame(pd.to_numeric(pd.to_datetime(test_data.index))).astype(int).values.reshape(-1, 1)
+            model = BayesianRidge()
+            model.fit(x_train_scaled, y_train_scaled.ravel())
 
-            test_predictions = np.squeeze(model.predict(x_test))
-            train_predictions = np.squeeze(model.predict(x_train))
+            x_test = pd.to_numeric(pd.to_datetime(test_data.index)).values.reshape(-1, 1)
+            x_test_scaled = scaler_x.transform(x_test)
+
+            test_predictions_scaled = model.predict(x_test_scaled)
+            test_predictions = np.squeeze(scaler_y.inverse_transform(test_predictions_scaled.reshape(-1, 1)))
+            train_predictions_scaled = model.predict(x_train_scaled)
+            train_predictions = np.squeeze(scaler_y.inverse_transform(train_predictions_scaled.reshape(-1, 1)))
 
             last_date = pd.to_datetime(time_series.index[-1])
-            future_dates = [last_date + pd.DateOffset(days=i) for i in range(1, prediction_periods + 1)]
-            x_future = pd.DataFrame(pd.to_numeric(pd.to_datetime(future_dates))).astype(int).values.reshape(-1, 1)
-            future_predictions = np.squeeze(model.predict(x_future))
+            future_dates = [last_date + pd.DateOffset(months=i) for i in range(1, prediction_periods + 1)]
+            x_future = pd.to_numeric(pd.to_datetime(future_dates)).values.reshape(-1, 1)
+            x_future_scaled = scaler_x.transform(x_future)
+            
+            future_predictions_scaled = model.predict(x_future_scaled)
+            future_predictions = np.squeeze(scaler_y.inverse_transform(future_predictions_scaled.reshape(-1, 1)))
+            
+            # Evitar predicciones negativas
+            future_predictions = [max(pred, 0) for pred in future_predictions]
+
+            return idx, list(train_predictions) + list(test_predictions) + list(future_predictions)
+
+        except Exception as err:
+            print(err)
+
+    @staticmethod
+    def linear(idx, row, test_periods, prediction_periods, dates):
+        try:
+            dates = pd.date_range(start=dates[0], periods=len(row), freq='MS')
+            time_series = pd.Series(row, index=dates).astype(dtype='float')
+            
+            # Dividir en datos de entrenamiento y prueba
+            train_data = time_series[:-test_periods]
+            test_data = time_series.iloc[-test_periods:]
+
+            # Normalizar las fechas y los datos
+            scaler_x = MinMaxScaler()
+            scaler_y = MinMaxScaler()
+
+            x_train = pd.to_numeric(pd.to_datetime(train_data.index)).values.reshape(-1, 1)
+            y_train = train_data.values.reshape(-1, 1)
+            
+            x_train_scaled = scaler_x.fit_transform(x_train)
+            y_train_scaled = scaler_y.fit_transform(y_train)
+
+            model = LinearRegression()
+            model.fit(x_train_scaled, y_train_scaled)
+
+            x_test = pd.to_numeric(pd.to_datetime(test_data.index)).values.reshape(-1, 1)
+            x_test_scaled = scaler_x.transform(x_test)
+
+            test_predictions_scaled = model.predict(x_test_scaled)
+            test_predictions = np.squeeze(scaler_y.inverse_transform(test_predictions_scaled))
+            train_predictions_scaled = model.predict(x_train_scaled)
+            train_predictions = np.squeeze(scaler_y.inverse_transform(train_predictions_scaled))
+
+            last_date = pd.to_datetime(time_series.index[-1])
+            future_dates = [last_date + pd.DateOffset(months=i) for i in range(1, prediction_periods + 1)]
+            x_future = pd.to_numeric(pd.to_datetime(future_dates)).values.reshape(-1, 1)
+            x_future_scaled = scaler_x.transform(x_future)
+            
+            future_predictions_scaled = model.predict(x_future_scaled)
+            future_predictions = np.squeeze(scaler_y.inverse_transform(future_predictions_scaled))
+            
+            # Evitar predicciones negativas
+            #future_predictions = [max(pred, 0) for pred in future_predictions]
 
             return idx, list(train_predictions) + list(test_predictions) + list(future_predictions)
         
