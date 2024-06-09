@@ -242,6 +242,7 @@ const MetricsByDateContainer = () => {
             ))}
           </select>
         </div>
+        {console.log(dataGraph)}
 
         <div className="w-auto d-flex flex-column justify-content-center align-items-start gap-1">
           <p className="text-primary w-auto m-0 p-0" onChange={handleOnChangeFilter}>SKU</p>
