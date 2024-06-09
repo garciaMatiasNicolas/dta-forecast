@@ -17,7 +17,12 @@ class Forecast(object):
         self.initial_dates = []
         self.result_data = pd.DataFrame()
         self.prediction_periods = prediction_periods
-        self.test_periods = test_periods
+        
+        if test_periods == 1:
+            self.test_periods = 2
+        else:
+            self.test_periods = test_periods
+
         self.additional_params = additional_params
         self.error_periods = error_periods
         self.error_method = error_method

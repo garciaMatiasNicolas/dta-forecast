@@ -104,10 +104,16 @@ class ForecastModels:
 
     @staticmethod
     def prophet(idx, row, prediction_periods, additional_params, seasonal_periods, dates):
+        def detect_outliers(series, threshold=3):
+            mean = series.mean()
+            std_dev = series.std()
+            z_scores = (series - mean) / std_dev
+            return z_scores.abs() > threshold
+    
         df = pd.DataFrame({'ds': pd.to_datetime(dates), 'y': row})
         df['floor'] = 0
         avg_historical = df['y'].mean()
-        max_cap = avg_historical * 1.5
+        max_cap = avg_historical * 2
 
         df['cap'] = max_cap
 
@@ -122,6 +128,9 @@ class ForecastModels:
             seasonality_prior_scale = 10.0
             uncertainty_samples = 1000
             changepoint_prior_scale = 0.05
+        
+        outliers = detect_outliers(df['y'])
+        df['outliers'] = outliers
 
         model = Prophet(weekly_seasonality=False,
                         yearly_seasonality=seasonal_periods,
@@ -132,7 +141,8 @@ class ForecastModels:
                         )
 
         model.add_seasonality(name='monthly', period=30.5, fourier_order=5)
-        model.fit(df)
+        # Exclude outliers during fitting
+        model.fit(df[~df['outliers']])
 
         future = model.make_future_dataframe(periods=prediction_periods, freq='MS')
         future['floor'] = 0
@@ -149,6 +159,7 @@ class ForecastModels:
         future_predictions = forecast['yhat_lower'].tail(prediction_periods).values
 
         future_predictions = [max(pred, 0) for pred in future_predictions]
+        future_predictions = [min(pred, max_cap) for pred in future_predictions]
 
         return idx, list(train_predictions) + list(future_predictions)
 

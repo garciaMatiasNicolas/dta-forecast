@@ -77,53 +77,33 @@ class StockDataView(APIView):
             results = []
             iterrows_historical = historical.iloc[:, -historical_periods:].iterrows()
 
-            historical.fillna(0)
-            stock.fillna(0)
+            historical.fillna(0, inplace=True)
+            stock.fillna(0, inplace=True)
+
+            historical_results = []
+            forecast_results = []
 
             if forecast is not None:
                 date_index = forecast.columns.get_loc(max_hsd)
-                iterrows_forecast = forecast.iloc[:, date_index:-forecast_periods].iterrows() 
-                forecast.fillna(0) 
-                
-                for (_, row_historical), ( _, row_forecast) in zip(iterrows_historical, iterrows_forecast):
-                    total_sales_historical = row_historical.sum()
+                next_columns = forecast.columns[date_index+1:date_index+1+forecast_periods]
+                iterrows_forecast = forecast.loc[:, next_columns].iterrows()
+                forecast.fillna(0, inplace=True)
+
+                for idx, row_forecast in iterrows_forecast:
                     total_sales_forecast = row_forecast.sum()
-
-                    avg_row_historical = np.average(row_historical)
                     avg_row_forecast = np.average(row_forecast)
-
-                    avg_sales_historical = round(avg_row_historical / 30, 2)
                     avg_sales_forecast = round(avg_row_forecast / 30, 2)
-
-                    desv_historical = round(row_historical.std(), 2)
                     desv_forecast = round(row_forecast.std(), 2)
-                    
-                    coefficient_of_variation_historical = round(desv_historical / avg_sales_historical, 2) if avg_sales_historical != 0 else 0
                     coefficient_of_variation_forecast = round(desv_forecast / avg_sales_forecast, 2) if avg_sales_forecast != 0 else 0
-
-                    stock_or_request_historical = 'stock' if coefficient_of_variation_historical > 0.7 else 'request'
                     stock_or_request_forecast = 'stock' if coefficient_of_variation_forecast > 0.7 else 'request'
-                    
-                    desv_2_historical = round(desv_historical / 30, 2)
                     desv_2_forecast = round(desv_forecast / 30, 2)
 
-                    avg_row_historical = str(avg_row_historical) if not pd.isna(avg_row_historical) else '0'
                     avg_row_forecast = str(avg_row_forecast) if not pd.isna(avg_row_forecast) else '0'
-
-                    desv_historical = str(desv_historical) if not pd.isna(desv_historical) else '0'
                     desv_forecast = str(desv_forecast) if not pd.isna(desv_forecast) else '0'
-
-                    coefficient_of_variation_historical = str(coefficient_of_variation_historical) if not pd.isna(coefficient_of_variation_historical) else '0'
                     coefficient_of_variation_forecast = str(coefficient_of_variation_forecast) if not pd.isna(coefficient_of_variation_forecast) else '0'
 
-                    row_with_stats = {
-                        'total_sales_historical': total_sales_historical,
-                        'avg_row_historical': avg_row_historical,
-                        'desv_historical': desv_historical,
-                        'coefficient_of_variation_historical': coefficient_of_variation_historical,
-                        'stock_or_request_historical': stock_or_request_historical,
-                        'avg_sales_per_day_historical': avg_sales_historical,
-                        'desv_per_day_historical': desv_2_historical,
+                    row_with_stats_forecast = {
+                        'index': idx,
                         'total_sales_forecast': total_sales_forecast,
                         'avg_row_forecast': avg_row_forecast,
                         'desv_forecast': desv_forecast,
@@ -133,39 +113,54 @@ class StockDataView(APIView):
                         'desv_per_day_forecast': desv_2_forecast
                     }
 
-                    results.append(row_with_stats)
-            
-            else:
-                for _, row in iterrows_historical:
-                    total_sales = row.sum()
-                    avg_row = np.average(row)
-                    avg_sales = round(avg_row / 30,2)
-                    desv = round(row.std(), 2)
-                    coefficient_of_variation = round(desv / avg_sales, 2) if avg_sales != 0 else 0
-                    stock_or_request = 'stock' if coefficient_of_variation > 0.7 else 'request'
-                    desv_2 = round(desv / 30, 2)
-            
-                    avg_row = str(avg_row) if not pd.isna(avg_row) else '0'
-                    desv = str(desv) if not pd.isna(desv) else '0'
-                    coefficient_of_variation = str(coefficient_of_variation) if not pd.isna(coefficient_of_variation) else '0'
+                    forecast_results.append(row_with_stats_forecast)
 
-                    row_with_stats = {
+            for idx, row in iterrows_historical:
+                total_sales = row.sum()
+                avg_row = np.average(row)
+                avg_sales = round(avg_row / 30, 2)
+                desv = round(row.std(), 2)
+                coefficient_of_variation = round(desv / avg_sales, 2) if avg_sales != 0 else 0
+                stock_or_request = 'stock' if coefficient_of_variation > 0.7 else 'request'
+                desv_2 = round(desv / 30, 2)
+
+                avg_row = str(avg_row) if not pd.isna(avg_row) else '0'
+                desv = str(desv) if not pd.isna(desv) else '0'
+                coefficient_of_variation = str(coefficient_of_variation) if not pd.isna(coefficient_of_variation) else '0'
+
+                row_with_stats = {
+                    'index': idx,
                     'total_sales_historical': total_sales,
-                        'avg_row_historical': avg_row,
-                        'avg_row_forecast': "0.0",
-                        'desv_historical': desv,
-                        'coefficient_of_variation_historical': coefficient_of_variation,
-                        'stock_or_request_historical': stock_or_request,
-                        'avg_sales_per_day_historical': avg_sales,
-                        "avg_sales_per_day_forecast": "0.0",
-                        'desv_per_day_historical': desv_2
-                    }
-                    
-                    results.append(row_with_stats)
+                    'avg_row_historical': avg_row,
+                    'avg_row_forecast': "0.0",
+                    'desv_historical': desv,
+                    'coefficient_of_variation_historical': coefficient_of_variation,
+                    'stock_or_request_historical': stock_or_request,
+                    'avg_sales_per_day_historical': avg_sales,
+                    "avg_sales_per_day_forecast": "0.0",
+                    'desv_per_day_historical': desv_2
+                }
+
+                historical_results.append(row_with_stats)
+
+            # Combina los resultados basados en el índice
+            for historical_row in historical_results:
+                index = historical_row['index']
+                combined_row = historical_row
+
+                # Busca el resultado correspondiente en forecast_results
+                forecast_row = next((fr for fr in forecast_results if fr['index'] == index), None)
+
+                if forecast_row:
+                    combined_row.update(forecast_row)
+                
+                # Elimina el índice del resultado final
+                del combined_row['index']
+                
+                results.append(combined_row)
 
             stats_df = pd.DataFrame(results)
         
-      
             result_df = pd.concat(objs=[historical[['SKU', 'Description', 'Family', 'Region', 'Client', 'Salesman', 'Category', 'Subcategory']], stats_df], axis=1)
             merged_df = pd.merge(result_df, stock, on=['SKU', 'Description', 'Family', 'Region', 'Client', 'Salesman', 'Category', 'Subcategory'], how='outer', indicator=True)
 
@@ -241,7 +236,7 @@ class StockDataView(APIView):
                 buy = 'Si' if (days_of_coverage - reorder_point) < 1 else 'No'
                 optimal_batch = float(item["EOQ (Economical order quantity)"])
                 how_much = max(optimal_batch, (next_buy_days + lead_time + safety_stock - days_of_coverage) * avg_sales ) if buy == 'Si' else 0
-                overflow_units = stock if avg_sales == 0 else (0 if days_of_coverage - reorder_point < 0 else round((days_of_coverage - reorder_point)*avg_sales/30)) 
+                overflow_units = stock if avg_sales == 0 else (0 if days_of_coverage - reorder_point < 0 else round((days_of_coverage - reorder_point)*avg_sales)) 
                 overflow_price = round(overflow_units*price)
                 lot_sizing = float(item['Lot Sizing'])
                 purchase_order = float(item['Purchase Order'])
@@ -300,11 +295,11 @@ class StockDataView(APIView):
                     'SKU': str(item['SKU']),
                     'Descripción': str(item['Description']),
                     'Stock': locale.format_string("%d", int(round(stock)), grouping=True),
-                    'Stock menos OVP': locale.format_string("%d", int(round(available_stock)), grouping=True),
+                    'Stock disponible': locale.format_string("%d", int(round(available_stock)), grouping=True),
                     'Ordenes de venta pendientes': sales_order,
                     'Ordenes de compra': purchase_order,
-                    'Venta diaria histórico': locale.format_string("%d", int(round(avg_sales_historical)), grouping=True),
-                    'Venta diaria predecido': locale.format_string("%d", int(round(avg_sales_forecast)), grouping=True),
+                    'Venta diaria histórico': avg_sales_historical,
+                    'Venta diaria predecido': avg_sales_forecast,
                     'Cobertura (días)': str(days_of_coverage),
                     'Punto de reorden': str(reorder_point),
                     '¿Compro?': str(final_buy) if is_obs != 'OB' else 'No',
@@ -330,6 +325,15 @@ class StockDataView(APIView):
                     'ABC': abc_class,
                     'XYZ': item['XYZ']
                 }
+
+                if str(item['SKU']) == "3POB":
+                    print(
+                        {
+                            'SKU': str(item['SKU']),
+                            'Venta diaria histórico': locale.format_string("%d", int(avg_sales_historical), grouping=True),
+                            'Venta diaria predecido': locale.format_string("%d", int(avg_sales_forecast), grouping=True)
+                        }
+                    )
 
                 results.append(stock)
         
