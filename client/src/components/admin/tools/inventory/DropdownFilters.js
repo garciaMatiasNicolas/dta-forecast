@@ -118,12 +118,10 @@ const DropdownFilters = ({name, data, setFilterData, isOrderBy}) => {
 
   };
 
-
   const handleSearchOption = (e) => {
     setSearchTerm(e.target.value);
   }
   
-
   useEffect(()=> {
     getUniqueValuesByKey(data, name);
   }, []);

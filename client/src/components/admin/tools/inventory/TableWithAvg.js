@@ -1,12 +1,30 @@
 import React, { useState } from 'react';
-import { MDBTable, MDBTableHead, MDBTableBody, MDBIcon } from 'mdb-react-ui-kit';
+import { MDBTable, MDBTableHead, MDBTableBody, MDBIcon, MDBModal, MDBModalDialog, MDBModalContent, MDBModalBody, MDBModalHeader, MDBModalTitle, MDBBtn } from 'mdb-react-ui-kit';
 import ReactPaginate from 'react-paginate';
 import DropdownFilters from './DropdownFilters';
+import AnalyticsProduct from './AnalyticsProduct';
+import axios from 'axios';
 
-const Table = ({ data, setData }) => {
+const apiUrl = process.env.REACT_APP_API_URL;
+
+const Table = ({ data, setData, scenario }) => {
     
   const itemsPerPage = 10;  // Número de ítems por página
   const [currentPage, setCurrentPage] = useState(0);
+  const [basicModal, setBasicModal] = useState(false);
+  const [selectedSKU, setSelectedSKU] = useState(null);
+  const [analyticsData, setAnalyticsData] = useState({});
+
+  // AUTHORIZATION HEADERS //
+  const token = localStorage.getItem("userToken");
+  const headers = {
+    'Authorization': `Token ${token}`, 
+    'Content-Type': 'application/json', 
+  };
+
+  const toggleOpen = () => {
+    setBasicModal(!basicModal);
+  };
   
   const handlePageChange = ({ selected }) => {
     setCurrentPage(selected);
@@ -75,12 +93,28 @@ const Table = ({ data, setData }) => {
     return slicedData.map((item, index) => (
       <tr key={index}>
         {Object.entries(item).map(([key, value]) => (
-          <td className={`border text-center ${getStyleClass(key, value)}`} key={key}>
+          <td className={`border text-center ${getStyleClass(key, value)}`} key={key}  onClick={() => handleClick(value, key)}>
             {value}
           </td>
         ))}
       </tr>
     ));
+  };
+
+  const handleClick = (value, key) => {
+    if (key === "SKU") {
+      setSelectedSKU(value);
+
+      axios.post(`${apiUrl}/forecast/product-all`, {
+        "sku": value, 
+        "scenario_pk": scenario,
+        "project_pk": localStorage.getItem("projectId")
+      }, {headers})
+      .then(res => setAnalyticsData(res.data))
+      .catch(err => console.log(err))
+      
+      toggleOpen();
+    }
   };
 
   const keys = ["Familia", 'Categoria', 'Vendedor', 'Subcategoria', 'Cliente', 'Región', '¿Compro?', 'MTO', 'OB', 'ABC', 'XYZ', 'Estado', 'Caracterización']
@@ -106,6 +140,20 @@ const Table = ({ data, setData }) => {
             {renderTableRows()}
           </MDBTableBody>
         </MDBTable>
+
+        <MDBModal show={basicModal} setShow={setBasicModal}>
+          <MDBModalDialog size='xl'>
+            <MDBModalContent>
+              <MDBModalHeader>
+                <MDBModalTitle className='text-black'>Analytics Producto {selectedSKU}</MDBModalTitle>
+                <MDBBtn className='btn-close' color='none' onClick={toggleOpen}></MDBBtn>
+              </MDBModalHeader>
+              <MDBModalBody>
+                <AnalyticsProduct data={analyticsData} />
+              </MDBModalBody>
+            </MDBModalContent>
+          </MDBModalDialog>
+        </MDBModal>
       </div> 
 
       { data.length > itemsPerPage && <ReactPaginate

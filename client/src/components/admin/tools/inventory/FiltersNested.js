@@ -13,7 +13,7 @@ import TrafficLightContainer from "../../../../containers/tools/inventory/Traffi
 
 const apiUrl = process.env.REACT_APP_API_URL;
 
-const FiltersNested = ({data, trafficLight, stockParams}) => {
+const FiltersNested = ({data, trafficLight, stockParams, scenario}) => {
     const [orderedData, setOrderedData] = useState(data);
     const {optionsFilterTable, setOptionsFilterTable} = useContext(AppContext);
     const [viewTrafficLight, setViewTrafficLight] = useState(false);
@@ -108,7 +108,7 @@ const FiltersNested = ({data, trafficLight, stockParams}) => {
                         <p style={{"cursor": "pointer"}} onClick={handleSetFilters}>Reestablecer filtros</p>
                     </div>
         
-                    <Table data={orderedData} setData={setOrderedData}/>
+                    <Table data={orderedData} setData={setOrderedData} scenario={scenario}/>
         
                     <TotalTable data={orderedData}/>
                 
