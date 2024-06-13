@@ -162,11 +162,12 @@ class AllProductView(APIView):
         
             final_data =  {
                 "product": f"{sku}",
-                "graphic_forecast": {"dates": date_columns, "values": values[0]},
-                "graphic_historical": {"dates": date_columns, "values": values[1]},
+                "graphic_forecast": {"dates": date_columns, "values": values[1]},
+                "graphic_historical": {"dates": date_columns, "values": values[0]},
                 "error": max(error_val),
                 "kpis": {"columns": ["YTD", "QTD", "MTD", "YTG", "QTG", "MTG"], "values": kpis[0]},  
             }
-        
+    
+
         return Response(final_data, status=status.HTTP_200_OK)
 
