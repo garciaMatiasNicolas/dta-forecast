@@ -89,11 +89,15 @@ const Table = ({ data, setData, scenario }) => {
     const start = currentPage * itemsPerPage;
     const end = start + itemsPerPage;
     const slicedData = data.slice(start, end);
-    
+  
     return slicedData.map((item, index) => (
       <tr key={index}>
         {Object.entries(item).map(([key, value]) => (
-          <td className={`border text-center ${getStyleClass(key, value)}`} key={key}  onClick={() => handleClick(value, key)}>
+          <td
+            className={`border text-center ${getStyleClass(key, value)}`}
+            key={key}
+            onClick={() => handleClick(item)} // Pasar el objeto completo
+          >
             {value}
           </td>
         ))}
@@ -101,18 +105,28 @@ const Table = ({ data, setData, scenario }) => {
     ));
   };
 
-  const handleClick = (value, key) => {
-    if (key === "SKU") {
-      setSelectedSKU(value);
-
+  const handleClick = (item) => {
+    if (item.SKU) {
+      setSelectedSKU(item.SKU);
+  
+      const filteredItem = {
+        Family: item.Familia === "null" ? 0 : item.Familia,
+        Category: item.Categoria === "null" ? 0 : item.Categoria,
+        Subcategory: item.Subcategoria === "null" ? 0 : item.Subcategoria,
+        Client: item.Cliente === "null" ? 0 : item.Cliente,
+        Salesman: item.Vendedor === "null" ? 0 : item.Vendedor,
+        Region: item.Región === "null" ? 0 : item.Región,
+        SKU: item.SKU === "null" ? 0 : item.SKU
+      };
+  
       axios.post(`${apiUrl}/forecast/product-all`, {
-        "sku": value, 
-        "scenario_pk": scenario,
-        "project_pk": localStorage.getItem("projectId")
-      }, {headers})
+        product: filteredItem,  // Aquí se envía el objeto completo
+        scenario_pk: scenario,
+        project_pk: localStorage.getItem("projectId")
+      }, { headers })
       .then(res => setAnalyticsData(res.data))
-      .catch(err => console.log(err))
-      
+      .catch(err => console.log(err));
+  
       toggleOpen();
     }
   };
