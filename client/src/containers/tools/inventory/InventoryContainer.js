@@ -19,6 +19,8 @@ const InventoryContainer = () => {
         next_buy: "15",
         forecast_or_historical: "historical",
         forecast_periods: "0", 
+        purchase_cost: "3000",
+        purchase_perc: "28",
         historical_periods: "12",
         scenario_id: false,
     });
@@ -101,6 +103,21 @@ const InventoryContainer = () => {
         }));
     };
 
+    const handleOptimalBatchParams = (e, type) => {
+
+        if(type === "perc") {
+            setStockParams((prev) => ({
+                ...prev,
+                purchase_perc: e.target.value
+            }));
+        } else {
+            setStockParams((prev) => ({
+                ...prev,
+                purchase_cost: e.target.value
+            }));
+        }
+    }
+
     const handleOnClick = () => {
         const token = localStorage.getItem("userToken");
         const headers = {
@@ -144,6 +161,15 @@ const InventoryContainer = () => {
                             <MDBInput onChange={handleNextBuy} type="text" label="Días" id="next_buy_days" defaultValue={15}/>
                         </div>
 
+                        <div className="w-75 d-flex justify-content-start align-items-center" style={{maxWidth: "500px"}} >    
+                            <p className="text-primary mt-3 w-50">Costo de compra:</p>
+                            <MDBInput onChange={(e)=>{handleOptimalBatchParams(e, "cost")}} type="text" label="Costo" id="purchase_cost" defaultValue={3000}/>
+                        </div>
+
+                        <div className="w-75 d-flex justify-content-start align-items-center" style={{maxWidth: "500px"}} >    
+                            <p className="text-primary mt-3 w-50">Porcentaje anual:</p>
+                            <MDBInput onChange={(e)=>{handleOptimalBatchParams(e, "perc")}} type="text" label="Porcentaje" id="purchase_perc" defaultValue={28}/>
+                        </div>
 
                         <div className="w-50 d-flex justify-content-start align-items-center gap-3">
                             <p className="text-primary mt-3">Data a utilizar:</p>
@@ -162,12 +188,12 @@ const InventoryContainer = () => {
                         
                         <div className="w-75 d-flex justify-content-start align-items-center" style={{maxWidth: "500px"}} >    
                             <p className="text-primary mt-3 w-50">Periodos históricos:</p>
-                            <MDBInput onChange={(e) => handlePeriods(e, "historical")} type="text" label="Periodos" id="historical_periods" defaultValue={0}/>
+                            <MDBInput onChange={(e) => handlePeriods(e, "historical")} type="text" label="Periodos" id="historical_periods" defaultValue={3}/>
                         </div>
                         
                         <div className="w-75 d-flex justify-content-start align-items-center" style={{maxWidth: "500px"}} >    
                             <p className="text-primary mt-3 w-50">Periodos de forecast:</p>
-                            <MDBInput onChange={(e) => handlePeriods(e, "forecast")} type="text" label="Periodos" id="forecast_periods" defaultValue={0}/>
+                            <MDBInput onChange={(e) => handlePeriods(e, "forecast")} type="text" label="Periodos" id="forecast_periods" defaultValue={3}/>
                         </div>
 
                         <MDBBtn onClick={handleOnClick} color="primary" type="button">CALCULAR</MDBBtn>

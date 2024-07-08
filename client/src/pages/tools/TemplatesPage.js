@@ -3,9 +3,8 @@ import TemplatesContainer from '../../containers/tools/uploads/TemplateContainer
 import ToolsNav from '../../components/navs/ToolsNav';
 import axios from 'axios';
 import { MDBIcon, MDBTable, MDBTableBody, MDBTableHead} from 'mdb-react-ui-kit';
-import Swal from "sweetalert2";
 import ReactPaginate from 'react-paginate';
-import { showErrorAlert, showSuccessAlert, showWariningAlert } from '../../components/other/Alerts';
+import { showWariningAlert } from '../../components/other/Alerts';
 
 const apiUrl = process.env.REACT_APP_API_URL;
 
@@ -55,22 +54,6 @@ const TemplatesPage = () => {
     link.click();
     document.body.removeChild(link);
   };
-
-  const handleDeleteScenario = (objectId) => {
-    Swal.fire({
-      text: '¿Estás seguro de eliminar este archivo? Se borrarán todas las predicciones relacionadas a él.',
-      icon: 'warning',
-      showCancelButton: true,
-      confirmButtonText: 'Eliminar',
-      cancelButtonText: 'Cancelar'
-    }).then((result) => {
-      if (result.isConfirmed) {
-        axios.delete(`${apiUrl}/files/${objectId}/`, {headers})
-        .then(()=>{showSuccessAlert("El archivo y sus predicciones fueron eliminados satisfactoriamente", "Archivo eliminado"); updateFileHistory();})
-        .catch(()=>{showErrorAlert("Ocurrio un error inesperado, intente mas tarde")});
-      }
-    });
-  }
 
   const [currentPage, setCurrentPage] = useState(0);
   const itemsPerPage = 3; // Cantidad de elementos por página
@@ -123,9 +106,6 @@ const TemplatesPage = () => {
                           <MDBIcon fas icon='file-excel' /> .xlsx
                         </td>
                         <td>{new Date(file.uploaded_at).toISOString().split('T')[0]}</td>
-                        <td>
-                          <span onClick={() => handleDeleteScenario(file.id)} style={{"cursor": "pointer"}} className='ms-3'><MDBIcon fas icon="trash-alt" color="danger"/></span>
-                        </td>
                       </tr>
                     ))}
                 </MDBTableBody>
