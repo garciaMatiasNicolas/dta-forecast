@@ -42,6 +42,10 @@ const RunModelsLogicContainer = ({apiUrl, token}) => {
 
     const [isExpert, setIsExpert] = useState(false);
 
+    const [detectOutliers, setDetectOutliers] = useState(true);
+
+    const [explosiveVariable, setExplosiveVariable] = useState(0);
+
     // USE EFFECT //
     useEffect(() => {
         // Get file types
@@ -190,7 +194,15 @@ const RunModelsLogicContainer = ({apiUrl, token}) => {
 
     const handleOptChange = (e) => {
         setFormData({ ...formData, error_type: e.target.id });
-    } 
+    }
+    
+    const handleExplosiveVariableChange = (e) => {
+        setExplosiveVariable(e.target.value);
+    }
+
+    const handleDetectOutliers = (e) => {
+        e.target.id === "yes" ? setDetectOutliers(true) : setDetectOutliers(false);
+    }
 
     const handleSubmit = (event) => {
         event.preventDefault();
@@ -206,7 +218,9 @@ const RunModelsLogicContainer = ({apiUrl, token}) => {
             let id = res.data.scenario_id;
             let data = {
                 scenario_id: id,
-                additional_params: additionalParams
+                additional_params: additionalParams,
+                detect_outliers: detectOutliers,
+                explosive_variable: explosiveVariable
             };
 
             axios.post(`${apiUrl}/forecast/test-model`, data, {headers})
@@ -304,6 +318,8 @@ const RunModelsLogicContainer = ({apiUrl, token}) => {
             isSelected={isSelected}
             setExpertModel={setExpertModel}
             isExpert={isExpert}
+            setExplosiveVariable={handleExplosiveVariableChange}
+            detectOutliers={handleDetectOutliers}
         />
     )
 }

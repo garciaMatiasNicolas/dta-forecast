@@ -25,7 +25,9 @@ const RunModelsVisual = (props) => {
         handleOptChange,
         isSelected,
         isExpert,
-        setExpertModel
+        setExpertModel,
+        detectOutliers,
+        setExplosiveVariable
     } = props
 
     return (
@@ -123,14 +125,15 @@ const RunModelsVisual = (props) => {
                                         </div>
                                         <div className="w-100 mt-4 mb-4">
                                             <p className="text-primary">Detectar valores atipicos</p>
-                                            <MDBRadio name='outliers' id='yes' label='Si' inline defaultChecked />
-                                            <MDBRadio name='outliers' id='no' label='No'  inline />
+                                            <MDBRadio  onChange={detectOutliers} name='outliers' id='yes' label='Si' inline defaultChecked />
+                                            <MDBRadio onChange={detectOutliers} name='outliers' id='no' label='No'  inline />
                                         </div>
-                                        <select style={{maxWidth: "280px", alignSelf: "start"}} onChange={handleSelectChange} className="form-select" aria-label="Seleccionar archivo para la corrida">
+                                        <select style={{maxWidth: "280px", alignSelf: "start"}} onChange={setExplosiveVariable} className="form-select" aria-label="Seleccionar archivo para la corrida">
                                             <option selected>Porcentaje variable explosiva</option>
-                                            <option>25%</option>
-                                            <option>50%</option>
-                                            <option>75%</option>
+                                            <option value={0}>0%</option>
+                                            <option value={2.5}>25%</option>
+                                            <option value={5}>50%</option>
+                                            <option value={7.5}>75%</option>
                                         </select>
                                         <ParamsArima isModelSelected={isSelected} lastScenariosParams={lastScenarioRan} setAdditionalParams={areParamsSetted}/>
                                        {/*  <ParamsHolts isModelSelected={isSelected} areParamsSetted={areParamsSetted}/> */}

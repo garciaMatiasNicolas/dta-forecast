@@ -8,7 +8,7 @@ import axios from 'axios';
 const apiUrl = process.env.REACT_APP_API_URL;
 
 const Table = ({ data, setData, scenario }) => {
-    
+  console.log(data)
   const itemsPerPage = 10;  // Número de ítems por página
   const [currentPage, setCurrentPage] = useState(0);
   const [basicModal, setBasicModal] = useState(false);

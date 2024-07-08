@@ -161,8 +161,8 @@ class FiltersByGroup(APIView):
         group = request.data.get('group')
         actual_or_predicted = request.data.get('actual_or_predicted')
 
-        columns_to_delete_hsd = ['family', 'region', 'salesman', 'client', 'category', 'sku', 'description',
-                                 'subcategory', 'model']
+        columns_to_delete_hsd = ['Family', 'Region', 'Salesman', 'Client', 'Category', 'SKU', 'Description',
+                                 'Subcategory', 'model']
 
         try:
 
@@ -185,7 +185,7 @@ class FiltersByGroup(APIView):
                     query = f'''SELECT {group}, {sum_columns} FROM {table}
                                     WHERE model {'=' if actual_or_predicted == 'actual' else '!='} "actual" 
                                     GROUP BY {group} '''
-
+                
                     cursor.execute(query)
                     data = cursor.fetchall()
 
@@ -198,6 +198,8 @@ class FiltersByGroup(APIView):
                         category_name = item[0]
                         sales_values = item[1:-1]
                         final_data['y'][category_name] = sales_values
+                    
+                    print(final_data)
 
             return Response(data=final_data, status=status.HTTP_200_OK)
 

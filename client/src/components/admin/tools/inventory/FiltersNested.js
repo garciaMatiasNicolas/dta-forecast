@@ -17,6 +17,7 @@ const FiltersNested = ({data, trafficLight, stockParams, scenario}) => {
     const [orderedData, setOrderedData] = useState(data);
     const {optionsFilterTable, setOptionsFilterTable} = useContext(AppContext);
     const [viewTrafficLight, setViewTrafficLight] = useState(false);
+    console.log(stockParams)
 
     // Function for download excel
     const handleDownload = (urlPath) => {

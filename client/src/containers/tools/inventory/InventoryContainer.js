@@ -174,7 +174,7 @@ const InventoryContainer = () => {
                     </div>
                     
                     {!loader ? 
-                        <FiltersNested data={data} params={stockParams} trafficLight={trafficLight} scenario={scenarioId} /> 
+                        <FiltersNested data={data} stockParams={stockParams} trafficLight={trafficLight} scenario={scenarioId} /> 
                         : 
                         <div className='d-flex flex-column justify-content-start align-items-start w-auto gap-2'>  
                             <ClipLoader/>

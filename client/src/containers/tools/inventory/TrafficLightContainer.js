@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import Table from "../../../components/admin/tools/inventory/TableWithAvg";
 import TrafficLightChart from "../../../components/admin/tools/inventory/TrafficLightChart";
 import { MDBBtn } from "mdb-react-ui-kit";
@@ -8,11 +8,16 @@ import { showErrorAlert } from "../../../components/other/Alerts";
 const apiUrl = process.env.REACT_APP_API_URL;
 
 const TrafficLightContainer = ({data, params}) => {
-    const [dataSeted, setData] = useState(data);
+    const [dataFiltered, setDataFiltered] = useState([]);
     const [filterName, setFilterName] = useState("");
+    const [initialData, setInitialData] = useState(data ||[]);
     const [filterValue, setFilterValue] = useState("");
     const [options, setOptionsFilter] = useState([]);
     const [isOnlyTL, setIsOnlyTl] = useState(false);
+    
+    useEffect(()=> {
+        setInitialData(data || []);
+    }, []);
 
     if (!data || data.length === 0) {
         return <div></div>;
@@ -35,7 +40,7 @@ const TrafficLightContainer = ({data, params}) => {
             type: "stock by product",
             params: params
         }, {headers})
-        .then(res => setData(res.data))
+        .then(res => setDataFiltered(res.data || []))
         .catch(err => showErrorAlert("Ocurrio un error al filtrar el semaforo"))
     };
 
@@ -60,7 +65,6 @@ const TrafficLightContainer = ({data, params}) => {
 
     const handleOnChangeFilterValue = (e) => {
         const selectedFilter = e.target.value;
-        console.log(selectedFilter)
         setFilterValue(selectedFilter);
     };
 
@@ -69,6 +73,7 @@ const TrafficLightContainer = ({data, params}) => {
             
             <div className="d-flex justify-content-center align-items-center w-auto gap-3">
                 <select className="form-select w-auto border border-0" onChange={handleFilterChange} onClick={handleClickFilter}>
+                    <option>-----</option>
                     <option value="Family">Familia</option>
                     <option value="Region">Region</option>
                     <option value="Category">Categoria</option>
@@ -84,14 +89,14 @@ const TrafficLightContainer = ({data, params}) => {
                     )}
                 </select>
 
-                <MDBBtn disabled onClick={handleFilterTrafficLight}>Filtrar</MDBBtn>
+                <MDBBtn onClick={handleFilterTrafficLight}>Filtrar</MDBBtn>
             </div>
 
 
-            <Table data={dataSeted} />
-            <div style={{ width: '800px', height: '400px' }} className="mb-5">
+            <Table data={ !isOnlyTL ? initialData : dataFiltered.traffic_light} /> 
+            {/* <div style={{ width: '800px', height: '400px' }} className="mb-5">
                 <TrafficLightChart data={dataSeted} isOnlyTL={isOnlyTL}/>
-            </div>
+            </div> */}
         </>
     )
 };
