@@ -3,7 +3,7 @@ import TemplatesContainer from '../../containers/tools/uploads/TemplateContainer
 import ToolsNav from '../../components/navs/ToolsNav';
 import axios from 'axios';
 import { MDBIcon, MDBTable, MDBTableBody, MDBTableHead} from 'mdb-react-ui-kit';
-import ReactPaginate from 'react-paginate';
+import ReactPaginate from 'react-paginate';   
 import { showWariningAlert } from '../../components/other/Alerts';
 
 const apiUrl = process.env.REACT_APP_API_URL;
