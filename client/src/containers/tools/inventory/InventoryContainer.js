@@ -18,10 +18,10 @@ const InventoryContainer = () => {
     const [stockParams, setStockParams] = useState({
         next_buy: "15",
         forecast_or_historical: "historical",
-        forecast_periods: "0", 
+        forecast_periods: "3", 
         purchase_cost: "3000",
         purchase_perc: "28",
-        historical_periods: "12",
+        historical_periods: "3",
         scenario_id: false,
     });
     const [scenarios, setScenarios] = useState([]);

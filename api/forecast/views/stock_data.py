@@ -76,7 +76,7 @@ class StockDataView(APIView):
         try:
             results = []
             iterrows_historical = historical.iloc[:, -historical_periods:].iterrows()
-
+            
             historical.fillna(0, inplace=True)
             stock.fillna(0, inplace=True)
 
@@ -158,7 +158,7 @@ class StockDataView(APIView):
                 del combined_row['index']
                 
                 results.append(combined_row)
-
+            
             stats_df = pd.DataFrame(results)
         
             result_df = pd.concat(objs=[historical[['SKU', 'Description', 'Family', 'Region', 'Client', 'Salesman', 'Category', 'Subcategory']], stats_df], axis=1)
@@ -175,6 +175,7 @@ class StockDataView(APIView):
 
         except Exception as err:
             print("ERROR CALCULOS", err)
+            traceback.print_exc()
 
 
     @staticmethod
@@ -198,6 +199,46 @@ class StockDataView(APIView):
     
         except Exception as err:
             print("ERROR ABC", err)
+    
+    @staticmethod
+    def calculate_abc_per_category(products: list):
+        for product in products:
+            product["Price"] = float(product["Price"])
+
+        categories = {}
+        abc_data = []
+        products.sort(key=lambda product: product["Price"], reverse=True)
+    
+        for product in products:
+            category = product['Category']
+            price = product['Price']
+
+            if category in categories:
+                categories[category] += price
+
+            else:
+                categories[category] = price 
+        
+        for category, prices in categories.items():
+            category_total = np.array(prices)
+            percentiles = {
+                'A': np.percentile(category_total, 80),
+                'B': np.percentile(category_total, 50)
+            }
+            
+        for product in products:
+            if product['Category'] == category:
+                if product["Price"] >= percentiles['A']:
+                    abc_class = "A"
+                elif product["Price"] >= percentiles['B']:
+                    abc_class = "B"
+                else:
+                    abc_class = "C"
+                
+                abc = {"SKU": product["SKU"], "ABC PRECIO": abc_class}
+                abc_data.append(abc)
+
+        return abc_data
     
     @staticmethod
     def calculate_optimal_batch(c, d, k):
@@ -227,10 +268,13 @@ class StockDataView(APIView):
             results = []
 
             abc = self.calculate_abc(products=data, is_forecast=is_forecast)
+
             abc_dict = {product['SKU']: product['ABC'] for product in abc}
+            abc_price_per_category = {product['SKU']: product['ABC PRECIO'] for product in self.calculate_abc_per_category(products=data)}
 
             for item in data:
                 abc_class = abc_dict.get(str(item['SKU']), 'N/A')
+                abc_price = abc_price_per_category.get(str(item["SKU"]), "N/a")
                 avg_sales_historical = float(item["avg_sales_per_day_historical"])
                 price = float(item['Price'])
                 avg_sales_forecast = float(item["avg_sales_per_day_forecast"]) 
@@ -295,6 +339,32 @@ class StockDataView(APIView):
 
                 optimal_batch_calc = self.calculate_optimal_batch(c=avg_sales, d=d, k=k)
                 
+                try:
+                    thirty_days = days_of_coverage - 30 + round(how_much) / avg_sales
+                    
+                    if thirty_days < reorder_point:
+                        thirty_days = optimal_batch_calc
+
+                except:
+                    thirty_days = 0
+                
+                try:
+                    sixty_days = days_of_coverage - 30 + round(how_much) / avg_sales + thirty_days / avg_sales - 30
+                    
+                    if sixty_days < reorder_point:
+                        sixty_days = optimal_batch_calc 
+                
+                except:
+                    sixty_days = 0
+
+                try:
+                    ninety_days = days_of_coverage - 30 + round(how_much) / avg_sales + thirty_days / avg_sales -30 -30 + sixty_days / avg_sales
+
+                    if ninety_days < reorder_point:
+                        ninety_days = optimal_batch_calc
+                except:
+                    ninety_days = 0
+
                 stock = {
                     'Familia': item['Family'],
                     'Categoria': item['Category'],
@@ -317,6 +387,9 @@ class StockDataView(APIView):
                     '¿Cuanto?': locale.format_string("%d", round(how_much), grouping=True) if buy == 'Si' and is_obs != 'OB' else "0" ,
                     '¿Cuanto? (Lot Sizing)': locale.format_string("%d", round(final_how_much), grouping=True) if buy == 'Si' and is_obs != 'OB' else "0",
                     '¿Cuanto? (Purchase Unit)': locale.format_string("%d", round(final_how_much * purchase_unit), grouping=True) if buy == 'Si' and is_obs != 'OB' else "0",
+                    'Compra 30 días':  0 if make_to_order == "MTO" or is_obs == "OB" else thirty_days,
+                    'Compra 60 días' : 0 if make_to_order == "MTO" or is_obs == "OB" else sixty_days,
+                    'Compra 90 días': 0 if make_to_order == "MTO" or is_obs == "OB" else ninety_days,
                     'Estado': str(stock_status),
                     'Venta valorizada': locale.format_string("%d", int(round(price * avg_sales)), grouping=True),
                     'Valorizado': locale.format_string("%d", int(round(price * stock)), grouping=True),
@@ -334,16 +407,18 @@ class StockDataView(APIView):
                     'MTO': make_to_order if make_to_order == 'MTO' else '',
                     'OB': is_obs if is_obs == 'OB' else '',
                     'ABC': abc_class,
+                    'ABC por categoria': abc_price,
                     'XYZ': item['XYZ']
                 }
 
                 results.append(stock)
+            
+            # print(results)
         
             return results, safety_stock_is_zero
         except Exception as err:
             print("ERROR CALCULO REAPRO", err)
             traceback.print_exc()
-
 
     @staticmethod
     def calculate_safety_stock(data: List[Dict[str, Any]]):
