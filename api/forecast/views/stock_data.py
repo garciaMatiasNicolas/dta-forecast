@@ -343,25 +343,38 @@ class StockDataView(APIView):
                     thirty_days = days_of_coverage - 30 + round(how_much) / avg_sales
                     
                     if thirty_days < reorder_point:
-                        thirty_days = optimal_batch_calc
+                        calc = optimal_batch_calc / avg_sales
+                        if calc < 30:
+                            thirty_days = round(30 / calc) * optimal_batch_calc
+                        else:
+                            thirty_days = optimal_batch_calc 
 
                 except:
                     thirty_days = 0
                 
                 try:
-                    sixty_days = days_of_coverage - 30 + round(how_much) / avg_sales + thirty_days / avg_sales - 30
+                    sixty_days = days_of_coverage - 60 + round(how_much) / avg_sales + thirty_days / avg_sales 
                     
                     if sixty_days < reorder_point:
-                        sixty_days = optimal_batch_calc 
+                        calc = optimal_batch_calc / avg_sales
+                        if calc < 30:
+                            sixty_days = round(30 / calc) * optimal_batch_calc
+                        else:
+                            sixty_days = optimal_batch_calc 
                 
                 except:
                     sixty_days = 0
 
                 try:
-                    ninety_days = days_of_coverage - 30 + round(how_much) / avg_sales + thirty_days / avg_sales -30 -30 + sixty_days / avg_sales
+                    ninety_days = days_of_coverage - 90 + round(how_much) / avg_sales + thirty_days / avg_sales + sixty_days / avg_sales
 
                     if ninety_days < reorder_point:
-                        ninety_days = optimal_batch_calc
+                        calc = optimal_batch_calc / avg_sales
+                        if calc < 30:
+                            ninety_days = round(30 / calc) * optimal_batch_calc
+                        else:    
+                            ninety_days = optimal_batch_calc
+                
                 except:
                     ninety_days = 0
 
@@ -387,9 +400,9 @@ class StockDataView(APIView):
                     '¿Cuanto?': locale.format_string("%d", round(how_much), grouping=True) if buy == 'Si' and is_obs != 'OB' else "0" ,
                     '¿Cuanto? (Lot Sizing)': locale.format_string("%d", round(final_how_much), grouping=True) if buy == 'Si' and is_obs != 'OB' else "0",
                     '¿Cuanto? (Purchase Unit)': locale.format_string("%d", round(final_how_much * purchase_unit), grouping=True) if buy == 'Si' and is_obs != 'OB' else "0",
-                    'Compra 30 días':  0 if make_to_order == "MTO" or is_obs == "OB" else thirty_days,
-                    'Compra 60 días' : 0 if make_to_order == "MTO" or is_obs == "OB" else sixty_days,
-                    'Compra 90 días': 0 if make_to_order == "MTO" or is_obs == "OB" else ninety_days,
+                    'Compra 30 días':  0 if make_to_order == "MTO" or is_obs == "OB" else locale.format_string("%d",thirty_days, grouping=True),
+                    'Compra 60 días' : 0 if make_to_order == "MTO" or is_obs == "OB" else locale.format_string("%d",sixty_days, grouping=True),
+                    'Compra 90 días': 0 if make_to_order == "MTO" or is_obs == "OB" else locale.format_string("%d",ninety_days, grouping=True),
                     'Estado': str(stock_status),
                     'Venta valorizada': locale.format_string("%d", int(round(price * avg_sales)), grouping=True),
                     'Valorizado': locale.format_string("%d", int(round(price * stock)), grouping=True),
