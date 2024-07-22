@@ -34,19 +34,19 @@ const NavInventory = () => {
         <div>
             <nav className='d-flex justify-content-start'>
                 <MDBPagination className='mb-0'>
-                    <Link to="/inventory">
-                        <MDBPaginationItem className='bg-transparent d-flex justify-content-center align-items-center gap-1 p-2' style={{"cursor": "pointer"}}>
-                            <span>«</span>
-                            <MDBIcon fas icon="warehouse" color='primary' />
-                            <span>Inventario</span>
-                        </MDBPaginationItem>
-                    </Link>
 
                     <Link to={`/tools/project/${project}`} onClick={handleOnclickChange}>
                         <MDBPaginationItem className='bg-transparent d-flex justify-content-center align-items-center gap-1 p-2' style={{"cursor": "pointer"}}>
                             <span>«</span>
                             <MDBIcon fas icon="tools" color='primary' />
                             <span>Forecast & Inventario</span>
+                        </MDBPaginationItem>
+                    </Link>
+                    <Link to="/inventory">
+                        <MDBPaginationItem className='bg-transparent d-flex justify-content-center align-items-center gap-1 p-2' style={{"cursor": "pointer"}}>
+                            <span>«</span>
+                            <MDBIcon fas icon="warehouse" color='primary' />
+                            <span>Inventario</span>
                         </MDBPaginationItem>
                     </Link>
                 </MDBPagination>

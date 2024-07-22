@@ -13,7 +13,6 @@ const SafetyStock = () => {
     const itemsPerPage = 10;  // Número de ítems por página
     const [currentPage, setCurrentPage] = useState(0);
     const [data, setData] = useState([]);
-//  const [loader, setLoader] = useState(true);
 
     // Function for download excel
     const handleDownload = (urlPath) => {
@@ -63,6 +62,8 @@ const SafetyStock = () => {
                 historical_periods: "12",
                 forecast_periods: "0", 
                 scenario_id: false,
+                purchase_cost: 0,
+                purchase_perc: 0
             }
         }, {headers})
         .then(res => setData(res.data.data))

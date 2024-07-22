@@ -41,6 +41,13 @@ const ToolsNav = () => {
               <span>Inicio</span>
             </MDBPaginationItem>
           </Link>
+          <Link to={`/tools/project/${project}`} onClick={handleOnclickChange}>
+            <MDBPaginationItem className='bg-transparent d-flex justify-content-center align-items-center gap-1 p-2' style={{"cursor": "pointer"}}>
+              <span>«</span>
+              <MDBIcon fas icon="tools" color='primary' />
+              <span>Forecast & Inventario</span>
+            </MDBPaginationItem>
+          </Link>
           {
             forecastPage && 
             <Link to={`/tools/project/${project}`}>
@@ -51,13 +58,6 @@ const ToolsNav = () => {
               </MDBPaginationItem>
             </Link>
           }
-          <Link to={`/tools/project/${project}`} onClick={handleOnclickChange}>
-            <MDBPaginationItem className='bg-transparent d-flex justify-content-center align-items-center gap-1 p-2' style={{"cursor": "pointer"}}>
-              <span>«</span>
-              <MDBIcon fas icon="tools" color='primary' />
-              <span>Forecast & Inventario</span>
-            </MDBPaginationItem>
-          </Link>
         </MDBPagination>
       </nav>
       <p className='ms-2 mt-3 d-flex gap-2'><p className='text-primary'>Proyecto:</p> {projectName}</p>

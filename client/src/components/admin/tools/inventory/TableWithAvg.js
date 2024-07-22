@@ -110,15 +110,16 @@ const Table = ({ data, setData, scenario }) => {
       setSelectedSKU(item.SKU);
   
       const filteredItem = {
-        Family: item.Familia === "null" ? 0 : item.Familia,
-        Category: item.Categoria === "null" ? 0 : item.Categoria,
-        Subcategory: item.Subcategoria === "null" ? 0 : item.Subcategoria,
-        Client: item.Cliente === "null" ? 0 : item.Cliente,
-        Salesman: item.Vendedor === "null" ? 0 : item.Vendedor,
-        Region: item.Región === "null" ? 0 : item.Región,
-        SKU: item.SKU === "null" ? 0 : item.SKU
+        Family: item.Familia === "null" && scenario !== null && scenario !== false ? 0 : item.Familia,
+        Category: item.Categoria === "null" && scenario !== null && scenario !== false ? 0 : item.Categoria,
+        Subcategory: item.Subcategoria === "null" && scenario !== null && scenario !== false ? 0 : item.Subcategoria,
+        Client: item.Cliente === "null" && scenario !== null && scenario !== false ? 0 : item.Cliente,
+        Salesman: item.Vendedor === "null" && scenario !== null && scenario !== false ? 0 : item.Vendedor,
+        Region: item.Región === "null" && scenario !== null && scenario !== false ? 0 : item.Región,
+        SKU: item.SKU === "null" && scenario !== null && scenario !== false ? 0 : item.SKU,
+        Description: item.Descripción == "null" && scenario !== null && scenario !== false ? 0 : item.Descripción,
       };
-  
+      console.log(filteredItem)
       axios.post(`${apiUrl}/forecast/product-all`, {
         product: filteredItem,  // Aquí se envía el objeto completo
         scenario_pk: scenario,
