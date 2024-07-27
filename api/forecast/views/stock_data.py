@@ -243,7 +243,7 @@ class StockDataView(APIView):
     @staticmethod
     def calculate_optimal_batch(c, d, k):
         c = c if c >= 0 else 0 * 360
-        d = int(d)
+        d = int(d)/100
         k = float(f'0.{k}')
         EOQ = math.sqrt((2 * c * d) / k)
         return EOQ
@@ -304,11 +304,14 @@ class StockDataView(APIView):
 
                 except OverflowError:
                     next_buy = ""
+                
 
                 if days_of_coverage == 9999:
                     stock_status = "Obsoleto"
                     if available_stock != 0:
                         characterization = "0-Con stock sin ventas"
+                    else:
+                        characterization = "Sin stock"
                 elif days_of_coverage > 360:
                     stock_status = 'Alto sobrestock'
                     characterization = "1-Más de 360 días"
@@ -330,6 +333,8 @@ class StockDataView(APIView):
                 else:
                     stock_status = 'Stock negativo'
                     characterization = "Sin stock"
+             
+                print(f"SKU {item['SKU']}: Caracterizacion {characterization}")
     
                 next_buy = next_buy.strftime('%Y-%m-%d') if isinstance(next_buy, datetime) else next_buy
                 how_much_vs_lot_sizing = round_up(how_much, int(lot_sizing)) if int(lot_sizing) != 0.0 else how_much
