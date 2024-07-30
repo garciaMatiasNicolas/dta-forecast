@@ -34,6 +34,7 @@ class AllProductView(APIView):
             query = f"SELECT * FROM {table.predictions_table_name} WHERE {adjusted_conditions};"
         
         data = pd.read_sql_query(query, engine)
+
         return data
     
     @staticmethod
@@ -173,7 +174,6 @@ class AllProductView(APIView):
             return Response(final_data, status=status.HTTP_200_OK)
         
         else:
-            print(data)
             scenario_obj = ForecastScenario.objects.get(pk=scenario)
             error_val = data[scenario_obj.error_type]
             max_date = scenario_obj.max_historical_date

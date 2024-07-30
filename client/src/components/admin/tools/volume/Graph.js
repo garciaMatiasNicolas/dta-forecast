@@ -9,6 +9,7 @@ import Mape from './Mape';
 import Filters from '../Filters';
 import { filters } from '../../../../data/filters';
 import SkuSearch from './SkuSearch';
+import ForecastValuedTable from './ForecastValuedTable';
 
 const apiUrl = process.env.REACT_APP_API_URL;
 
@@ -37,6 +38,10 @@ const Graph = () => {
 
   // State for data graph all
   const [data, setData] = useState(false);
+
+  // State for data conversion 
+  const [dataConversion, setDataConversion] = useState([]);
+  const [currentPage, setCurrentPage] = useState(0);
 
   // State for data graph yearly
   const [dataYear, setDataYear] = useState(false);
@@ -231,13 +236,33 @@ const Graph = () => {
     })
   }
 
+  const fetchConversionData = async (id, category) => {
+    try {
+      const res = await axios.get(`${apiUrl}/forecast/conversion-forecast/?scid=${id}&type_of_conversion=money${category !== "SKU" && `&group_by=${category}`}`);
+      setDataConversion(res.data);
+      setCurrentPage(0); // Restablece la página actual a 0 cuando se cambia la categoría
+    } catch (err) {
+      console.log(err);
+      setDataConversion([]);
+    }
+  };
+
+  const handleGroupByForecastValued = (e) => {
+    let category = e.target.value;
+    fetchConversionData(scenarioId, category);
+    setCurrentPage(0); // Restablece la página actual a 0 cuando se cambia la categoría
+  }
+
   // Function for set graphic data by scenario on select 
   const handleOnChangeScenario = (e) => {
     let scenarioId = e.target.value;
     setScenarioId(scenarioId);
     getFirstGraphs(scenarioId);
     setConditions([]);
+    fetchConversionData(scenarioId, "SKU");
+    setCurrentPage(0); // Restablece la página actual a 0 cuando se cambia el escenario
   }
+
 
   // DRAG GRAPH BY GROUPS //
   const [draggedFilter, setDraggedFilter] = useState(null);
@@ -350,6 +375,27 @@ const Graph = () => {
             </div>
           </MDBCol>
         </MDBRow>
+      </MDBContainer>
+
+      <MDBContainer className='mt-5 mb-5 w-100 d-flex justify-content-start align-items-start flex-column'>
+        <h5 className='text-primary mb-5'>Forecast Valorizado</h5>
+        <div className='d-flex justify-content-center align-items-center gap-3 w-auto mb-3'>
+          <p className='text-primary w-100 mt-2'>Agrupar por</p>
+          <select className="form-select" style={{"maxWidth": "250px", "minWidth":"200px"}} onChange={handleGroupByForecastValued}>
+            <option value="SKU">SKU</option>
+            <option value="Family">Familia</option>
+            <option value="Region">Región</option>
+            <option value="Category">Categoria</option>
+            <option value="Subcategory">Subcategoria</option>
+            <option value="Client">Cliente</option>
+            <option value="Salesman">Vendedor</option>
+          </select>
+        </div>
+        <ForecastValuedTable 
+          data={dataConversion}
+          currentPage={currentPage} 
+          setCurrentPage={setCurrentPage}
+        />
       </MDBContainer>
 
       <MDBContainer className='mt-5 mb-5 w-100 d-flex justify-content-start align-items-start flex-column'>
