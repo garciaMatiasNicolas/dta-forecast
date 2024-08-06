@@ -17,6 +17,7 @@ import MetricsAnalysisPage from '../pages/tools/MetricsAnalysisPage.js';
 import InventoryPage from '../pages/tools/InventoryPage.js';
 import SafetyStockContainer from '../containers/tools/inventory/SafetyStockContainer.js';
 import InventoryContainer from '../containers/tools/inventory/InventoryContainer.js';
+import DrpContainer from '../containers/tools/inventory/DrpContainer.js';
 
 const isUserAuthenticated = () => {
   const userToken = localStorage.getItem('userToken');
@@ -39,6 +40,7 @@ const AppRouter = () => {
         <Route path='/uploads' element={<PrivateRoute element={<TemplatesPage />} />}/>
         <Route path='/safety-stock' element={<PrivateRoute element={<SafetyStockContainer />} />}/>
         <Route path='/stock' element={<PrivateRoute element={<InventoryContainer />} />}/>
+        <Route path='/drp' element={<PrivateRoute element={<DrpContainer />} />}/>
         <Route path='/confirmation' element={<ConfirmationUser/>}/>
         <Route path='/tools/project/:idProyecto' element={<PrivateRoute element={<ToolsPage />} />} >
           <Route path='exploration' element={<ExplorationPage />} />

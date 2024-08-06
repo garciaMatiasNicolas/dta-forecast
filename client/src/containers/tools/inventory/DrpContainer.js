@@ -9,7 +9,7 @@ import NavInventory from '../../../components/navs/NavInventory';
 
 const apiUrl = process.env.REACT_APP_API_URL;
 
-const InventoryContainer = () => {
+const DrpContainer = () => {
     const [data, setData] = useState([]);
     const [trafficLight, setTrafficLight] = useState([]);
     const [loader, setLoader] = useState(false);
@@ -27,7 +27,7 @@ const InventoryContainer = () => {
     const [scenarios, setScenarios] = useState([]);
 
     const fetchData = (headers, type, params) => {
-        axios.post(`${apiUrl}/forecast/stock-data/`, 
+        axios.post(`${apiUrl}/forecast/stock-data/?drp=true`, 
         {
             project_id: localStorage.getItem("projectId"), 
             type: type,
@@ -155,7 +155,7 @@ const InventoryContainer = () => {
                 <div className="d-flex flex-column justify-content-start align-items-start gap-3 w-100">
 
                     <div className="w-100 d-flex justify-content-start align-items-start flex-column gap-3 mb-5 border ps-5 pt-5 pb-5" style={{maxWidth: "800px"}}>
-                        <h5 className="text-primary text-center">Parámetros calculo de stock</h5>
+                        <h5 className="text-primary text-center">Parametros de cálculo DRP por sucursal</h5>
                         <div className="w-75 d-flex justify-content-start align-items-center" style={{maxWidth: "500px"}} >    
                             <p className="text-primary mt-3 w-50">Próxima compra:</p>
                             <MDBInput onChange={handleNextBuy} type="text" label="Días" id="next_buy_days" defaultValue={15}/>
@@ -200,7 +200,7 @@ const InventoryContainer = () => {
                     </div>
                     
                     {!loader ? 
-                        <FiltersNested data={data} stockParams={stockParams} trafficLight={trafficLight} scenario={scenarioId} is_drp={false}/> 
+                        <FiltersNested data={data} stockParams={stockParams} trafficLight={trafficLight} scenario={scenarioId} is_drp={true}/> 
                         : 
                         <div className='d-flex flex-column justify-content-start align-items-start w-auto gap-2'>  
                             <ClipLoader/>
@@ -213,4 +213,4 @@ const InventoryContainer = () => {
     );
 }
 
-export default InventoryContainer;
+export default DrpContainer;

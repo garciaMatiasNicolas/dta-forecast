@@ -13,17 +13,16 @@ import TrafficLightContainer from "../../../../containers/tools/inventory/Traffi
 
 const apiUrl = process.env.REACT_APP_API_URL;
 
-const FiltersNested = ({data, trafficLight, stockParams, scenario}) => {
+const FiltersNested = ({data, trafficLight, stockParams, scenario, is_drp}) => {
     const [orderedData, setOrderedData] = useState(data);
     const {optionsFilterTable, setOptionsFilterTable} = useContext(AppContext);
     const [viewTrafficLight, setViewTrafficLight] = useState(false);
-    console.log(stockParams)
 
     // Function for download excel
     const handleDownload = (urlPath) => {
         const link = document.createElement("a");
         link.href = `${apiUrl}/${urlPath}`;
-        link.download = `Reapro.xlsx`;
+        link.download = is_drp ? `DRP.xlsx` : "Reapro.xlsx";
         document.body.appendChild(link);
         link.click();
         document.body.removeChild(link);
@@ -33,7 +32,7 @@ const FiltersNested = ({data, trafficLight, stockParams, scenario}) => {
         const dataToSend = {
             "columns": Object.keys(data[0]),
             "rows": orderedData.map(obj => Object.values(obj)),
-            "file_name": `Reapro`,
+            "file_name": is_drp ? `DRP` : "Reapro" ,
             "project_pk": parseInt(localStorage.getItem("projectId"))
         };
           
@@ -44,10 +43,13 @@ const FiltersNested = ({data, trafficLight, stockParams, scenario}) => {
             }
         })
         .then(res => {
-            let file_path = res.data.file_url
+            let file_path = res.data.file_url;
             handleDownload(file_path);
         })
-        .catch(err => {showErrorAlert(err.response.data); console.log(err)});  
+        .catch(err => {
+            showErrorAlert(err.response.data); 
+            console.log(err);
+        });  
     };
 
     const handleSearchProduct = (event) => {
@@ -59,32 +61,38 @@ const FiltersNested = ({data, trafficLight, stockParams, scenario}) => {
     const handleSetFilters = () => {
         setOrderedData(data);
         setOptionsFilterTable([]);
-    }
+    };
 
     if (!data || data.length === 0) {
         return <div></div>;
-    };
+    }
     
     return (
         <div className="w-100 gap-4 d-flex justify-content-start align-items-start flex-column">
-            <h5 className='text-primary'>{!viewTrafficLight ? "Tabla de stock por producto" : "Semáforo de stock"}</h5>
-            <p style={{'cursor': 'pointer'}} onClick={() => setViewTrafficLight(!viewTrafficLight)} className='text-primary'>{!viewTrafficLight ? "Ver semáforo" : "Ver reapro"}</p>
-
-            {
-                viewTrafficLight ?  <TrafficLightContainer data={trafficLight} params={stockParams}/> 
-                :
+            <h5 className='text-primary'>
+                {is_drp ? "DRP por producto" : (!viewTrafficLight ? "Tabla de stock por producto" : "Semáforo de stock")}
+            </h5>
+            {!is_drp && (
+                <p style={{'cursor': 'pointer'}} onClick={() => setViewTrafficLight(!viewTrafficLight)} className='text-primary'>
+                    {!viewTrafficLight ? "Ver semáforo" : "Ver reapro"}
+                </p>
+            )}
+            
+            {viewTrafficLight && !is_drp ? (
+                <TrafficLightContainer data={trafficLight} params={stockParams}/> 
+            ) : (
                 <>
                     <MDBBtn 
                         className="w-auto" 
                         style={{ backgroundColor: '#25d366' }} 
                         onClick={handleExport}
                         disabled={orderedData.length === 0}
-                        > Exportar como Excel
+                    > 
+                        Exportar como Excel
                         <MDBIcon className="ms-2" fas icon="file-export" />
                     </MDBBtn> 
         
                     <div className="w-100 d-flex justify-content-between align-items-center">
-                        
                         <div className="w-auto d-flex justify-content-between align-items-center gap-2">
                             <MDBInput
                                 type="text"
@@ -92,9 +100,7 @@ const FiltersNested = ({data, trafficLight, stockParams, scenario}) => {
                                 className="w-auto"
                                 onChange={handleSearchProduct}
                             />
-                            
                         </div>
-                    
                     </div>
         
                     <div className="d-flex w-100 justify-content-between align-items-center">
@@ -110,15 +116,12 @@ const FiltersNested = ({data, trafficLight, stockParams, scenario}) => {
                     </div>
         
                     <Table data={orderedData} setData={setOrderedData} scenario={scenario}/>
-        
-                    <TotalTable data={orderedData}/>
-                
+                    
+                    {!is_drp && <TotalTable data={orderedData}/>}
                 </>
-            }
-
+            )}
         </div>
     );
-}
-
+};
 
 export default FiltersNested;

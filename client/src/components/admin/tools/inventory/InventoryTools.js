@@ -16,6 +16,10 @@ const InventoryTools = () => {
         navigate("/stock");
     };
 
+    const handleNavigateDRP = () => {
+        navigate("/drp");
+    };
+
 
     const safetyStock = {
         title: "Stock de seguridad",
@@ -32,6 +36,13 @@ const InventoryTools = () => {
         handleClick: handleNavigateStock 
        
     };
+
+    const drp = {
+        title: "DRP sucursales",
+        text: "Distribución y compra",
+        icon: "map-marked-alt",
+        handleClick: handleNavigateDRP
+    }
     
     return(
  
@@ -41,6 +52,7 @@ const InventoryTools = () => {
             <div className="d-flex w-auto justify-content-center align-items-center gap-1 flex-wrap">
                 <Tools props={safetyStock}/>
                 <Tools props={stockByProduct}/>
+                <Tools props={drp} />
             </div>
         </div>
 

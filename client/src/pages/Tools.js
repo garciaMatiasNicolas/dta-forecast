@@ -5,6 +5,7 @@ import { Outlet, useLocation, useNavigate } from 'react-router-dom';
 import Tools from "../components/admin/tools/Tools";
 import { AppContext } from "../context/Context";
 import ToolsNav from "../components/navs/ToolsNav";
+import { MDBCard, MDBCardTitle, MDBCardBody, MDBCardText, MDBIcon } from "mdb-react-ui-kit";
 
 const ToolsPage = () => {
   const location = useLocation();
@@ -46,12 +47,6 @@ const ToolsPage = () => {
     handleClick: handleOnclickChange
   };
 
-  const manualComponent = {
-    title: "Manual DTA F&IO",
-    text: "Aprende todo sobre nuestra app",
-    icon: "book",
-    handleClick: console.log("Download Manual")
-  };
 
   return (
     <div> 
@@ -69,7 +64,17 @@ const ToolsPage = () => {
               <Tools props={uploadFilesComponent} />
               <Tools props={forecastComponent}/> 
               <Tools props={inventoryComponent}/>
-              <Tools props={manualComponent}/>
+
+              <a href={require(`../manual/Manual DTA FI&O.docx`)} download={"Manual DTA FI&O.docx"} target="_blank" rel="noreferrer">
+                <MDBCard style={{"width": "19rem", "cursor": "pointer"}} alignment='center' className='hover-shadow border'>
+                  <MDBCardBody>
+                    <MDBCardTitle className="text-black">Manual DTA F&IO</MDBCardTitle>
+                    <MDBCardText className="text-black">Aprende todo sobre nuestra app</MDBCardText>
+                    <MDBIcon fas icon="book" size='6x' color='primary'/>
+                  </MDBCardBody>
+                </MDBCard>
+              </a>
+
             </div>
           }
         </main> 

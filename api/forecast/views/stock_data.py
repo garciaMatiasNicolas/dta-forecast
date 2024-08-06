@@ -411,10 +411,13 @@ class StockDataView(APIView):
                     'Compra 60 días' : 0 if make_to_order == "MTO" or is_obs == "OB" else locale.format_string("%d",sixty_days, grouping=True),
                     'Compra 90 días': 0 if make_to_order == "MTO" or is_obs == "OB" else locale.format_string("%d",ninety_days, grouping=True),
                     'Estado': str(stock_status),
-                    'Compra Valorizada': locale.format_string("%d", valued_cost, grouping=True),
+                    'Compra Valorizada': locale.format_string("%d", valued_cost, grouping=True) if buy == 'Si' and is_obs != 'OB' else "0",
                     'Venta valorizada': locale.format_string("%d", int(round(price * avg_sales)), grouping=True),
                     'Valorizado': locale.format_string("%d", int(round(price * stock)), grouping=True),
                     'Demora en dias': str(lead_time),
+                    'Demora en dias (DRP)': float(item["DRP lead time"]),
+                    'Stock de seguridad (DRP)': float(item["DRP safety stock (days)"]),
+                    'Lote de compra (DRP)': float(item["DRP Lot sizing"]),
                     'Fecha próx. compra': str(next_buy) if days_of_coverage != 9999 else "---",
                     'Caracterización': characterization if merge == 'both' else ('No encontrado en Stock Data' if merge == 'left_only' else 'No encontrado en Historical Data'),
                     'Sobrante (unidades)': locale.format_string("%d", overflow_units, grouping=True),
@@ -542,6 +545,56 @@ class StockDataView(APIView):
             return sorted_results
         except Exception as err:
             print("ERROR EN SEMÁFORO", err)
+    
+    @staticmethod
+    def calculate_drp(products: list, is_forecast: bool):
+        try:
+            available_stock = 0
+            avg_sales_per_day = 0
+
+            coverage_by_sku_region = {}
+        
+            # Llenar el diccionario con los datos de cobertura
+            for product in products:
+                sku = product['SKU']
+                available_stock += float(product["Stock disponible"])
+                avg_sales_per_day += float(product[f"Venta diaria {'predecido' if is_forecast else 'histórico'}"])
+                region = product['Región']
+                coverage = int(product['Cobertura (días)'])
+                
+                if sku not in coverage_by_sku_region:
+                    coverage_by_sku_region[sku] = {}
+
+                coverage_by_sku_region[sku][region] = coverage
+            
+            # Transformar la lista de productos
+            transformed_products = []
+            for product in products:
+                sku = product['SKU']
+                region = product['Región']
+                
+                # Crear un nuevo producto con la cobertura disponible en otras regiones
+                new_product = product.copy()
+                for reg in coverage_by_sku_region[sku]:
+                    new_product[f"Cobertura en {reg}"] = coverage_by_sku_region[sku][reg]
+                
+                transformed_products.append(new_product)
+            
+            for product in transformed_products:
+                reorder_point_drp =  int(round(product["Stock de seguridad (DRP)"])) + int(round(product["Demora en dias (DRP)"]))
+                replenish = "Si" if int(product["Cobertura (días)"]) < reorder_point_drp else "No"
+                how_much_drp = 0 if replenish == "No" else float(product[f"Venta diaria {'predecido' if is_forecast else 'histórico'}"]) * 15
+
+                product["Cobertura Total"] = int(round(available_stock / avg_sales_per_day))
+                product["Punto de reorden (DRP)"] = reorder_point_drp
+                product["¿Repongo?"] = replenish
+                product["¿Cuanto repongo?"] = how_much_drp 
+            
+            return transformed_products
+    
+        except Exception as err:
+            print("ERROR EN DRP", err)
+            
 
     @authentication_classes([TokenAuthentication])
     @permission_classes([IsAuthenticated])
@@ -552,12 +605,13 @@ class StockDataView(APIView):
         historical_periods = int(params["historical_periods"])
         is_forecast = True if params["forecast_or_historical"] == "forecast" else False
         forecast_periods = int(params["forecast_periods"])
-        scenario = int(params["scenario_id"]) if params["scenario_id"] is not False or params["scenario_id"] else False
+        scenario = False #int(params["scenario_id"]) if params["scenario_id"] is not False or params["scenario_id"] else False
         only_traffic_light = request.GET.get('only_traffic_light', None)
         filter_name = request.GET.get('filter_name', None)
         filter_value = request.GET.get('filter_value', None)
         purchase_cost = params['purchase_cost']
         pruchase_perc = params['purchase_perc']
+        drp = request.GET.get('drp', None)
 
         try:
             traffic_light = ""
@@ -576,6 +630,10 @@ class StockDataView(APIView):
                 final_data, safety_stock = self.calculate_stock(data=data, next_buy_days=int(params["next_buy"]), is_forecast=is_forecast, d=purchase_cost, k=pruchase_perc)
                 safety_stock_is_zero = safety_stock
                 traffic_light = self.traffic_light(products=final_data)
+
+                if drp == "true":
+                    drp_products = self.calculate_drp(products=final_data, is_forecast=is_forecast)
+                    return Response(data={"data": drp_products, "is_zero": False, "traffic_light": []}, status=status.HTTP_200_OK)
 
             if type_of_stock == 'safety stock':
                 final_data = self.calculate_safety_stock(data=data)
