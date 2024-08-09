@@ -38,9 +38,11 @@ const DrpContainer = () => {
             setTrafficLight(res.data.traffic_light);
         })
         .catch(err => {
+            console.log(err.response)
             if(err.response.data.error === "data_none") {showErrorAlert("No hay datos históricos")}
             else if(err.response.data.error === "stock_data_none")  {showErrorAlert("No hay datos de Stock")}
             else if(err.response.data.error === "stock_hsd_dif_len")  {showErrorAlert("Hay mas productos en tu planilla de stock que en la historica")}
+            else if(err.response.data.error === "regions_null") {showErrorAlert("Su data (Stock o Histórico) no tiene regiones")}
             else {showErrorAlert("Ocurrio un error inesperado")}
         })
         .finally(() => {setLoader(false)});

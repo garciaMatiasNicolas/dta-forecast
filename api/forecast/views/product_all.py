@@ -181,12 +181,12 @@ class AllProductView(APIView):
             index = date_columns.index(str(max_date))
             values = data[date_columns].values.tolist()
             kpis = self.calculate_kpis(predictions_table_name=scenario_obj.predictions_table_name, last_date_index=index, list_date_columns=date_columns, product=product["SKU"])
-
+            
             final_data = {
                 "product": f"{product['SKU']}",
                 "graphic_forecast": {"dates": date_columns, "values": values[1]},
                 "graphic_historical": {"dates": date_columns, "values": values[0]},
-                "error": max(error_val),
+                "error": str(max(error_val)),
                 "kpis": {"columns": ["YTD", "QTD", "MTD", "YTG", "QTG", "MTG"], "values": kpis[0]},
             }
 

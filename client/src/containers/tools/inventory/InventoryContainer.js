@@ -14,6 +14,7 @@ const InventoryContainer = () => {
     const [trafficLight, setTrafficLight] = useState([]);
     const [loader, setLoader] = useState(false);
     const [scenarioId, setScenarioId] = useState(null);
+    const [resetFilters, setResetFilters] = useState(false);
     
     const [stockParams, setStockParams] = useState({
         next_buy: "15",
@@ -119,6 +120,7 @@ const InventoryContainer = () => {
     }
 
     const handleOnClick = () => {
+        setResetFilters(true);
         const token = localStorage.getItem("userToken");
         const headers = {
             'Authorization': `Token ${token}`, 
@@ -200,7 +202,7 @@ const InventoryContainer = () => {
                     </div>
                     
                     {!loader ? 
-                        <FiltersNested data={data} stockParams={stockParams} trafficLight={trafficLight} scenario={scenarioId} is_drp={false}/> 
+                        <FiltersNested data={data} stockParams={stockParams} trafficLight={trafficLight} scenario={scenarioId} is_drp={false} resetFilters={resetFilters}/> 
                         : 
                         <div className='d-flex flex-column justify-content-start align-items-start w-auto gap-2'>  
                             <ClipLoader/>

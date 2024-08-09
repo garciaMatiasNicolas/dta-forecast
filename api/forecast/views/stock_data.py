@@ -18,6 +18,7 @@ from collections import defaultdict
 import traceback
 import locale
 import math
+import json
 
 locale.setlocale(locale.LC_ALL, 'es_ES.utf8')
 
@@ -25,10 +26,9 @@ class StockDataView(APIView):
 
     # -- METHODS FOR GET DATA FROM DB -- #
     @staticmethod
-    def get_data(project_pk: int, only_traffic_light: bool, scenario: int = None, filter_name: str = None, filter_value: str = None):
+    def get_data(project_pk: int, only_traffic_light: bool, is_drp = None, scenario: int = None, filter_name: str = None, filter_value: str = None):
         try:
             max_historical_date = ""
-
             if scenario:
                 forecast_data = ForecastScenario.objects.get(pk=scenario)
                 max_historical_date = forecast_data.max_historical_date.strftime('%Y-%m-%d')
@@ -64,6 +64,15 @@ class StockDataView(APIView):
                 # table_forecast = None
 
             tables = {"historical": table_historical, "stock": table_stock, "forecast": table_forecast}
+
+            if is_drp is not None:
+                regions_hsd = table_historical["Region"].unique()
+                regions_stock = table_stock["Region"].unique()
+                regions_forecast = table_stock["Region"].unique() if table_forecast is not None else ["null"]
+
+                if regions_forecast[0] == "null" or regions_stock[0] == "null" or regions_hsd[0] == "null":
+                    return "regions_null", ""
+                
 
             return tables, max_historical_date
         
@@ -181,25 +190,20 @@ class StockDataView(APIView):
             traceback.print_exc()
 
     @staticmethod
-    def calculate_abc(products, is_forecast):
+    def calculate_abc(products_df: pd.DataFrame, is_forecast: bool):
         try:
-            total = sum(product[f'avg_sales_per_day_{"forecast" if is_forecast else "historical"}'] for product in products)
-            products.sort(key=lambda x: x[f'avg_sales_per_day_{"forecast" if is_forecast else "historical"}'], reverse=True)
+            products_df['Valor Anual'] = products_df[f'Venta diaria {"predecido" if is_forecast else "histórico"}'] * products_df['Precio unitario'].apply(lambda num: int(num.replace('.', '')))
             
-            abc_data = []
-            acum = 0
+            products_df = products_df.sort_values('Valor Anual', ascending=False)
+            
+            products_df['Valor Acumulado'] = round(products_df['Valor Anual'].cumsum(), 2)
+            products_df['% Acumulado'] = round((products_df['Valor Acumulado'] / products_df['Valor Anual'].sum()) * 100, 2)
 
-            for product in products:
-                acum += product[f'avg_sales_per_day_{"forecast" if is_forecast else "historical"}']
-                abc_class = 'A' if acum / total <= 0.2 else (
-                    'B' if acum / total <= 0.8 else 'C')
-
-                abc = {"SKU": product['SKU'], "ABC": abc_class}
-                abc_data.append(abc)
-
-            return abc_data
-    
+            products_df['ABC en $ Total'] = pd.cut(products_df['% Acumulado'], bins=[0, 80, 95, 110], labels=['A', 'B', 'C'])
+            return products_df.to_dict(orient='records')
+        
         except Exception as err:
+            traceback.print_exc()
             print("ERROR ABC", err)
     
     @staticmethod
@@ -269,14 +273,7 @@ class StockDataView(APIView):
 
             results = []
 
-            abc = self.calculate_abc(products=data, is_forecast=is_forecast)
-
-            abc_dict = {product['SKU']: product['ABC'] for product in abc}
-            abc_price_per_category = {product['SKU']: product['ABC PRECIO'] for product in self.calculate_abc_per_category(products=data)}
-
             for item in data:
-                abc_class = abc_dict.get(str(item['SKU']), 'N/A')
-                abc_price = abc_price_per_category.get(str(item["SKU"]), "N/a")
                 avg_sales_historical = float(item["avg_sales_per_day_historical"])
                 price = float(item['Price'])
                 avg_sales_forecast = float(item["avg_sales_per_day_forecast"]) 
@@ -290,7 +287,6 @@ class StockDataView(APIView):
                 days_of_coverage = round(available_stock / avg_sales) if avg_sales != 0 else 9999
                 buy = 'Si' if (days_of_coverage - reorder_point) < 1 else 'No'
                 optimal_batch = float(item["EOQ (Economical order quantity)"])
-                how_much = max(optimal_batch, (next_buy_days + lead_time + safety_stock - days_of_coverage) * avg_sales ) if buy == 'Si' else 0
                 overflow_units = stock if avg_sales == 0 else (0 if days_of_coverage - reorder_point < 0 else round((days_of_coverage - reorder_point)*avg_sales)) 
                 overflow_price = round(overflow_units*price)
                 lot_sizing = float(item['Lot Sizing'])
@@ -337,9 +333,17 @@ class StockDataView(APIView):
                     characterization = "Sin stock"
     
                 next_buy = next_buy.strftime('%Y-%m-%d') if isinstance(next_buy, datetime) else next_buy
+                
+                # Si es MTO y available stock es menor que cero, available stock+, si es MTO y available stock es mayor que cero, 0
+                how_much = (abs(available_stock) if available_stock < 0 else 0) if make_to_order == 'MTO' else max(optimal_batch, (next_buy_days + lead_time + safety_stock - days_of_coverage) * avg_sales ) if buy == 'Si' else 0
+
+                # Cuanto lot sizing
                 how_much_vs_lot_sizing = round_up(how_much, int(lot_sizing)) if int(lot_sizing) != 0.0 else how_much
                 how_much_vs_lot_sizing = max(how_much_vs_lot_sizing, optimal_batch)
-                final_how_much = available_stock - sales_order + purchase_order if make_to_order == 'MTO' else round(how_much_vs_lot_sizing) if buy == 'Si' else 0
+
+                # Si es MTO y available stock es menor que cero, available stock+, si es MTO y available stock es mayor que cero, 0
+                final_how_much = (abs(available_stock) if available_stock < 0 else 0) if make_to_order == 'MTO' else round(how_much_vs_lot_sizing) if buy == 'Si' else 0
+                
                 final_buy = ('Si' if available_stock - sales_order + purchase_order < 0 else 'No') if make_to_order == 'MTO' else buy
                 cost_price = float(item["Cost Price"])
                 valued_cost = round(cost_price*how_much_vs_lot_sizing,2)
@@ -350,11 +354,7 @@ class StockDataView(APIView):
                     thirty_days = days_of_coverage - 30 + round(how_much) / avg_sales
                     
                     if thirty_days < reorder_point:
-                        calc = optimal_batch_calc / avg_sales
-                        if calc < 30:
-                            thirty_days = round(30 / calc) * optimal_batch_calc
-                        else:
-                            thirty_days = optimal_batch_calc 
+                        thirty_days = avg_sales * 30
 
                 except:
                     thirty_days = 0
@@ -363,11 +363,7 @@ class StockDataView(APIView):
                     sixty_days = days_of_coverage - 60 + round(how_much) / avg_sales + thirty_days / avg_sales 
                     
                     if sixty_days < reorder_point:
-                        calc = optimal_batch_calc / avg_sales
-                        if calc < 30:
-                            sixty_days = round(30 / calc) * optimal_batch_calc
-                        else:
-                            sixty_days = optimal_batch_calc 
+                       sixty_days = avg_sales * 60
                 
                 except:
                     sixty_days = 0
@@ -376,14 +372,20 @@ class StockDataView(APIView):
                     ninety_days = days_of_coverage - 90 + round(how_much) / avg_sales + thirty_days / avg_sales + sixty_days / avg_sales
 
                     if ninety_days < reorder_point:
-                        calc = optimal_batch_calc / avg_sales
-                        if calc < 30:
-                            ninety_days = round(30 / calc) * optimal_batch_calc
-                        else:    
-                            ninety_days = optimal_batch_calc
+                       ninety_days = avg_sales * 90
                 
                 except:
                     ninety_days = 0
+
+                try:
+                    drp_lead_time = float(item["DRP lead time"])
+                    drp_safety_stock = float(item["DRP safety stock (days)"])
+                    drp_lot_sizing =  float(item["DRP Lot sizing"])
+                
+                except KeyError:
+                    drp_lead_time = "Falta de subir en Stock data"
+                    drp_safety_stock = "Falta de subir en Stock data"
+                    drp_lot_sizing =  "Falta de subir en Stock data"
 
                 stock = {
                     'Familia': item['Family'],
@@ -413,11 +415,11 @@ class StockDataView(APIView):
                     'Estado': str(stock_status),
                     'Compra Valorizada': locale.format_string("%d", valued_cost, grouping=True) if buy == 'Si' and is_obs != 'OB' else "0",
                     'Venta valorizada': locale.format_string("%d", int(round(price * avg_sales)), grouping=True),
-                    'Valorizado': locale.format_string("%d", int(round(price * stock)), grouping=True),
+                    'Valorizado': locale.format_string("%d", int(round(cost_price * stock)), grouping=True),
                     'Demora en dias': str(lead_time),
-                    'Demora en dias (DRP)': float(item["DRP lead time"]),
-                    'Stock de seguridad (DRP)': float(item["DRP safety stock (days)"]),
-                    'Lote de compra (DRP)': float(item["DRP Lot sizing"]),
+                    'Demora en dias (DRP)': drp_lead_time,
+                    'Stock de seguridad (DRP)': drp_safety_stock,
+                    'Lote de compra (DRP)': drp_lot_sizing,
                     'Fecha próx. compra': str(next_buy) if days_of_coverage != 9999 else "---",
                     'Caracterización': characterization if merge == 'both' else ('No encontrado en Stock Data' if merge == 'left_only' else 'No encontrado en Historical Data'),
                     'Sobrante (unidades)': locale.format_string("%d", overflow_units, grouping=True),
@@ -427,12 +429,10 @@ class StockDataView(APIView):
                     'Stock seguridad en dias': str(safety_stock),
                     'Unidad de compra': purchase_unit,
                     'Lote de compra': lot_sizing,
-                    'Precio unitario': round(price, 2),
-                    "Costo del producto": round(cost_price, 2),
+                    'Precio unitario': locale.format_string("%d",round(price),grouping=True),
+                    "Costo del producto": locale.format_string("%d",round(cost_price),grouping=True),
                     'MTO': make_to_order if make_to_order == 'MTO' else '',
                     'OB': is_obs if is_obs == 'OB' else '',
-                    'ABC': abc_class,
-                    'ABC por categoria': abc_price,
                     'XYZ': item['XYZ']
                 }
 
@@ -605,7 +605,7 @@ class StockDataView(APIView):
         historical_periods = int(params["historical_periods"])
         is_forecast = True if params["forecast_or_historical"] == "forecast" else False
         forecast_periods = int(params["forecast_periods"])
-        scenario = False #int(params["scenario_id"]) if params["scenario_id"] is not False or params["scenario_id"] else False
+        scenario = int(params["scenario_id"]) if params["scenario_id"] is not False or params["scenario_id"] else False
         only_traffic_light = request.GET.get('only_traffic_light', None)
         filter_name = request.GET.get('filter_name', None)
         filter_value = request.GET.get('filter_value', None)
@@ -618,10 +618,13 @@ class StockDataView(APIView):
             safety_stock_is_zero = False
 
             if only_traffic_light == "true":
-                tables, max_historical_date = self.get_data(project_pk=project_pk, scenario=scenario, only_traffic_light=True, filter_name=filter_name, filter_value=filter_value)
+                tables, max_historical_date = self.get_data(project_pk=project_pk, scenario=scenario, only_traffic_light=True, is_drp=drp, filter_name=filter_name, filter_value=filter_value)
             
             else:
-                tables, max_historical_date = self.get_data(project_pk=project_pk, scenario=scenario, only_traffic_light=False)
+                tables, max_historical_date = self.get_data(project_pk=project_pk, is_drp=drp, scenario=scenario, only_traffic_light=False)
+            
+            if tables == "regions_null":
+                return Response(data={"error": "regions_null"}, status=status.HTTP_400_BAD_REQUEST)
 
             data = self.calculate_avg_desv_varcoefficient(historical=tables["historical"], stock=tables["stock"], forecast=tables["forecast"], 
             forecast_periods=forecast_periods, historical_periods=historical_periods, max_hsd=max_historical_date)
@@ -630,9 +633,13 @@ class StockDataView(APIView):
                 final_data, safety_stock = self.calculate_stock(data=data, next_buy_days=int(params["next_buy"]), is_forecast=is_forecast, d=purchase_cost, k=pruchase_perc)
                 safety_stock_is_zero = safety_stock
                 traffic_light = self.traffic_light(products=final_data)
+                
+                final_data_df = pd.DataFrame(final_data)
+                final_data = self.calculate_abc(products_df=final_data_df, is_forecast=is_forecast)
 
                 if drp == "true":
                     drp_products = self.calculate_drp(products=final_data, is_forecast=is_forecast)
+                    drp_products = self.calculate_abc(products_df=pd.DataFrame(drp_products), is_forecast=is_forecast)
                     return Response(data={"data": drp_products, "is_zero": False, "traffic_light": []}, status=status.HTTP_200_OK)
 
             if type_of_stock == 'safety stock':

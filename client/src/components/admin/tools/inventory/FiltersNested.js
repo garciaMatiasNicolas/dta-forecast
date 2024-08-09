@@ -1,4 +1,4 @@
-import { useState, useContext } from "react";
+import { useState, useContext, useEffect } from "react";
 import axios from "axios";
 import { showErrorAlert } from "../../../other/Alerts";
 import {
@@ -13,7 +13,7 @@ import TrafficLightContainer from "../../../../containers/tools/inventory/Traffi
 
 const apiUrl = process.env.REACT_APP_API_URL;
 
-const FiltersNested = ({data, trafficLight, stockParams, scenario, is_drp}) => {
+const FiltersNested = ({data, trafficLight, stockParams, scenario, is_drp, resetFilters}) => {
     const [orderedData, setOrderedData] = useState(data);
     const {optionsFilterTable, setOptionsFilterTable} = useContext(AppContext);
     const [viewTrafficLight, setViewTrafficLight] = useState(false);
@@ -62,6 +62,10 @@ const FiltersNested = ({data, trafficLight, stockParams, scenario, is_drp}) => {
         setOrderedData(data);
         setOptionsFilterTable([]);
     };
+
+    useEffect(()=>{
+        resetFilters && setOptionsFilterTable([]);
+    }, [resetFilters])
 
     if (!data || data.length === 0) {
         return <div></div>;

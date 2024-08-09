@@ -25,7 +25,7 @@ class ReportDataViews(APIView):
         if for_report:
             dates_joined = " + ".join([f"SUM(`{date}`)" for date in list_dates])
         else:
-            dates_joined = ",\n".join([f"SUM(`{date}`) as `{date.split('-')[0]}`" for date in list_dates])
+            dates_joined = ",\n".join([f"ROUND(SUM(`{date}`), 2) as `{date.split('-')[0]}`" for date in list_dates])
 
         return dates_joined
 
@@ -179,7 +179,6 @@ class ReportDataViews(APIView):
                         # Agregar los resultados a la lista final
                         final_data.append([predicted[0], ytd, qtd, mtd, ytg, qtg, mtg])
 
-                print(final_data)
                 # Retornar los datos finales
                 return final_data
             
@@ -234,6 +233,7 @@ class ReportDataViews(APIView):
 
                 past_cols = self.join_dates(list_dates=past_dates, for_report=False)
                 future_cols = self.join_dates(list_dates=future_dates, for_report=False)
+                data = {}
 
                 query_for_past_dates = f'''
                     SELECT {filter_name},
@@ -244,59 +244,57 @@ class ReportDataViews(APIView):
                     GROUP BY {filter_name};
                 '''
 
-                cursor.execute(sql=query_for_past_dates)
-                past_data = cursor.fetchall()
+                def get_dates():
+                    past = ",\n".join([f'a.`{date.split("-")[0]}`' for date in past_dates])
+                    future = ",\n".join([f'b.`{date.split("-")[0]}`' for date in future_dates])
+                    return past, future
 
                 if len(future_dates) > 0:
-                    query_for_future_dates = f'''
-                        SELECT {filter_name},
+                    past, future = get_dates()
+
+                    query_for_all_dates = f'''
+                        SELECT  
+                            a.{filter_name},
+                            {past},
+                            {future}
+                        FROM (
+                            SELECT {filter_name},
+                                {past_cols}
+                                FROM {predictions_table_name}
+                                WHERE model = 'actual'
+                                {'AND SKU = ' + f"'{str(product)}'" if product else ''}
+                            GROUP BY {filter_name}
+                        ) a
+                        JOIN 
+                        (
+                            SELECT {filter_name},
                             {future_cols}
-                        FROM {predictions_table_name}
-                        WHERE model != 'actual'
-                        {'AND SKU = ' + f"'{str(product)}'" if product else ''}
-                        GROUP BY {filter_name};
+                                FROM {predictions_table_name}
+                                WHERE model != 'actual'
+                                {'AND SKU = ' + f"'{str(product)}'" if product else ''}
+                            GROUP BY {filter_name}
+                        ) b ON a.{filter_name} = b.{filter_name};
                     '''
-                    cursor.execute(sql=query_for_past_dates)
-                    past_data = cursor.fetchall()
 
-                    cursor.execute(sql=query_for_future_dates)
-                    future_data = cursor.fetchall()
-
-                    dict_values = {tupla[0]: tupla[1] for tupla in future_data}
-
-                    rounded_data = [[elem[0]] + [round(val) for val in elem[1:]] +
-                                    [round(dict_values[elem[0]])] for elem in past_data]
+                    cursor.execute(sql=query_for_all_dates)
+                    all_dates_raw = cursor.fetchall()
+                    column_names = [desc[0] for desc in cursor.description]
+                    ordered_column_names = sorted(column_names, reverse=False, key=lambda x: x if x != filter_name else '')
+    
+                    # Construir los diccionarios con el orden de columnas deseado
+                    data = [dict((col, row[column_names.index(col)]) for col in ordered_column_names) for row in all_dates_raw]
 
                 else:
                     cursor.execute(sql=query_for_past_dates)
                     past_data = cursor.fetchall()
 
-                    rounded_data = [[elem[0]] + [round(val) for val in elem[1:]] for elem in past_data]
+                    # Reordenar las columnas de manera explícita
+                    ordered_column_names = sorted(column_names, reverse=False, key=lambda x: x if x != filter_name else '')
+                    
+                    # Construir los diccionarios con el orden de columnas deseado
+                    data = [dict((col, row[column_names.index(col)]) for col in ordered_column_names) for row in past_data]
 
-                # Create a dictionary to organize data by year
-                data_by_year = {year: 0 for year in years}
-
-                final_rounded_data = []
-                for row in rounded_data:
-                    entry = {year: 0 for year in years}
-                    entry['name'] = row[0]
-                    for i, date in enumerate(past_dates):
-                        year = date.split('-')[0]
-                        entry[year] = row[i + 1]
-                    final_rounded_data.append(entry)
-
-                num_sublist = [sublist for sublist in final_rounded_data if
-                            all(isinstance(sublist[year], (int, float)) for year in years)]
-
-                total = {'name': 'TOTAL'}
-                for year in years:
-                    total[year] = sum(sublist[year] for sublist in num_sublist)
-
-                final_rounded_data.append(total)
-
-                json_data = dict(columns=years, data=final_rounded_data)
-
-                return Response({"data_per_month": json_data, "reports": final_data},
+                return Response(data={"data_per_month": data, "reports": final_data},
                                 status=status.HTTP_200_OK)
 
         else:
