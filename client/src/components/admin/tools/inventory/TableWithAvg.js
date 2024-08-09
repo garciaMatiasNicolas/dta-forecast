@@ -130,9 +130,9 @@ const Table = ({ data, setData, scenario }) => {
   
       toggleOpen();
     }
-  };
+  }
 
-  const keys = ["Familia", 'Categoria', 'Vendedor', 'Subcategoria', 'Cliente', 'Región', '¿Compro?', 'MTO', 'OB', 'ABC', 'XYZ', 'Estado', 'Caracterización', '¿Repongo?', 'ABC en $ Total']
+  const keys = ["Familia", 'Categoria', 'Vendedor', 'Subcategoria', 'Cliente', 'Región', '¿Compro?', 'MTO', 'OB', 'ABC', 'XYZ', 'Estado', 'Caracterización', '¿Repongo?', 'ABC en $ Tota']
 
   return (
     <>
