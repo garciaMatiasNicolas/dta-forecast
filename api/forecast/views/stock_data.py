@@ -207,11 +207,11 @@ class StockDataView(APIView):
             products_df['% Acumulado'] = products_df.groupby('Categoria')['Valor Acumulado'].apply(lambda x: round((x / x.iloc[-1]) * 100, 2)).reset_index(drop=True)
             
             # Asignar etiquetas ABC basadas en el '% Acumulado' por categoría
-            products_df['ABC en $ por Categoria'] = pd.cut(products_df['% Acumulado'], bins=[0, 80, 95, 110], labels=['A', 'B', 'C'])
+            products_df['ABC en $ por Categoria'] = pd.cut(products_df['% Acumulado'], bins=[0, 80, 95, 100], labels=['A', 'B', 'C'])
             
             # Eliminar las columnas temporales utilizadas para los cálculos
             products_df.drop(columns=["Valor Acumulado", "% Acumulado", "Valor Anual"], inplace=True)
-            
+            products_df.fillna('C', inplace=True)
             return products_df.to_dict(orient='records')
         
         except Exception as err:
@@ -227,7 +227,7 @@ class StockDataView(APIView):
             products_df['Valor Acumulado'] = round(products_df['Valor Anual'].cumsum(), 2)
             products_df['% Acumulado'] = round((products_df['Valor Acumulado'] / products_df['Valor Anual'].sum()) * 100, 2)
 
-            products_df['ABC en $ Total'] = pd.cut(products_df['% Acumulado'], bins=[0, 80, 95, 110], labels=['A', 'B', 'C'])
+            products_df['ABC en $ Total'] = pd.cut(products_df['% Acumulado'], bins=[0, 80, 95, 100], labels=['A', 'B', 'C'])
             products_df.drop(columns=["Valor Acumulado", "% Acumulado", "Valor Anual"], inplace=True)
 
             products = self.calculate_abc_per_category(products_df=products_df, is_forecast=is_forecast)
