@@ -132,7 +132,7 @@ const Table = ({ data, setData, scenario }) => {
     }
   }
 
-  const keys = ["Familia", 'Categoria', 'Vendedor', 'Subcategoria', 'Cliente', 'Región', '¿Compro?', 'MTO', 'OB', 'ABC', 'XYZ', 'Estado', 'Caracterización', '¿Repongo?', 'ABC en $ Tota']
+  const keys = ["Familia", 'Categoria', 'Vendedor', 'Subcategoria', 'Cliente', 'Región', '¿Compro?', 'MTO', 'OB', 'ABC', 'XYZ', 'Estado', 'Caracterización', '¿Repongo?', 'ABC en $ Total', 'ABC Cliente', 'ABC en $ por Categoria']
 
   return (
     <>

@@ -190,7 +190,35 @@ class StockDataView(APIView):
             traceback.print_exc()
 
     @staticmethod
-    def calculate_abc(products_df: pd.DataFrame, is_forecast: bool):
+    def calculate_abc_per_category(products_df: pd.DataFrame, is_forecast: bool):
+        try:
+            products_df['Precio unitario'] = products_df['Precio unitario'].apply(lambda num: int(num.replace('.', '')))
+        
+            # Calcular el 'Valor Anual' por categoría
+            products_df['Valor Anual'] = products_df[f'Venta diaria {"predecido" if is_forecast else "histórico"}'] * products_df['Precio unitario']
+            
+            # Agrupar por categoría y ordenar cada grupo por 'Valor Anual'
+            products_df = products_df.groupby('Categoria').apply(lambda x: x.sort_values('Valor Anual', ascending=False)).reset_index(drop=True)
+            
+            # Calcular el 'Valor Acumulado' por categoría
+            products_df['Valor Acumulado'] = products_df.groupby('Categoria')['Valor Anual'].cumsum()
+            
+            # Calcular el '% Acumulado' por categoría y restablecer el índice para evitar conflictos
+            products_df['% Acumulado'] = products_df.groupby('Categoria')['Valor Acumulado'].apply(lambda x: round((x / x.iloc[-1]) * 100, 2)).reset_index(drop=True)
+            
+            # Asignar etiquetas ABC basadas en el '% Acumulado' por categoría
+            products_df['ABC en $ por Categoria'] = pd.cut(products_df['% Acumulado'], bins=[0, 80, 95, 110], labels=['A', 'B', 'C'])
+            
+            # Eliminar las columnas temporales utilizadas para los cálculos
+            products_df.drop(columns=["Valor Acumulado", "% Acumulado", "Valor Anual"], inplace=True)
+            
+            return products_df.to_dict(orient='records')
+        
+        except Exception as err:
+            traceback.print_exc()
+            print("ERROR ABC POR CATEGORÍA", err)
+
+    def calculate_abc(self, products_df: pd.DataFrame, is_forecast: bool):
         try:
             products_df['Valor Anual'] = products_df[f'Venta diaria {"predecido" if is_forecast else "histórico"}'] * products_df['Precio unitario'].apply(lambda num: int(num.replace('.', '')))
             
@@ -200,51 +228,14 @@ class StockDataView(APIView):
             products_df['% Acumulado'] = round((products_df['Valor Acumulado'] / products_df['Valor Anual'].sum()) * 100, 2)
 
             products_df['ABC en $ Total'] = pd.cut(products_df['% Acumulado'], bins=[0, 80, 95, 110], labels=['A', 'B', 'C'])
-            return products_df.to_dict(orient='records')
+            products_df.drop(columns=["Valor Acumulado", "% Acumulado", "Valor Anual"], inplace=True)
+
+            products = self.calculate_abc_per_category(products_df=products_df, is_forecast=is_forecast)
+            return products
         
         except Exception as err:
             traceback.print_exc()
-            print("ERROR ABC", err)
-    
-    @staticmethod
-    def calculate_abc_per_category(products: list):
-        for product in products:
-            product["Price"] = float(product["Price"])
-
-        categories = {}
-        abc_data = []
-        products.sort(key=lambda product: product["Price"], reverse=True)
-    
-        for product in products:
-            category = product['Category']
-            price = product['Price']
-
-            if category in categories:
-                categories[category] += price
-
-            else:
-                categories[category] = price 
-        
-        for category, prices in categories.items():
-            category_total = np.array(prices)
-            percentiles = {
-                'A': np.percentile(category_total, 80),
-                'B': np.percentile(category_total, 50)
-            }
-            
-        for product in products:
-            if product['Category'] == category:
-                if product["Price"] >= percentiles['A']:
-                    abc_class = "A"
-                elif product["Price"] >= percentiles['B']:
-                    abc_class = "B"
-                else:
-                    abc_class = "C"
-                
-                abc = {"SKU": product["SKU"], "ABC PRECIO": abc_class}
-                abc_data.append(abc)
-
-        return abc_data
+            print("ERROR ABC TOTAL", err)
     
     @staticmethod
     def calculate_optimal_batch(c, d, k):
@@ -355,6 +346,9 @@ class StockDataView(APIView):
                     
                     if thirty_days < reorder_point:
                         thirty_days = avg_sales * 30
+                    
+                    else:
+                        thirty_days = 0
 
                 except:
                     thirty_days = 0
@@ -364,6 +358,9 @@ class StockDataView(APIView):
                     
                     if sixty_days < reorder_point:
                        sixty_days = avg_sales * 60
+                    
+                    else:
+                        sixty_days = 0
                 
                 except:
                     sixty_days = 0
@@ -373,6 +370,9 @@ class StockDataView(APIView):
 
                     if ninety_days < reorder_point:
                        ninety_days = avg_sales * 90
+                    
+                    else:
+                        ninety_days = 0
                 
                 except:
                     ninety_days = 0
@@ -433,7 +433,8 @@ class StockDataView(APIView):
                     "Costo del producto": locale.format_string("%d",round(cost_price),grouping=True),
                     'MTO': make_to_order if make_to_order == 'MTO' else '',
                     'OB': is_obs if is_obs == 'OB' else '',
-                    'XYZ': item['XYZ']
+                    'XYZ': item['XYZ'],
+                    'ABC Cliente': item['ABC']
                 }
 
                 results.append(stock)
