@@ -386,7 +386,7 @@ class StockDataView(APIView):
                     sixty_days = days_of_coverage - 60 + round(how_much) / avg_sales + thirty_days / avg_sales 
                     
                     if sixty_days < reorder_point:
-                       sixty_days = avg_sales * 60
+                       sixty_days = avg_sales * 30
                     
                     else:
                         sixty_days = 0
@@ -398,7 +398,7 @@ class StockDataView(APIView):
                     ninety_days = days_of_coverage - 90 + round(how_much) / avg_sales + thirty_days / avg_sales + sixty_days / avg_sales
 
                     if ninety_days < reorder_point:
-                       ninety_days = avg_sales * 90
+                       ninety_days = avg_sales * 30
                     
                     else:
                         ninety_days = 0
@@ -814,49 +814,3 @@ class StockByProduct(APIView):
             return Response(data={'error': 'historical_data_not_found'}, status=status.HTTP_400_BAD_REQUEST)
 
 
-
-
-
-
-
-"""
-@staticmethod
-def get_filtered_data(project_pk: int, filters: list, is_forecast: bool, scenario: int = None):
-    conditions = [
-        f"{filter_name} = '{filter_value}'"
-        for filter_dict in filters
-        for filter_name, filter_value in filter_dict.items()
-    ]
-
-    if is_forecast:
-        data = ForecastScenario.objects.get(pk=scenario)
-        query_for_data = f"SELECT * FROM {data.predictions_table_name} WHERE " + " AND ".join(conditions)
-        
-    else:
-        data = FileRefModel.objects.filter(project_id=project_pk, model_type_id=1).first()
-        query_for_data = f"SELECT * FROM {data.file_name} WHERE " + " AND ".join(conditions)
-
-    stock_data = FileRefModel.objects.filter(project_id=project_pk, model_type_id=4).first()
-
-    if data is None:
-        raise ValueError("Data_not_found")
-
-    if stock_data is None:
-        raise ValueError("Stock_data_not_found")
-
-
-    query_for_stock = f"SELECT * FROM {stock_data.file_name} WHERE " + " AND ".join(conditions)
-
-    with connection.cursor() as cursor:
-        cursor.execute(query_for_data)
-        historical_rows = cursor.fetchall()
-        columns_historical = [desc[0] for desc in cursor.description]
-        df_historical = pd.DataFrame(historical_rows, columns=columns_historical)
-
-        cursor.execute(query_for_stock)
-        stock_rows = cursor.fetchall()
-        columns_stock = [desc[0] for desc in cursor.description]
-        df_stock = pd.DataFrame(stock_rows, columns=columns_stock)
-
-    return df_historical, df_stock 
-"""
