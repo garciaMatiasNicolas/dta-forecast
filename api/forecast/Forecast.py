@@ -64,12 +64,12 @@ class Forecast(object):
         actual_dataframe.insert(loc=sku_index + 1, column="model", value="actual")
         actual_dataframe[self.future_dates] = 0.0
         actual_dataframe[self.error_method] = ""
-        # actual_dataframe["LAST"] = ""
 
         actual_dataframe.columns = ['Family', 'Region', 'Salesman', 'Client', 'Category', 'Subcategory',
                                     'SKU', 'Description', 'model'] + self.date_columns + [self.error_method]
 
         predicted_dataframe = pd.concat([actual_dataframe, forecast_df], ignore_index=True)
+        predicted_dataframe.fillna({f'{self.error_method}': 0}, inplace=True)
 
         return predicted_dataframe
 

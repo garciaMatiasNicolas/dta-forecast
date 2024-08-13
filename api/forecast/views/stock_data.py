@@ -324,18 +324,47 @@ class StockDataView(APIView):
                     characterization = "Sin stock"
     
                 next_buy = next_buy.strftime('%Y-%m-%d') if isinstance(next_buy, datetime) else next_buy
-                
-                # Si es MTO y available stock es menor que cero, available stock+, si es MTO y available stock es mayor que cero, 0
-                how_much = (abs(available_stock) if available_stock < 0 else 0) if make_to_order == 'MTO' else max(optimal_batch, (next_buy_days + lead_time + safety_stock - days_of_coverage) * avg_sales ) if buy == 'Si' else 0
-
-                # Cuanto lot sizing
-                how_much_vs_lot_sizing = round_up(how_much, int(lot_sizing)) if int(lot_sizing) != 0.0 else how_much
-                how_much_vs_lot_sizing = max(how_much_vs_lot_sizing, optimal_batch)
-
-                # Si es MTO y available stock es menor que cero, available stock+, si es MTO y available stock es mayor que cero, 0
-                final_how_much = (abs(available_stock) if available_stock < 0 else 0) if make_to_order == 'MTO' else round(how_much_vs_lot_sizing) if buy == 'Si' else 0
-                
                 final_buy = ('Si' if available_stock - sales_order + purchase_order < 0 else 'No') if make_to_order == 'MTO' else buy
+                
+                if final_buy == "Si":
+                    
+                    if is_obs == 'OB':
+                        # Cuanto
+                        how_much = 0
+                        # Cuanto Lot Sizing 
+                        how_much_vs_lot_sizing = 0
+                        # Cuanto Purchase Unit
+                        how_much_purchase_unit = 0
+                    
+                    else:
+                        # Cuanto
+                        if make_to_order == "MTO":
+                            how_much = abs(available_stock) if available_stock < 0 else 0
+                        
+                        else: 
+                            how_much = max(optimal_batch, (next_buy_days + lead_time + safety_stock - days_of_coverage) * avg_sales )
+
+                        # Cuanto lot sizing
+                        how_much_vs_lot_sizing = round_up(how_much, int(lot_sizing)) if int(lot_sizing) != 0.0 else how_much
+                        how_much_vs_lot_sizing = max(how_much_vs_lot_sizing, optimal_batch)
+
+                        if make_to_order == "MTO":
+                            how_much_vs_lot_sizing = abs(available_stock) if available_stock < 0 else 0
+                        
+                        else: 
+                            how_much_vs_lot_sizing = round(how_much_vs_lot_sizing)
+                        
+                        # Cuanto purchase unit
+                        how_much_purchase_unit = round(how_much_vs_lot_sizing * purchase_unit)
+                
+                else:
+                    # Cuanto
+                    how_much = 0
+                    # Cuanto Lot Sizing 
+                    how_much_vs_lot_sizing = 0
+                    # Cuanto Purchase Unit
+                    how_much_purchase_unit = 0
+                
                 cost_price = float(item["Cost Price"])
                 valued_cost = round(cost_price*how_much_vs_lot_sizing,2)
 
@@ -406,9 +435,9 @@ class StockDataView(APIView):
                     'Cobertura (días)': str(days_of_coverage),
                     'Punto de reorden': str(reorder_point),
                     '¿Compro?': str(final_buy) if is_obs != 'OB' else 'No',
-                    '¿Cuanto?': locale.format_string("%d", round(how_much), grouping=True) if buy == 'Si' and is_obs != 'OB' else "0" ,
-                    '¿Cuanto? (Lot Sizing)': locale.format_string("%d", round(final_how_much), grouping=True) if buy == 'Si' and is_obs != 'OB' else "0",
-                    '¿Cuanto? (Purchase Unit)': locale.format_string("%d", round(final_how_much * purchase_unit), grouping=True) if buy == 'Si' and is_obs != 'OB' else "0",
+                    '¿Cuanto?': locale.format_string("%d", round(how_much), grouping=True) ,
+                    '¿Cuanto? (Lot Sizing)': locale.format_string("%d", round(how_much_vs_lot_sizing), grouping=True),
+                    '¿Cuanto? (Purchase Unit)': locale.format_string("%d", how_much_purchase_unit, grouping=True),
                     'Compra 30 días':  0 if make_to_order == "MTO" or is_obs == "OB" else locale.format_string("%d",thirty_days, grouping=True),
                     'Compra 60 días' : 0 if make_to_order == "MTO" or is_obs == "OB" else locale.format_string("%d",sixty_days, grouping=True),
                     'Compra 90 días': 0 if make_to_order == "MTO" or is_obs == "OB" else locale.format_string("%d",ninety_days, grouping=True),
