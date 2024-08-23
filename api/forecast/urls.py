@@ -3,7 +3,7 @@ from .views.stock_data import StockDataView, StockByProduct
 from .views.forecast_views import RunModelsViews
 from .views.filter_data import FilterDataViews, GetFiltersView, FiltersByGroup, FiltersNested
 from .views.report_data_view import ReportDataViews, ModelsGraphicAPIView
-from .views.mape_report_view import ErrorReportAPIView, ErrorGraphicView
+from .views.mape_report_view import ErrorReportAPIView, ErrorGraphicView, ForecastModelsSelctedGraphAPIView
 from .views.exploration_variables_view import (AllocationMatrixView, HistoricalDataView, FilterValuesView,
                                                GetExogVars, ExogenousVariablesTable, ExogenousVariablesGraph, )
 from .views.outliers_graphic import GraphicOutliersView, FiltersHistoricalData
@@ -31,6 +31,7 @@ stock_data = StockDataView.as_view()
 stock_by_product = StockByProduct.as_view()
 product_all = AllProductView.as_view()
 conversion = ConversionForecast.as_view()
+all_models_graph = ForecastModelsSelctedGraphAPIView.as_view()
 
 urlpatterns = [
     path('test-model', test_model, name='test_model'),
@@ -53,5 +54,6 @@ urlpatterns = [
     path('stock-data/', stock_data, name='stock-data'),
     path('stock-product/', stock_by_product, name='stock_by_product'),
     path('product-all', product_all, name="product_all"),
-    path('conversion-forecast/', conversion, name="conversion")
+    path('conversion-forecast/', conversion, name="conversion"),
+    path('all-models-graph', all_models_graph, name="all_models_graph")
 ]

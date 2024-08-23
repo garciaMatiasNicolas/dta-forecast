@@ -68,7 +68,7 @@ class StockDataView(APIView):
             if is_drp is not None:
                 regions_hsd = table_historical["Region"].unique()
                 regions_stock = table_stock["Region"].unique()
-                regions_forecast = table_stock["Region"].unique() if table_forecast is not None else ["null"]
+                regions_forecast = table_stock["Region"].unique() if table_forecast is not None else [""]
 
                 if regions_forecast[0] == "null" or regions_stock[0] == "null" or regions_hsd[0] == "null":
                     return "regions_null", ""
@@ -278,8 +278,8 @@ class StockDataView(APIView):
                 days_of_coverage = round(available_stock / avg_sales) if avg_sales != 0 else 9999
                 buy = 'Si' if (days_of_coverage - reorder_point) < 1 else 'No'
                 optimal_batch = float(item["EOQ (Economical order quantity)"])
-                overflow_units = stock if avg_sales == 0 else (0 if days_of_coverage - reorder_point < 0 else round((days_of_coverage - reorder_point)*avg_sales)) 
-                overflow_price = round(overflow_units*price)
+                overflow_units = stock if avg_sales == 0 else (0 if (stock / avg_sales) - reorder_point < 0 else round((stock / avg_sales - reorder_point)*avg_sales)) 
+                overflow_price = round(overflow_units*cost_price)
                 lot_sizing = float(item['Lot Sizing'])
                 sales_order = float(item['Sales Order Pending Deliverys'])
                 is_obs = str(item['Slow moving'])
@@ -669,7 +669,6 @@ class StockDataView(APIView):
 
                 if drp == "true":
                     drp_products = self.calculate_drp(products=final_data, is_forecast=is_forecast)
-                    drp_products = self.calculate_abc(products_df=pd.DataFrame(drp_products), is_forecast=is_forecast)
                     return Response(data={"data": drp_products, "is_zero": False, "traffic_light": []}, status=status.HTTP_200_OK)
 
             if type_of_stock == 'safety stock':

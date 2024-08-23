@@ -11,6 +11,67 @@ from datetime import datetime
 from ..Error import Error
 from dateutil.relativedelta import relativedelta
 from datetime import datetime, timedelta
+from django.shortcuts import get_object_or_404
+import os
+import pandas as pd
+
+
+class ForecastModelsSelctedGraphAPIView(APIView):
+    @authentication_classes([TokenAuthentication])
+    @permission_classes([IsAuthenticated])
+    def post(self, request):
+        sc_id = request.data.get('sc_id')
+        product = request.data.get('product')
+
+        scenario = get_object_or_404(ForecastScenario, pk=sc_id)
+        excel_name = f'{scenario.project.project_name}_scenario_{scenario.scenario_name}_u{scenario.user.id}.xlsx_all.xlsx'
+        excel_path = os.path.join('media', 'excel_files', 'predictions', excel_name)
+
+        # Verificar si el archivo existe
+        if not os.path.exists(excel_path):
+            return Response({"error": "El archivo de Excel no existe."}, status=404)
+
+        # Leer el archivo de Excel en un DataFrame de pandas
+        try:
+            df = pd.read_excel(excel_path)
+            df.fillna('null', inplace=True)
+
+            # Filtrar dataframe
+            product_data = df[
+                (df["Family"] == product["Family"]) &
+                (df["Region"] == product["Region"]) &
+                (df["Category"] == product["Category"]) &
+                (df["Client"] == product["Client"]) &
+                (df["Subcategory"] == product["Subcategory"]) &
+                (df["Salesman"] == product["Salesman"]) &
+                (df["SKU"] == product["SKU"]) &
+                (df["Description"] == product["Description"]) 
+            ]
+
+            product_data = product_data.drop(columns=["Family", "Region", "Client", "Subcategory", "Category", "SKU", "Description", "Salesman"])
+            model_columns = ['model'] + [col for col in product_data.columns if col.startswith('202')]
+            product_data_filtered = product_data[model_columns]
+
+            # Convertir los datos a un formato adecuado para JSON
+            data_for_chart = {
+                "dates": product_data_filtered.columns[1:].tolist(),  # Las fechas
+                "models": []
+            }
+
+            # Iterar sobre cada modelo para agregar sus datos
+            for _, row in product_data_filtered.iterrows():
+                model_data = {
+                    "name": row['model'],
+                    "values": row[1:].tolist()  # Los valores de ventas para ese modelo
+                }
+                data_for_chart["models"].append(model_data)
+
+            # Retornar los datos como JSON
+            return Response(data=data_for_chart, status=200)
+            
+        except Exception as e:
+            return Response({"error": str(e)}, status=500)
+
 
 
 class ErrorReportAPIView(APIView):

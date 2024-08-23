@@ -4,7 +4,6 @@ import { useEffect, useRef, useState } from "react";
 import axios from "axios";
 import GraphMape from "./GraphMape";
 import { showErrorAlert } from "../../../components/other/Alerts";
-import GraphModels from "./GraphModels";
 
 const apiUrl = process.env.REACT_APP_API_URL;
 
@@ -22,7 +21,6 @@ const MetricsByDateContainer = () => {
   const [scenarioId, setScenarioId] = useState(0);
   const [data, setData] = useState([]);
   const [dataGraph, setDataGraph] = useState({"x": 0, "y": 0});
-  const[dataModelGraph, setDataModelGraph] = useState({"models": 0, "avg": 0});
   const [selectedDate, setSelectedDate] = useState(null);
   const [optionsFilter, setOptionsFilter] = useState([]);
   const [errorType, setErrorType] = useState("");
@@ -51,12 +49,10 @@ const MetricsByDateContainer = () => {
     .catch((err) => {setDates([])} );
 
     handleGraphicData(id);
-    handleGraphicDataModels(id);
 
     if (id == "-----" || id == 0) {
       setOptionsFilter([]); 
       setDataGraph({"x": 0, "y": 0}); 
-      setDataModelGraph({"models": 0, "avg": 0})
     };
   };
 
@@ -71,17 +67,6 @@ const MetricsByDateContainer = () => {
 
     axios.post(`${apiUrl}/forecast/graphic-mape`, data, {headers})
     .then(res => setDataGraph(res.data))
-    .catch(err => console.log(err)); 
-  };
-
-  // Function to get graphic data 
-  const handleGraphicDataModels = (scId) => { 
-    const data = {
-      "scenario_id": scId,
-    }
-
-    axios.post(`${apiUrl}/forecast/graphic-model`, data, {headers})
-    .then(res => setDataModelGraph(res.data))
     .catch(err => console.log(err)); 
   };
 
@@ -242,23 +227,11 @@ const MetricsByDateContainer = () => {
             ))}
           </select>
         </div>
-        {console.log(dataGraph)}
-
-        <div className="w-auto d-flex flex-column justify-content-center align-items-start gap-1">
-          <p className="text-primary w-auto m-0 p-0" onChange={handleOnChangeFilter}>SKU</p>
-          <select onClick={handleClickFilter} className="form-select w-100 mt-2" style={{"maxWidth": "250px", "minWidth":"200px"}} name="SKU" onChange={handleOnChangeFilter}>
-            <option value={0}>-----</option>
-            {optionsFilter.map(item => (
-              <option key={item} value={item} >{item}</option>
-            ))}
-          </select>
-        </div>
 
       </MDBRow>
 
       <MDBRow className="w-auto d-flex justify-content-between align-items-center" >
         <GraphMape errorName={errorType} scenario={scenarioId} graphicData={dataGraph}/>
-        <GraphModels scenario={scenarioId} graphicData={dataModelGraph}/>
       </MDBRow>
 
       <MDBRow className="mt-5">

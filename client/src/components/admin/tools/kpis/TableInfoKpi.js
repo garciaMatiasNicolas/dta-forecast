@@ -13,7 +13,7 @@ const TableComponent = ({ props, data, itemsPerPage = 7 }) => {
   const paginatedData = data.slice(currentPage * itemsPerPage, (currentPage + 1) * itemsPerPage);
 
   return (
-    <div style={{ "overflowX": 'auto', "whiteSpace": 'nowrap' }} className='d-flex justify-content-start align-items-start flex-column'>
+    <div style={{ overflowX: 'auto', whiteSpace: 'nowrap' }} className='d-flex justify-content-start align-items-start flex-column'>
       <MDBTable hover className='w-auto'>
         <MDBTableHead className='bg-primary'>
           <tr>
@@ -21,9 +21,11 @@ const TableComponent = ({ props, data, itemsPerPage = 7 }) => {
             <th scope='col' className='text-white'>YTD</th>
             <th scope='col' className='text-white'>QTD</th>
             <th scope='col' className='text-white'>MTD</th>
+            <th scope='col' className='text-white'>FYTD</th>
             <th scope='col' className='text-white'>YTG</th>
             <th scope='col' className='text-white'>QTG</th>
             <th scope='col' className='text-white'>MTG</th>
+            <th scope='col' className='text-white'>FYTG</th>
           </tr>
         </MDBTableHead>
         <MDBTableBody>
@@ -31,24 +33,37 @@ const TableComponent = ({ props, data, itemsPerPage = 7 }) => {
             <tr key={index}>
               <th className='w-auto border' scope='row'>{rowData[0] === 0 ? `Sin ${props}` : rowData[0]}</th>
               {rowData.slice(1).map((value, yearIndex) => (
-                <td className='w-auto border' key={yearIndex}>{value}%</td>
+                <td
+                  className='w-auto border'
+                  key={yearIndex}
+                  style={{
+                    backgroundColor:
+                      yearIndex < 4 ? 'rgba(255, 99, 132, 0.5)' : 'rgba(53, 162, 235, 0.5)',
+                  }}
+                >
+                  {value}%
+                </td>
               ))}
             </tr>
           ))}
           <tr className='bg-success w-auto'>
             <th scope='row' className='text-white'>{lastRow[0]}</th>
             {lastRow.slice(1).map((value, yearIndex) => (
-              <td className='text-white' key={yearIndex}>{value}%</td>
+              <td
+                className='text-white'
+                key={yearIndex}
+              >
+                {value}%
+              </td>
             ))}
           </tr>
         </MDBTableBody>
       </MDBTable>
 
-      {
-        data.length >= 6 && 
+      {data.length >= 6 && (
         <ReactPaginate
-          previousLabel={<MDBIcon fas icon="angle-double-left" />}
-          nextLabel={<MDBIcon fas icon="angle-double-right" />}
+          previousLabel={<MDBIcon fas icon='angle-double-left' />}
+          nextLabel={<MDBIcon fas icon='angle-double-right' />}
           breakLabel={'...'}
           pageCount={Math.ceil(data.length / itemsPerPage)}
           marginPagesDisplayed={2}
@@ -59,7 +74,7 @@ const TableComponent = ({ props, data, itemsPerPage = 7 }) => {
           pageClassName={'page-item'}
           activeClassName={'active text-decoration-underline'}
         />
-      }
+      )}
     </div>
   );
 };

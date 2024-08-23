@@ -19,6 +19,8 @@ class Error:
             mape = 0
         elif (actual == 0 or actual < 0) and predicted != 0:
             mape = 100
+        elif predicted < 0:
+            mape = 100
         else:
             mape = abs((actual - predicted) / actual) * 100
 
@@ -29,6 +31,8 @@ class Error:
         if actual == 0 and predicted == 0:
             rmse = 0
         elif (actual == 0 or actual < 0) and predicted != 0:
+            rmse = 100
+        elif predicted < 0:
             rmse = 100
         else:
             rmse = (actual - predicted) ** 2
@@ -41,6 +45,8 @@ class Error:
             mae = 0
         elif (actual == 0 or actual < 0) and predicted != 0:
             mae = 100
+        elif predicted < 0:
+            mae = 100
         else:
             mae = abs(actual - predicted)
 
@@ -51,6 +57,8 @@ class Error:
         if actual == 0 and predicted == 0:
             smape = 0
         elif (actual == 0 or actual < 0) and predicted != 0:
+            smape = 100
+        elif predicted < 0:
             smape = 100
         else:
             smape = abs((actual - predicted) / ((actual + predicted) / 2)) * 100

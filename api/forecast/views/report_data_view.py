@@ -8,6 +8,8 @@ from ..serializer import FilterData
 from ..models import ForecastScenario
 from django.db import connection
 from datetime import datetime
+from dateutil.relativedelta import relativedelta
+
 
 
 class ReportDataViews(APIView):
@@ -15,7 +17,7 @@ class ReportDataViews(APIView):
     @staticmethod
     def calc_perc(n1: float, n2: float) -> float:
         try:
-            result = round((n1 / n2 - 1) * 100)
+            result = round(((n1 - n2) / n1) * 100, 2)
             return result
         except ZeroDivisionError:
             return 0
@@ -53,9 +55,18 @@ class ReportDataViews(APIView):
 
         return filtered_dates, future_dates
 
-    def handle_reports(self, filter_name, predictions_table_name, last_date_index, list_date_columns, product=None):
+    def handle_reports(self, filter_name, predictions_table_name, last_date_index, list_date_columns, last_date, product=None):
         try:
             with (connection.cursor() as cursor):
+                
+                if len(list_date_columns) > 12: 
+                    actual_year_predicted = list(filter(lambda x: x.startswith(last_date.split('-')[0]), list_date_columns))
+                    actual_year_historical = actual_year_predicted[:actual_year_predicted.index(last_date) + 1]
+
+                    previous_year_dates = [(datetime.strptime(date, '%Y-%m-%d') - relativedelta(years=1)).strftime('%Y-%m-%d') for date in actual_year_historical]
+                    previous_year_dates = list(filter(lambda x: x in previous_year_dates, previous_year_dates))
+                    previous_year_predicted = [(datetime.strptime(date, '%Y-%m-%d') - relativedelta(years=1)).strftime('%Y-%m-%d') for date in actual_year_predicted]
+
                 last_year_since_last_date = list_date_columns[last_date_index - 12:last_date_index + 1][1:]
                 last_quarter_since_last_date = list_date_columns[last_date_index - 3:last_date_index + 1]
                 last_month = list_date_columns[last_date_index]
@@ -86,7 +97,11 @@ class ReportDataViews(APIView):
                     "dates_b",
                     "dates_c",
                     "dates_d",
-                    "dates_e"
+                    "dates_e",
+                    "actual_year" if len(list_date_columns) > 12 else None,
+                    "last_year" if len(list_date_columns) > 12 else None,
+                    "full_actual_year" if len(list_date_columns) > 12 else None,
+                    "full_past_year" if len(list_date_columns) > 12 else None,
                 ]
 
                 date_ranges = [
@@ -100,7 +115,11 @@ class ReportDataViews(APIView):
                     dates_b,
                     dates_c,
                     dates_d,
-                    dates_e
+                    dates_e,
+                    actual_year_historical if len(list_date_columns) > 12 else None,
+                    previous_year_dates if len(list_date_columns) > 12 else None,
+                    actual_year_predicted if len(list_date_columns) > 12 else None,
+                    previous_year_predicted if len(list_date_columns) > 12 else None,
                 ]
 
                 reports_data = {}
@@ -119,7 +138,9 @@ class ReportDataViews(APIView):
                         ROUND({reports_data["dates_b"]}),
                         ROUND(SUM(`{dates_c}`)),
                         ROUND({reports_data["dates_d"]}),
-                        ROUND(SUM(`{dates_e}`))
+                        ROUND(SUM(`{dates_e}`)),
+                        ROUND({reports_data["actual_year"]}),
+                        ROUND({reports_data["last_year"]})
                     FROM {predictions_table_name}
                     WHERE model = 'actual'
                     GROUP BY {filter_name} WITH ROLLUP;
@@ -132,7 +153,9 @@ class ReportDataViews(APIView):
                         ROUND({reports_data["dates_b"]}),
                         ROUND(SUM(`{dates_c}`)),
                         ROUND({reports_data["dates_d"]}),
-                        ROUND(SUM(`{dates_e}`))
+                        ROUND(SUM(`{dates_e}`)),
+                        ROUND({reports_data["actual_year"]}),
+                        ROUND({reports_data["last_year"]})
                     FROM {predictions_table_name}
                     WHERE model = 'actual'
                     ;
@@ -144,7 +167,9 @@ class ReportDataViews(APIView):
                         {filter_name},
                         ROUND({reports_data["next_year_since_last_date"]}),
                         ROUND({reports_data["next_quarter_since_last_date"]}),
-                        ROUND({reports_data["next_month_since_last_date"]})
+                        ROUND({reports_data["next_month_since_last_date"]}),
+                        ROUND({reports_data["full_actual_year"]}),
+                        ROUND({reports_data["full_past_year"]})
                     FROM {predictions_table_name}
                     WHERE model != 'actual'
                     GROUP BY {filter_name} WITH ROLLUP;
@@ -152,7 +177,9 @@ class ReportDataViews(APIView):
                     SELECT 'TOTAL',
                         ROUND({reports_data["next_year_since_last_date"]}),
                         ROUND({reports_data["next_quarter_since_last_date"]}),
-                        ROUND({reports_data["next_month_since_last_date"]})
+                        ROUND({reports_data["next_month_since_last_date"]}),
+                        ROUND({reports_data["full_actual_year"]}),
+                        ROUND({reports_data["full_past_year"]})
                     FROM {predictions_table_name}
                     WHERE model != 'actual';
                 '''
@@ -172,14 +199,17 @@ class ReportDataViews(APIView):
                         ytd = self.calc_perc(n1=actual[1], n2=actual[4])
                         qtd = self.calc_perc(n1=actual[2], n2=actual[5])
                         mtd = self.calc_perc(n1=actual[3], n2=actual[6])
+                        fytd = self.calc_perc(n1=actual[9], n2=actual[10])
                         ytg = self.calc_perc(n1=predicted[1], n2=actual[1])
                         qtg = self.calc_perc(n1=predicted[2], n2=actual[7])
                         mtg = self.calc_perc(n1=predicted[3], n2=actual[8])
+                        fytg = self.calc_perc(n1=predicted[4], n2=predicted[5])
                         
                         # Agregar los resultados a la lista final
-                        final_data.append([predicted[0], ytd, qtd, mtd, ytg, qtg, mtg])
+                        final_data.append([predicted[0], ytd, qtd, mtd, fytd, ytg, qtg, mtg, fytg])
 
                 # Retornar los datos finales
+
                 return final_data
             
         except Exception as err:
@@ -221,11 +251,12 @@ class ReportDataViews(APIView):
                 years = sorted(list(years_set))
 
                 new_last_date = last_date.strftime('%Y-%m-%d')
+                last_year = new_last_date.split('-')[0]
                 last_date_index = list_date_columns.index(new_last_date)
 
                 # Handle reports and get data
                 final_data = self.handle_reports(filter_name, predictions_table_name,
-                                                last_date_index, list_date_columns, product)
+                                                last_date_index, list_date_columns, new_last_date, product)
 
                 past_dates, future_dates = self.filter_dates_by_month(last_date=last_date,
                                                                     date_list=list_date_columns,

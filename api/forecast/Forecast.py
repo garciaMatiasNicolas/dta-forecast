@@ -128,7 +128,7 @@ class Forecast(object):
 
         for product_idx, result in results:
             actual_sales = actual[f"Producto {product_idx}"]
-            predicted_sales = result[:len(actual_sales)]
+            predicted_sales = [round(num, 2) for num in result[:len(actual_sales)]]
 
             error = Error(error_method=self.error_method, error_periods=self.error_periods, actual=actual_sales,
                           predicted=predicted_sales)

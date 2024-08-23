@@ -44,7 +44,7 @@ const GraphMape = ({ scenario, graphicData }) => {
     };
 
     return (
-        <div className='w-50 mt-5 d-flex justify-content-center align-items-center flex-column'>
+        <div className='w-auto mt-5 d-flex justify-content-center align-items-center flex-column'>
             <p className="text-primary w-auto m-0 p-0">Grafico Modelos</p>
             <div style={{ width: '400px', height: '400px' }}>
                 {scenario === 0 ? <EmptyLineChart /> : <Pie  options={options} data={dataPie} />}
