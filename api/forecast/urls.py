@@ -1,7 +1,7 @@
 from django.urls import path
 from .views.stock_data import StockDataView, StockByProduct
 from .views.forecast_views import RunModelsViews
-from .views.filter_data import FilterDataViews, GetFiltersView, FiltersByGroup, FiltersNested
+from .views.filter_data import FilterDataViews, GetFiltersView, FiltersByGroup, FiltersNested, GetPredictionsTableAPIView
 from .views.report_data_view import ReportDataViews, ModelsGraphicAPIView
 from .views.mape_report_view import ErrorReportAPIView, ErrorGraphicView, ForecastModelsSelctedGraphAPIView
 from .views.exploration_variables_view import (AllocationMatrixView, HistoricalDataView, FilterValuesView,
@@ -32,6 +32,7 @@ stock_by_product = StockByProduct.as_view()
 product_all = AllProductView.as_view()
 conversion = ConversionForecast.as_view()
 all_models_graph = ForecastModelsSelctedGraphAPIView.as_view()
+forecast_table = GetPredictionsTableAPIView.as_view()
 
 urlpatterns = [
     path('test-model', test_model, name='test_model'),
@@ -55,5 +56,6 @@ urlpatterns = [
     path('stock-product/', stock_by_product, name='stock_by_product'),
     path('product-all', product_all, name="product_all"),
     path('conversion-forecast/', conversion, name="conversion"),
-    path('all-models-graph', all_models_graph, name="all_models_graph")
+    path('all-models-graph', all_models_graph, name="all_models_graph"),
+    path('predictions-table/', forecast_table, name="forecast_table"),
 ]

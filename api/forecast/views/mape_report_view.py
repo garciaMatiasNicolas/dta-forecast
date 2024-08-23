@@ -15,7 +15,6 @@ from django.shortcuts import get_object_or_404
 import os
 import pandas as pd
 
-
 class ForecastModelsSelctedGraphAPIView(APIView):
     @authentication_classes([TokenAuthentication])
     @permission_classes([IsAuthenticated])
@@ -49,14 +48,34 @@ class ForecastModelsSelctedGraphAPIView(APIView):
             ]
 
             product_data = product_data.drop(columns=["Family", "Region", "Client", "Subcategory", "Category", "SKU", "Description", "Salesman"])
+            winner_model = product_data[['model', scenario.error_type]].copy()
             model_columns = ['model'] + [col for col in product_data.columns if col.startswith('202')]
             product_data_filtered = product_data[model_columns]
+            
 
             # Convertir los datos a un formato adecuado para JSON
             data_for_chart = {
                 "dates": product_data_filtered.columns[1:].tolist(),  # Las fechas
-                "models": []
+                "models": [], 
+                "error": [],
+                "error_type": scenario.error_type
             }
+
+            errors = []
+
+            # Iterar sobre las filas del DataFrame winner_model
+            for index, row in winner_model.iterrows():
+                model_name = row['model']
+                error_value = row[scenario.error_type]
+                
+                # Crear un diccionario donde la clave es el nombre del modelo y el valor es el error
+                model_error = {"name": model_name, "value": error_value}
+                
+                # Agregar el diccionario a la lista de errores
+                errors.append(model_error)
+
+            # Agregar la lista de errores a la estructura de datos para el gráfico
+            data_for_chart['error'] = errors
 
             # Iterar sobre cada modelo para agregar sus datos
             for _, row in product_data_filtered.iterrows():
@@ -64,6 +83,7 @@ class ForecastModelsSelctedGraphAPIView(APIView):
                     "name": row['model'],
                     "values": row[1:].tolist()  # Los valores de ventas para ese modelo
                 }
+
                 data_for_chart["models"].append(model_data)
 
             # Retornar los datos como JSON

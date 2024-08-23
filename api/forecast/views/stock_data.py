@@ -266,6 +266,7 @@ class StockDataView(APIView):
 
             for item in data:
                 avg_sales_historical = float(item["avg_sales_per_day_historical"])
+                cost_price = float(item["Cost Price"])
                 price = float(item['Price'])
                 avg_sales_forecast = float(item["avg_sales_per_day_forecast"]) 
                 purchase_order = float(item['Purchase Order'])
@@ -365,7 +366,6 @@ class StockDataView(APIView):
                     # Cuanto Purchase Unit
                     how_much_purchase_unit = 0
                 
-                cost_price = float(item["Cost Price"])
                 valued_cost = round(cost_price*how_much_vs_lot_sizing,2)
 
                 optimal_batch_calc = self.calculate_optimal_batch(c=avg_sales, d=d, k=k)
@@ -442,18 +442,7 @@ class StockDataView(APIView):
                     'Compra 60 días' : 0 if make_to_order == "MTO" or is_obs == "OB" else locale.format_string("%d",sixty_days, grouping=True),
                     'Compra 90 días': 0 if make_to_order == "MTO" or is_obs == "OB" else locale.format_string("%d",ninety_days, grouping=True),
                     'Estado': str(stock_status),
-                    'Compra Valorizada': locale.format_string("%d", valued_cost, grouping=True) if buy == 'Si' and is_obs != 'OB' else "0",
-                    'Venta valorizada': locale.format_string("%d", int(round(price * avg_sales)), grouping=True),
-                    'Valorizado': locale.format_string("%d", int(round(cost_price * stock)), grouping=True),
-                    'Demora en dias': str(lead_time),
-                    'Demora en dias (DRP)': drp_lead_time,
-                    'Stock de seguridad (DRP)': drp_safety_stock,
-                    'Lote de compra (DRP)': drp_lot_sizing,
-                    'Fecha próx. compra': str(next_buy) if days_of_coverage != 9999 else "---",
-                    'Caracterización': characterization if merge == 'both' else ('No encontrado en Stock Data' if merge == 'left_only' else 'No encontrado en Historical Data'),
-                    'Sobrante (unidades)': locale.format_string("%d", overflow_units, grouping=True),
                     'Cobertura prox. compra (días)': str(days_of_coverage - next_buy_days),
-                    'Sobrante valorizado': locale.format_string("%d", int(round(overflow_price)), grouping=True),
                     'Lote optimo de compra': optimal_batch,
                     'Stock seguridad en dias': str(safety_stock),
                     'Unidad de compra': purchase_unit,
@@ -463,7 +452,18 @@ class StockDataView(APIView):
                     'MTO': make_to_order if make_to_order == 'MTO' else '',
                     'OB': is_obs if is_obs == 'OB' else '',
                     'XYZ': item['XYZ'],
-                    'ABC Cliente': item['ABC']
+                    'ABC Cliente': item['ABC'],
+                    'Sobrante valorizado': locale.format_string("%d", int(round(overflow_price)), grouping=True),
+                    'Demora en dias (DRP)': drp_lead_time,
+                    'Stock de seguridad (DRP)': drp_safety_stock,
+                    'Lote de compra (DRP)': drp_lot_sizing,
+                    'Compra Valorizada': locale.format_string("%d", valued_cost, grouping=True) if buy == 'Si' and is_obs != 'OB' else "0",
+                    'Venta valorizada': locale.format_string("%d", int(round(price * avg_sales)), grouping=True),
+                    'Valorizado': locale.format_string("%d", int(round(cost_price * stock)), grouping=True),
+                    'Demora en dias': str(lead_time),
+                    'Fecha próx. compra': str(next_buy) if days_of_coverage != 9999 else "---",
+                    'Caracterización': characterization if merge == 'both' else ('No encontrado en Stock Data' if merge == 'left_only' else 'No encontrado en Historical Data'),
+                    'Sobrante (unidades)': locale.format_string("%d", overflow_units, grouping=True),
                 }
 
                 results.append(stock)

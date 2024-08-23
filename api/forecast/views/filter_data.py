@@ -247,3 +247,32 @@ class FiltersNested(APIView):
         except ValueError as err:
             if str(err) == 'Historical_data_not_found':
                 return Response(data={'error': 'hsd_not_found'}, status=status.HTTP_400_BAD_REQUEST)
+            
+
+class GetPredictionsTableAPIView(APIView):
+    @authentication_classes([TokenAuthentication])
+    @permission_classes([IsAuthenticated])
+    def get(self, request):
+        try:
+            sc_id = request.GET.get('sc_id')
+            
+            scenario_data = ForecastScenario.objects.get(pk=sc_id)
+            table = scenario_data.predictions_table_name
+
+            with connection.cursor() as cursor:
+                query = f'SELECT Family, Region, Salesman, Client, Category, Subcategory, SKU, Description FROM {table} WHERE model = "actual"'
+                data = cursor.execute(sql=query)
+                data = cursor.fetchall()
+
+                columns = [col[0] for col in cursor.description]
+                
+                final_data = []
+                for row in data:
+                    final_data.append(dict(zip(columns, row)))
+
+                return Response(data=final_data, status=200) 
+        
+        except Exception as err:
+            print("ERROR EN DATOS TABLA FORECAST: ", err)
+            return Response(data={"error": "server_error"}, status=500)
+
