@@ -40,6 +40,7 @@ const GraphicBySku = () => {
     const [productChanged, setProductChanged] = useState(false);
     const [errorType, setErrorType] = useState(null);
     const [errors, setErrors] = useState([]);
+    const [searchTerm, setSearchTerm] = useState(""); 
 
     useEffect(() => {
         axios.get(`${apiUrl}/scenarios/`, {
@@ -53,7 +54,6 @@ const GraphicBySku = () => {
         .catch(err => {console.log(err);})
     }, []);
 
-    // Function to get graphic data 
     const handleGraphicDataModels = (scId) => { 
         const data = {
             "scenario_id": scId,
@@ -70,7 +70,7 @@ const GraphicBySku = () => {
 
     const toggleOpen = () => {
         setBasicModal(!basicModal);
-        getProducts();
+        getProducts(scenarioId); // Asegúrate de pasar el `scenarioId` aquí
     }
 
     const getProducts = (id) => {
@@ -85,7 +85,6 @@ const GraphicBySku = () => {
         });
     };
 
-    // Función para manejar la selección de un producto
     const handleProductSelect = async (product) => {
         const selectedProductData = columns.reduce((acc, column) => {
             acc[column] = product[column];
@@ -103,14 +102,13 @@ const GraphicBySku = () => {
             
             const data = response.data;
     
-            // Asegúrate de que la estructura de los datos sea válida
             if (data && data.models && data.dates && data.error && data.error_type) {
                 const labels = data.dates;
                 const datasets = data.models.map((model, index) => ({
                     label: model.name,
                     data: model.values,
-                    borderColor: `rgba(${index * 90}, 99, 132, 0.5)`, // Personalizar color
-                    backgroundColor: `rgba(${index * 60}, 99, 132, 0.5)`, // Personalizar color
+                    borderColor: `rgba(${index * 90}, 99, 132, 0.5)`,
+                    backgroundColor: `rgba(${index * 60}, 99, 132, 0.5)`,
                     fill: false,
                 }));
     
@@ -138,10 +136,21 @@ const GraphicBySku = () => {
         getProducts(id);
     };
 
+    const handleSearchChange = (e) => {
+        setSearchTerm(e.target.value);
+        setCurrentPage(0); // Reiniciar a la primera página cuando se busca
+    };
+
+    // Filtrar productos según el término de búsqueda
+    const filteredProducts = products.filter(product =>
+        product.SKU.toLowerCase().includes(searchTerm.toLowerCase())
+    );
+
     const startIndex = currentPage * itemsPerPage;
     const endIndex = startIndex + itemsPerPage;
-    const currentItems = products.slice(startIndex, endIndex);
+    const currentItems = filteredProducts.slice(startIndex, endIndex);
     const columns = ["Family", 'Category', 'Salesman', 'Subcategory', 'Client', 'Region', 'SKU', 'Description'];
+
 
     return(
         <div className="w-100 px-3 gap-5 d-flex justify-content-start flex-column align-items-start">
@@ -202,7 +211,12 @@ const GraphicBySku = () => {
                         </MDBModalHeader>
                         <MDBModalBody>
                             <div className="w-25 mb-5 mt-2">
-                                <MDBInput label="Buscar SKU..." id="sku" />
+                                <MDBInput 
+                                    label="Buscar SKU..." 
+                                    id="sku" 
+                                    value={searchTerm} 
+                                    onChange={handleSearchChange} // Vincular el campo de entrada al estado de búsqueda
+                                />
                             </div>
 
                             <MDBTable hover className='w-auto'>

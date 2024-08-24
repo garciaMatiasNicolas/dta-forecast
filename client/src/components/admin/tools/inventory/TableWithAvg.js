@@ -39,6 +39,14 @@ const Table = ({ data, setData, scenario }) => {
       return 'bg-success text-white';
     };
 
+    if (key === '¿Repongo?' && value === 'Si') {
+      return 'bg-success text-white';
+    };
+
+    if (key === '¿Repongo?' && value !== 'Si') {
+      return 'bg-danger text-white';
+    };
+
     if (key === '¿Compro?' && value !== 'Si') {
       return 'bg-danger text-white';
     };

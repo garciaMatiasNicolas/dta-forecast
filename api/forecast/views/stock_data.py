@@ -427,7 +427,7 @@ class StockDataView(APIView):
                     'Descripción': str(item['Description']),
                     'Stock': locale.format_string("%d", int(round(stock)), grouping=True),
                     'Stock disponible': locale.format_string("%d", int(round(available_stock)), grouping=True),
-                    'EOQ (Calculado)': locale.format_string("%d",optimal_batch_calc, grouping=True),
+                    'Lote mínimo de compra': optimal_batch,
                     'Ordenes de venta pendientes': sales_order,
                     'Ordenes de compra': purchase_order,
                     'Venta diaria histórico': avg_sales_historical,
@@ -443,10 +443,10 @@ class StockDataView(APIView):
                     'Compra 90 días': 0 if make_to_order == "MTO" or is_obs == "OB" else locale.format_string("%d",ninety_days, grouping=True),
                     'Estado': str(stock_status),
                     'Cobertura prox. compra (días)': str(days_of_coverage - next_buy_days),
-                    'Lote optimo de compra': optimal_batch,
                     'Stock seguridad en dias': str(safety_stock),
                     'Unidad de compra': purchase_unit,
                     'Lote de compra': lot_sizing,
+                    'EOQ (Calculado)': locale.format_string("%d",optimal_batch_calc, grouping=True),
                     'Precio unitario': locale.format_string("%d",round(price),grouping=True),
                     "Costo del producto": locale.format_string("%d",round(cost_price),grouping=True),
                     'MTO': make_to_order if make_to_order == 'MTO' else '',
@@ -579,6 +579,11 @@ class StockDataView(APIView):
     @staticmethod
     def calculate_drp(products: list, is_forecast: bool):
         try:
+            def round_up(n, dec):
+                factor = n / dec
+                factor = round(factor)
+                return factor * dec
+            
             available_stock = 0
             avg_sales_per_day = 0
 
@@ -618,7 +623,7 @@ class StockDataView(APIView):
                 product["Cobertura Total"] = int(round(available_stock / avg_sales_per_day))
                 product["Punto de reorden (DRP)"] = reorder_point_drp
                 product["¿Repongo?"] = replenish
-                product["¿Cuanto repongo?"] = how_much_drp 
+                product["¿Cuanto repongo?"] = 0 if replenish == "No" else round_up(how_much_drp, product["Lote de compra (DRP)"]) 
             
             return transformed_products
     

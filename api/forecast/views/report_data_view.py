@@ -27,7 +27,7 @@ class ReportDataViews(APIView):
         if for_report:
             dates_joined = " + ".join([f"SUM(`{date}`)" for date in list_dates])
         else:
-            dates_joined = ",\n".join([f"ROUND(SUM(`{date}`), 2) as `{date.split('-')[0]}`" for date in list_dates])
+            dates_joined = ",\n".join([f"ROUND(SUM(`{date}`)) as `{date.split('-')[0]}`" for date in list_dates])
 
         return dates_joined
 
