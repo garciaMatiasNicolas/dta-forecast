@@ -53,7 +53,7 @@ const TableExogenousVariables = () => {
                 'Content-Type': 'application/json',
             }})
             .then(res => {setExogData(true); setRows(res.data.rows); setDates(res.data.date_columns)})
-            .catch(err => err.response.data.error === "not_data" && setExogData(false))
+            .catch(err => {console.log(err); err.response.data.error === "not_data" && setExogData(false)})
 
             setColumns(["Variable Exógena", e.target.options[e.target.selectedIndex].textContent])
         }

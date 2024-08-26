@@ -72,6 +72,10 @@ def save_dataframe(route_file: str, file_name: str, model_type: str, wasSaved: b
             date_columns = dataframe.iloc[:, 9:].columns
             not_date_columns = dataframe.iloc[:, :9].columns
 
+            for col in not_date_columns:
+                dataframe[col] = dataframe[col].fillna('null')
+                dataframe[col] = dataframe[col].astype('str')
+
             endog_table = FileRefModel.objects.filter(project_id=project_pk, model_type_id=1).first()
 
             if endog_table is not None and model_type == 'historical_exogenous_variables':
@@ -123,19 +127,11 @@ def save_dataframe(route_file: str, file_name: str, model_type: str, wasSaved: b
             raise ValueError("model_not_allowed")
 
         else:
-            if model_type == "historical_exogenous_variables" or model_type == "projected_exogenous_variables":
-                try:
-                    dataframe.to_sql(table_name, con=engine, if_exists='append', index=False)
-                    print("TABLA GUARDADA")
-                except Exception as Err:
-                    print(Err)
-                
-            else:
-                try:
-                    dataframe.to_sql(table_name, con=engine, if_exists='replace', index=False)
-                    print("TABLA GUARDADA")
-                except Exception as Err:
-                    print(Err)
+            try:
+                dataframe.to_sql(table_name, con=engine, if_exists='replace', index=False)
+                print("TABLA GUARDADA")
+            except Exception as Err:
+                print(Err)
 
             return "succeed"
 

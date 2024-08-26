@@ -9,6 +9,7 @@ from files.file_model import FileRefModel
 from django.db import connection
 import pandas as pd
 import locale
+import numpy as np
 locale.setlocale(locale.LC_ALL, 'es_ES.utf8')
 
 class FilterValuesView(APIView):
@@ -96,9 +97,6 @@ class HistoricalDataView(APIView):
                 
         except Exception as err:
             print(err)
-
-    
-
 
 class AllocationMatrixView(APIView):
     @staticmethod
@@ -189,40 +187,46 @@ class ExogenousVariablesTable(APIView):
     @authentication_classes([TokenAuthentication])
     @permission_classes([IsAuthenticated])
     def post(self, request):
-        project_id = request.data.get("project_id")
-        group = request.data.get('group')
-        hev = FileRefModel.objects.filter(project_id=project_id, model_type_id=2).first()
+        try:
+            project_id = request.data.get("project_id")
+            group = request.data.get('group')
+            hev = FileRefModel.objects.filter(project_id=project_id, model_type_id=2).first()
 
-        if hev is None:
-            return Response(data={'error': 'not_data'}, status=status.HTTP_400_BAD_REQUEST)
+            if hev is None:
+                return Response(data={'error': 'not_data'}, status=status.HTTP_400_BAD_REQUEST)
 
-        hev_table = pd.read_sql_table(table_name=hev.file_name, con=engine)
-        date_columns = hev_table.columns[8:].to_list()
-        rows = []
+            hev_table = pd.read_sql_table(table_name=hev.file_name, con=engine)
+            date_columns = hev_table.columns[9:].to_list()
+            rows = []
 
-        if group is None:
-            for col, row in hev_table.iterrows():
-                rows.append(row.to_list())
+            if group is None:
+                for col, row in hev_table.iterrows():
+                    rows.append(row.to_list())
 
-        else:
-            with connection.cursor() as cursor:
-                date_columns_str = ', '.join([f'"{date}"' for date in date_columns])
+            else:
+                with connection.cursor() as cursor:
+                    date_columns_str = ', '.join([f'`{date}`' for date in date_columns])
 
-                cursor.execute(f'''SELECT  VARIABLE, {group},
-                                           {date_columns_str}  
-                                    FROM {hev.file_name} WHERE {group} != "nan" ''')
+                    cursor.execute(f'''SELECT  VARIABLE, {group},
+                                            {date_columns_str}  
+                                        FROM {hev.file_name} WHERE {group} != "nan" ''')
 
-                filtered_table = cursor.fetchall()
+                    filtered_table = cursor.fetchall()
 
-                for row in filtered_table:
-                    rows.append(row)
+                    for row in filtered_table:
+                        row = ["null" if value is None or (isinstance(value, float) and np.isnan(value)) else value for value in row]
+                        rows.append(row)
 
-        data = {
-            'date_columns': date_columns,
-            'rows': rows
-        }
+            data = {
+                'date_columns': date_columns,
+                'rows': rows
+            }
 
-        return Response(data=data, status=status.HTTP_200_OK)
+            print("DATOS TABLA: ", data)
+            return Response(data=data, status=status.HTTP_200_OK)
+    
+        except Exception as err:
+            print(err)
 
 
 class ExogenousVariablesGraph(APIView):
@@ -236,12 +240,11 @@ class ExogenousVariablesGraph(APIView):
             return Response(data={'error': 'not_data'}, status=status.HTTP_400_BAD_REQUEST)
 
         hev_table = pd.read_sql_table(table_name=hev.file_name, con=engine)
-        date_columns = hev_table.columns[8:].to_list()
+        date_columns = hev_table.columns[9:].to_list()
         data_for_each_date = []
 
         with connection.cursor() as cursor:
-            date_columns_str = ', '.join([f'"{date}"' for date in date_columns])
-
+            date_columns_str = ', '.join([f'`{date}`' for date in date_columns])
             cursor.execute(f'''SELECT Variable {date_columns_str} FROM {hev.file_name} ''')
             table = cursor.fetchall()
 

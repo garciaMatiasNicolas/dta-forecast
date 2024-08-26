@@ -17,7 +17,7 @@ class ReportDataViews(APIView):
     @staticmethod
     def calc_perc(n1: float, n2: float) -> float:
         try:
-            result = round(((n1 - n2) / n1) * 100, 2)
+            result = round((n1 / n2 - 1) * 100)
             return result
         except ZeroDivisionError:
             return 0

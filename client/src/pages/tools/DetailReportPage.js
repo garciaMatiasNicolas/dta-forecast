@@ -127,7 +127,7 @@ const DetailReportPage = () => {
 
     const handleExport = () => {
         const dataToSend = {
-            "columns": [group, "YTD", "MTD", "QTD","YTG", "MTG", "QTG"],
+            "columns": [group, "YTD", "MTD", "QTD", "FYTD", "YTG", "MTG", "QTG", "FYTG"],
             "rows": reportTableData,
             "file_name": `ReportForecast`,
             "project_pk": parseInt(localStorage.getItem("projectId"))
