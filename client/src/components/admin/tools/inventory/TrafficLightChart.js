@@ -1,62 +1,63 @@
 import React from 'react';
-import { Bar } from 'react-chartjs-2';
+import { Pie } from 'react-chartjs-2';
 
-const TrafficLightChart = ({ data, isOnlyTL }) => {
-
+const TrafficLightChart = ({ data, isOnlyTL, type }) => {
   let dataFiltered = data;
 
   if (!isOnlyTL) {
     dataFiltered = data.slice(0, -1);  
-  };
-
+  }
+  
   const labels = dataFiltered.map(item => item['Caracterización']);
-  const counts = dataFiltered.map(item => item['Cantidad de productos']);
-  const sumSales = dataFiltered.map(item => item['Suma venta diaria']);
-  const sumStock = dataFiltered.map(item => item['Suma de stock']);
-
-  // Creamos el objeto de datos para el gráfico
+  const counts = dataFiltered.map(item => {
+    const value = parseInt(item[type].replace(/\./g, ''));
+    return isNaN(value) ? 0 : value;
+  });
+  
+  // Creamos el objeto de datos para el gráfico de torta
   const chartData = {
     labels: labels,
     datasets: [
       {
-        label: 'Cantidad de productos',
-        backgroundColor: 'rgba(255, 99, 132, 0.5)',
-        borderColor: 'rgba(255, 99, 132, 1)',
+        label: type,
+        backgroundColor: [
+          'rgba(255, 99, 132, 0.7)',  // Rojo
+          'rgba(75, 192, 192, 0.7)',  // Verde azulado
+          'rgba(255, 205, 86, 0.7)',  // Amarillo
+          'rgba(54, 162, 235, 0.7)',  // Azul
+          'rgba(153, 102, 255, 0.7)', // Morado
+          'rgba(255, 159, 64, 0.7)',  // Naranja
+          'rgba(101, 143, 255, 0.7)', // Azul cielo
+          'rgba(233, 87, 63, 0.7)',   // Naranja rojizo
+          'rgba(90, 209, 77, 0.7)'    // Verde
+        ],
+        borderColor: [
+          'rgba(255, 99, 132, 1)',   // Rojo
+          'rgba(75, 192, 192, 1)',   // Verde azulado
+          'rgba(255, 205, 86, 1)',   // Amarillo
+          'rgba(54, 162, 235, 1)',   // Azul
+          'rgba(153, 102, 255, 1)',  // Morado
+          'rgba(255, 159, 64, 1)',   // Naranja
+          'rgba(101, 143, 255, 1)',  // Azul cielo
+          'rgba(233, 87, 63, 1)',    // Naranja rojizo
+          'rgba(90, 209, 77, 1)'     // Verde
+        ],
         borderWidth: 1,
         data: counts
-      },
-      {
-        label: 'Suma venta diaria',
-        backgroundColor: 'rgba(54, 162, 235, 0.5)',
-        borderColor: 'rgba(54, 162, 235, 1)',
-        borderWidth: 1,
-        data: sumSales
-      },
-      {
-        label: 'Suma de stock',
-        backgroundColor: 'rgba(255, 206, 86, 0.5)',
-        borderColor: 'rgba(255, 206, 86, 1)',
-        borderWidth: 1,
-        data: sumStock
       }
     ]
   };
-
-  // Configuración del gráfico
+  
+  // Configuración del gráfico de torta
   const options = {
-    scales: {
-      yAxes: [{
-        ticks: {
-          beginAtZero: true
-        }
-      }]
-    }
+    responsive: true,
+    maintainAspectRatio: false
   };
 
   return (
-    <div className='mt-5'>
-      <Bar data={chartData} options={options} />
-    </div>
+
+    <Pie data={chartData} options={options} />
+
   );
 };
 

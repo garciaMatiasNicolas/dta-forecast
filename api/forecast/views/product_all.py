@@ -10,6 +10,9 @@ from django.db import connection
 import pandas as pd
 from files.file_model import FileRefModel
 from .report_data_view import ReportDataViews
+import traceback
+from datetime import datetime
+from dateutil.relativedelta import relativedelta
 
 class AllProductView(APIView):
     
@@ -38,9 +41,17 @@ class AllProductView(APIView):
         return data
     
     @staticmethod
-    def calculate_kpis(predictions_table_name, last_date_index, list_date_columns, product):
+    def calculate_kpis(predictions_table_name, last_date_index, list_date_columns, product, last_date):
         try:
             with (connection.cursor() as cursor):
+                if len(list_date_columns) > 12: 
+                    actual_year_predicted = list(filter(lambda x: x.startswith(last_date.split('-')[0]), list_date_columns))
+                    actual_year_historical = actual_year_predicted[:actual_year_predicted.index(last_date) + 1]
+
+                    previous_year_dates = [(datetime.strptime(date, '%Y-%m-%d') - relativedelta(years=1)).strftime('%Y-%m-%d') for date in actual_year_historical]
+                    previous_year_dates = list(filter(lambda x: x in previous_year_dates, previous_year_dates))
+                    previous_year_predicted = [(datetime.strptime(date, '%Y-%m-%d') - relativedelta(years=1)).strftime('%Y-%m-%d') for date in actual_year_predicted]
+
                 last_year_since_last_date = list_date_columns[last_date_index - 12:last_date_index + 1][1:]
                 last_quarter_since_last_date = list_date_columns[last_date_index - 3:last_date_index + 1]
                 last_month = list_date_columns[last_date_index]
@@ -71,7 +82,11 @@ class AllProductView(APIView):
                     "dates_b",
                     "dates_c",
                     "dates_d",
-                    "dates_e"
+                    "dates_e",
+                    "actual_year" if len(list_date_columns) > 12 else None,
+                    "last_year" if len(list_date_columns) > 12 else None,
+                    "full_actual_year" if len(list_date_columns) > 12 else None,
+                    "full_past_year" if len(list_date_columns) > 12 else None,
                 ]
 
                 date_ranges = [
@@ -85,9 +100,13 @@ class AllProductView(APIView):
                     dates_b,
                     dates_c,
                     dates_d,
-                    dates_e
+                    dates_e,
+                    actual_year_historical if len(list_date_columns) > 12 else None,
+                    previous_year_dates if len(list_date_columns) > 12 else None,
+                    actual_year_predicted if len(list_date_columns) > 12 else None,
+                    previous_year_predicted if len(list_date_columns) > 12 else None,
                 ]
-
+                
                 reports_data = {}
 
                 for date_range, date_name in zip(date_ranges, reports_name):
@@ -105,7 +124,9 @@ class AllProductView(APIView):
                         ROUND({reports_data["dates_b"]}),
                         ROUND(SUM(`{dates_c}`)),
                         ROUND({reports_data["dates_d"]}),
-                        ROUND(SUM(`{dates_e}`))
+                        ROUND(SUM(`{dates_e}`)),
+                        ROUND({reports_data["actual_year"]}),
+                        ROUND({reports_data["last_year"]})
                     FROM {predictions_table_name}
                     WHERE model = 'actual' AND SKU = "{product}"
                     GROUP BY SKU, DESCRIPTION;
@@ -116,7 +137,9 @@ class AllProductView(APIView):
                         SKU || " " || DESCRIPTION,
                         ROUND({reports_data["next_year_since_last_date"]}),
                         ROUND({reports_data["next_quarter_since_last_date"]}),
-                        ROUND({reports_data["next_month_since_last_date"]})
+                        ROUND({reports_data["next_month_since_last_date"]}),
+                        ROUND({reports_data["full_actual_year"]}),
+                        ROUND({reports_data["full_past_year"]})
                     FROM {predictions_table_name}
                     WHERE model != 'actual' AND SKU = "{product}"
                     GROUP BY SKU, DESCRIPTION;
@@ -137,17 +160,20 @@ class AllProductView(APIView):
                         ytd = ReportDataViews.calc_perc(n1=actual[1], n2=actual[4])
                         qtd = ReportDataViews.calc_perc(n1=actual[2], n2=actual[5])
                         mtd = ReportDataViews.calc_perc(n1=actual[3], n2=actual[6])
+                        fytd = ReportDataViews.calc_perc(n1=actual[9], n2=actual[10])
                         ytg = ReportDataViews.calc_perc(n1=predicted[1], n2=actual[1])
                         qtg = ReportDataViews.calc_perc(n1=predicted[2], n2=actual[7])
                         mtg = ReportDataViews.calc_perc(n1=predicted[3], n2=actual[8])
+                        fytg = ReportDataViews.calc_perc(n1=predicted[4], n2=predicted[5])
                         
                         # Agregar los resultados a la lista final
-                        final_data.append([ytd, qtd, mtd, ytg, qtg, mtg])
+                        final_data.append([ytd, qtd, mtd, fytd, ytg, qtg, mtg, fytg])
 
                 # Retornar los datos finales
                 return final_data
             
         except Exception as err:
+            traceback.print_exc()
             print(err)
 
 
@@ -180,14 +206,14 @@ class AllProductView(APIView):
             date_columns = [col for col in data.columns if '-' in col and len(col.split('-')) == 3]
             index = date_columns.index(str(max_date))
             values = data[date_columns].values.tolist()
-            kpis = self.calculate_kpis(predictions_table_name=scenario_obj.predictions_table_name, last_date_index=index, list_date_columns=date_columns, product=product["SKU"])
+            kpis = self.calculate_kpis(predictions_table_name=scenario_obj.predictions_table_name, last_date_index=index, list_date_columns=date_columns, product=product["SKU"], last_date=max_date.strftime('%Y-%m-%d'))
             
             final_data = {
                 "product": f"{product['SKU']}",
                 "graphic_forecast": {"dates": date_columns, "values": values[1]},
                 "graphic_historical": {"dates": date_columns, "values": values[0]},
                 "error": str(max(error_val)),
-                "kpis": {"columns": ["YTD", "QTD", "MTD", "YTG", "QTG", "MTG"], "values": kpis[0]},
+                "kpis": {"columns": ["YTD", "QTD", "MTD", "FYTD", "YTG", "QTG", "MTG", "FYTG"], "values": kpis[0]},
             }
 
             return Response(final_data, status=status.HTTP_200_OK)

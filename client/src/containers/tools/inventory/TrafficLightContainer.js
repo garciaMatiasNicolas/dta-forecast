@@ -93,10 +93,18 @@ const TrafficLightContainer = ({data, params}) => {
             </div>
 
 
-            <Table data={ !isOnlyTL ? initialData : dataFiltered.traffic_light} /> 
-            {/* <div style={{ width: '800px', height: '400px' }} className="mb-5">
-                <TrafficLightChart data={dataSeted} isOnlyTL={isOnlyTL}/>
-            </div> */}
+            <Table data={ !isOnlyTL ? initialData : dataFiltered.traffic_light} />
+
+            <div className="w-100 d-flex justify-content-bewteen align-items-center">    
+                <div style={{ width: '800px', height: '400px' }} className="mb-5 mt-5">
+                    <h5 className="text-primary">Cantidad de productos</h5>
+                    <TrafficLightChart data={initialData} isOnlyTL={isOnlyTL} type="Cantidad de productos"/>
+                </div> 
+                <div style={{ width: '800px', height: '400px' }} className="mb-5 mt-5">
+                    <h5 className="text-primary">Stock valorizado</h5>
+                    <TrafficLightChart data={initialData} isOnlyTL={isOnlyTL} type="Stock valorizado"/>
+                </div> 
+            </div> 
         </>
     )
 };

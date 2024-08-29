@@ -9,6 +9,7 @@ from ..models import ForecastScenario
 from django.db import connection
 from datetime import datetime
 from dateutil.relativedelta import relativedelta
+import traceback
 
 
 
@@ -213,6 +214,7 @@ class ReportDataViews(APIView):
                 return final_data
             
         except Exception as err:
+            traceback.print_exc()
             print(err)
 
     @authentication_classes([TokenAuthentication])
