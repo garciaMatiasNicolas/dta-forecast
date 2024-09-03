@@ -101,8 +101,11 @@ class HistoricalDataView(APIView):
 class AllocationMatrixView(APIView):
     @staticmethod
     def calculate_allocation_matrix(var_name, row_exog_data, row_historical_data):
-        correlation = row_exog_data.corr(row_historical_data)
-        return {var_name: str(round(correlation.mean(), 3))}
+        row_exog_data = np.array(row_exog_data)
+        row_historical_data = np.array(row_historical_data)
+        correlation = np.corrcoef(row_exog_data, row_historical_data)[0, 1]
+        return {var_name: str(round(correlation, 3))}
+
 
     @authentication_classes([TokenAuthentication])
     @permission_classes([IsAuthenticated])
@@ -147,8 +150,8 @@ class AllocationMatrixView(APIView):
                     ):
                         corr_dict = self.calculate_allocation_matrix(
                             var_name=row_exog['Variable'],
-                            row_exog_data=row_exog[8:],
-                            row_historical_data=row_historical[12:]
+                            row_exog_data=row_exog[9:].to_list(),
+                            row_historical_data=row_historical[12:].to_list()
                         )
                         correlations.append(corr_dict)
 

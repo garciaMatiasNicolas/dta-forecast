@@ -11,12 +11,13 @@ warnings.filterwarnings("ignore")
 class Forecast(object):
 
     def __init__(self, df: pd.DataFrame, prediction_periods: int, test_periods: int, error_periods: int, error_method: str, seasonal_periods: int, 
-                models: list = None, additional_params=None, explosive_variable=None, detect_outliers=True):
+                models: list = None, additional_params=None, explosive_variable=None, detect_outliers=True, df_exog: pd.DataFrame = None):
 
         self.initial_data = df
         self.initial_dates = []
         self.result_data = pd.DataFrame()
         self.prediction_periods = prediction_periods
+        self.df_exog = df_exog
         
         if test_periods == 1:
             self.test_periods = 2
@@ -54,8 +55,13 @@ class Forecast(object):
         self.date_columns = self.date_columns + future_dates
         self.future_dates = future_dates
 
-        return formatted_data
+        if self.df_exog is not None:
+            formatted_data_exog = self.df_exog.copy() 
+            return self.initial_data.copy(), formatted_data_exog
 
+        else:
+            return self.initial_data.copy(), None
+        
     def format_result_data(self, forecast_df: pd.DataFrame, actual_df: pd.DataFrame):
         actual_dataframe = actual_df.drop(columns=["Starting Year", "Starting Period", "Periods Per Year",
                                                    "Periods Per Cycle"])
@@ -73,19 +79,37 @@ class Forecast(object):
 
         return predicted_dataframe
 
-    def parallel_process(self, data, model_name: str, actual: dict):
+    def parallel_process(self, data, model_name: str, actual: dict, exog_data=None):
         num_cores = int(multiprocessing.cpu_count() * 0.8)
-        data_list = [row.tolist() for idx, row in data.iterrows()]
+        data_list = [row.tolist() for idx, row in data.iloc[:, 12:].iterrows()]
 
         if model_name in ["holtsWintersExponentialSmoothing", "holtsExponentialSmoothing", "exponential_moving_average"]:
             results = Parallel(n_jobs=round(num_cores))(
                 delayed(ForecastModels.holt_holtwinters_ema)(idx, row, self.test_periods, self.prediction_periods,
                                                              model_name, self.seasonal_periods) for idx, row in enumerate(data_list, 1))
 
-        if model_name == "arima":
+        elif model_name == "arima":
             results = Parallel(n_jobs=round(num_cores))(
                 delayed(ForecastModels.arima)(idx, row, self.test_periods, self.prediction_periods,
                                               self.additional_params) for idx, row in enumerate(data_list, 1))
+        
+        elif model_name == "arimax":
+            data_list_for_exog = [row.tolist() for idx, row in data.iterrows()] 
+            results = Parallel(n_jobs=round(num_cores))(
+                delayed(ForecastModels.arimax)(idx=idx, row=row, exog_data=exog_data, test_periods=self.test_periods, prediction_periods=self.prediction_periods, additional_params=self.additional_params)
+                for idx, row in enumerate(data_list_for_exog, 1))
+        
+        elif model_name == "sarimax":
+            data_list_for_exog = [row.tolist() for idx, row in data.iterrows()] 
+            results = Parallel(n_jobs=round(num_cores))(
+                delayed(ForecastModels.sarimax)(idx=idx, row=row, exog_data=exog_data, test_periods=self.test_periods, prediction_periods=self.prediction_periods, additional_params=self.additional_params)
+                for idx, row in enumerate(data_list_for_exog, 1))
+        
+        elif model_name == "prophet_exog":
+            data_list_for_exog = [row.tolist() for idx, row in data.iterrows()]
+            results = Parallel(n_jobs=round(num_cores))(
+                delayed(ForecastModels.prophet_exog)(idx=idx, row=row, exog_data=exog_data, prediction_periods=self.prediction_periods, dates=self.initial_dates)
+                for idx, row in enumerate(data_list_for_exog, 1)) 
 
         elif model_name == "sarima":
             results = Parallel(n_jobs=round(num_cores))(
@@ -144,7 +168,8 @@ class Forecast(object):
         return predicted
 
     def run_forecast(self):
-        data = self.format_initial_data()
+        data, exog_data = self.format_initial_data()
+
         actual_dataframe = self.initial_data.copy()
         actual_for_error_calc = actual_dataframe.iloc[:, 12:]
         model_results = {}
@@ -158,7 +183,7 @@ class Forecast(object):
             i = i + 1
 
         for model_name in self.models:
-            forecast_results = self.parallel_process(data=data, model_name=model_name, actual=actual_dict)
+            forecast_results = self.parallel_process(data=data, model_name=model_name, actual=actual_dict, exog_data=exog_data)
             forecast_results_df = pd.DataFrame(forecast_results).T.reset_index()
             forecast_results_df.columns = ["Producto"] + self.date_columns + [self.error_method]
 

@@ -41,6 +41,11 @@ const exogModels = [
         value: "sarimax",
         label: "SARIMAX",
         param: "sarimax",
+    },
+    {
+        value: "prophet_exog",
+        label: "Prophet (Exógenas)",
+        param: "prophet_exog",
     }
 ];
 

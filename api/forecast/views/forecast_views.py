@@ -77,7 +77,7 @@ class RunModelsViews(APIView):
                 models = scenario.models
                 user = scenario.user.id
 
-                if 'arimax' in models or 'sarimax' in models:
+                if 'arimax' in models or 'sarimax' in models or 'prophet_exog' in models:
 
                     exog = FileRefModel.objects.filter(project_id=scenario.project_id, model_type_id=2).first()
                     exog_projected = FileRefModel.objects.filter(project_id=scenario.project_id, model_type_id=3).first()
@@ -114,9 +114,15 @@ class RunModelsViews(APIView):
                 # Excel all models path
                 path_all_models = f'{path}_all.xlsx'
 
-                forecast = Forecast(df=df_historical, prediction_periods=pred_p, error_periods=error_periods,
-                                    test_periods=test_p, error_method=error_method, seasonal_periods=seasonal_periods, models=models,
-                                    additional_params=additional_params, detect_outliers=detect_outliers, explosive_variable=explosive_variable)
+                if 'arimax' in models or 'sarimax' in models or 'prophet_exog' in models:
+                    forecast = Forecast(df=df_historical, prediction_periods=pred_p, error_periods=error_periods,
+                                        test_periods=test_p, error_method=error_method, seasonal_periods=seasonal_periods, models=models,
+                                        additional_params=additional_params, detect_outliers=detect_outliers, explosive_variable=explosive_variable, df_exog=df_exog_data)
+                
+                else:
+                    forecast = Forecast(df=df_historical, prediction_periods=pred_p, error_periods=error_periods,
+                                        test_periods=test_p, error_method=error_method, seasonal_periods=seasonal_periods, models=models,
+                                        additional_params=additional_params, detect_outliers=detect_outliers, explosive_variable=explosive_variable)
 
                 all_predictions = forecast.run_forecast()
                 all_predictions.to_excel(path_all_models, index=False)

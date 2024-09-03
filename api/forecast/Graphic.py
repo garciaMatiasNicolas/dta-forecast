@@ -26,8 +26,10 @@ class Graphic:
         actual_rows = df_pred[df_pred['model'] == 'actual']
         other_rows = df_pred[df_pred['model'] != 'actual']
 
-        actual_sum = actual_rows[date_columns].sum()
+        actual_rows[date_columns] = actual_rows[date_columns].fillna(0.0)
+        other_rows[date_columns] = other_rows[date_columns].fillna(0.0)
 
+        actual_sum = actual_rows[date_columns].sum()
         other_sum = other_rows[date_columns].sum()
 
         actual_data = {'x': date_columns.tolist(), 'y': actual_sum.tolist()}

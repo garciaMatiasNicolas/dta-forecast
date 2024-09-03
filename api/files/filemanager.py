@@ -73,7 +73,7 @@ def save_dataframe(route_file: str, file_name: str, model_type: str, wasSaved: b
             not_date_columns = dataframe.iloc[:, :9].columns
 
             for col in not_date_columns:
-                dataframe[col] = dataframe[col].fillna('null')
+                dataframe[col] = dataframe[col].fillna('not_apply')
                 dataframe[col] = dataframe[col].astype('str')
 
             endog_table = FileRefModel.objects.filter(project_id=project_pk, model_type_id=1).first()

@@ -13,6 +13,184 @@ import numpy as np
 class ForecastModels:
 
     @staticmethod
+    def arimax(idx, row, test_periods, prediction_periods, additional_params, exog_data):
+        def get_exog_data(df, row):
+            for _, fila in df.iterrows():
+                if fila['Family'] == 'all_data':
+                    return fila[df.columns[9:]].values.tolist()
+
+                match = True
+                if  (fila['Region'] != row[1]) or \
+                    (fila['Salesman'] != row[2]) or \
+                    (fila['Client'] != row[3]) or \
+                    (fila['Category'] != row[4]) or \
+                    (fila['Subcategory'] != row[5]) or \
+                    (fila["SKU"] != row[6]) or \
+                    (fila["Description"] != row[7]):
+                    match = False
+
+                if match:
+                    return fila[df.columns[9:]].values.tolist()
+
+            return []
+        
+        exog_data = get_exog_data(df=exog_data, row=row)
+
+        if len(exog_data) > 0:
+            exog_series = pd.Series(exog_data).astype(dtype='float')
+            train_exog = exog_series[:-test_periods].values.reshape(-1, 1)
+            test_exog = exog_series[-test_periods:].values.reshape(-1, 1)
+        else:
+            train_exog = None
+            test_exog = None
+
+        # Parámetros ARIMA
+        arima_order = (1, 1, 0)
+        
+        # Convertir la fila de datos a una serie temporal
+        sales_series = pd.Series(row[12:]).astype(dtype='float')
+
+        train_sales = sales_series[:-test_periods]
+        test_sales = sales_series[-test_periods:]
+
+        # Verificación de formas antes de pasar al modelo
+        print(f"Train sales shape: {train_sales.shape}, Train exog shape: {train_exog.shape if train_exog is not None else None}")
+        print(f"Test sales shape: {test_sales.shape}, Test exog shape: {test_exog.shape if test_exog is not None else None}")
+
+        # Crear y ajustar el modelo ARIMA con exógenos si existen
+        model = ARIMA(train_sales, order=arima_order, exog=train_exog)
+        model.initialize_approximate_diffuse()
+        model_fit = model.fit()
+
+        # Predicciones
+        train_predictions = model_fit.predict(start=0, end=len(train_sales) - 1, exog=train_exog)
+        test_predictions = model_fit.predict(start=len(train_sales), end=len(sales_series) - 1, exog=test_exog)
+
+        # Ajustar `prediction_periods` si necesario
+        model_no_exog = ARIMA(sales_series, order=arima_order)
+        model_no_exog_fit = model_no_exog.fit()
+        future_predictions = model_no_exog_fit.forecast(steps=prediction_periods)
+
+        # Combinar todas las predicciones
+        total_predictions = list(train_predictions) + list(test_predictions) + list(future_predictions)
+
+        return idx, total_predictions
+
+    @staticmethod
+    def sarimax(idx, row, test_periods, prediction_periods, additional_params, exog_data):
+        filtered_exog = exog_data[
+            (exog_data['Family'] == "all_data") &
+            (exog_data['Family'] == row[0]) &
+            (exog_data['Region'] == row[1]) &
+            (exog_data['Category'] == row[2]) &
+            (exog_data['Subcategory'] == row[3]) &
+            (exog_data['Client'] == row[4]) &
+            (exog_data['Salesman'] == row[5])
+        ]
+        
+        if not filtered_exog.empty:
+            exog_values = filtered_exog.iloc[:, 8:].values.flatten()
+            exog_series = pd.Series(exog_values).astype(dtype='float')
+            exog_train = exog_series.iloc[:-test_periods]
+            exog_test = exog_series.iloc[-test_periods:]
+        else:
+            exog_series = []
+            exog_train = None
+            exog_test = None
+        
+        # Parámetros SARIMAX
+        sarimax_order = (1, 1, 0)  # (p, d, q)
+        seasonal_order = (1, 0, 0, 12)  # (P, D, Q, s) - Configuración estacional
+        
+        # Convertir la fila de datos a una serie temporal
+        time_series = pd.Series(row[12:]).astype(dtype='float')
+
+        train_data = time_series[:-test_periods]
+        test_data = time_series.iloc[-test_periods:]
+
+        n_train = len(train_data)
+
+        # Crear y ajustar el modelo SARIMAX con exógenos si existen
+        model = SARIMAX(train_data, 
+                        order=sarimax_order, 
+                        seasonal_order=seasonal_order, 
+                        exog=exog_train if exog_train is not None else None,
+                        enforce_stationarity=False, 
+                        enforce_invertibility=False)
+        
+        model_fit = model.fit(disp=False)
+
+        # Predicciones
+        train_predictions = model_fit.predict(start=0, end=n_train - 1, exog=exog_train)
+        test_predictions = model_fit.predict(start=n_train, end=len(time_series) - 1, exog=exog_test)
+        future_exog = exog_test if exog_test is not None else None
+        future_predictions = model_fit.forecast(steps=prediction_periods, exog=future_exog)
+        
+        # Combinar todas las predicciones
+        results = list(train_predictions.values) + list(test_predictions.values) + list(future_predictions.values)
+        return idx, results
+
+    @staticmethod
+    def prophet_exog(idx, row, prediction_periods, exog_data, dates):
+        seasonality_mode = "additive"
+        seasonality_prior_scale = 10.0
+        uncertainty_samples = 1000
+        changepoint_prior_scale = 0.05
+
+        def get_exog_data(df, row):
+            for _, fila in df.iterrows():
+                if fila['Family'] == 'all_data':
+                    return fila[df.columns[9:]].values.tolist()
+
+                match = True
+                if  (fila['Region'] != row[1]) or \
+                    (fila['Salesman'] != row[2]) or \
+                    (fila['Client'] != row[3]) or \
+                    (fila['Category'] != row[4]) or \
+                    (fila['Subcategory'] != row[5]) or \
+                    (fila["SKU"] != row[6]) or \
+                    (fila["Description"] != row[7]):
+                    match = False
+
+                if match:
+                    return fila[df.columns[9:]].values.tolist()
+
+            return []
+        
+        exog_data = get_exog_data(df=exog_data, row=row)
+
+        df = pd.DataFrame({'ds': pd.to_datetime(dates), 'y': row[12:]}) 
+        model = Prophet(weekly_seasonality=False,
+                        yearly_seasonality=12,
+                        seasonality_mode=seasonality_mode,
+                        seasonality_prior_scale=seasonality_prior_scale,
+                        changepoint_prior_scale=changepoint_prior_scale,
+                        uncertainty_samples=uncertainty_samples
+                        )
+        
+        model.add_seasonality(name='monthly', period=30.5, fourier_order=5)
+
+        if len(exog_data) > 0:
+            df["var"] = exog_data
+
+            model.add_regressor("var")
+            model.fit(df)
+
+            future = model.make_future_dataframe(periods=prediction_periods, freq="MS")
+            future['var'] = df['var'].tolist() + [df['var'].iloc[-1]] * prediction_periods
+            forecast = model.predict(future)
+        
+        train_predictions_df = model.predict(df)
+        train_predictions = train_predictions_df[['ds', 'yhat']].tail(len(dates)).values
+
+        train_predictions_df = model.predict(df)
+        train_predictions = train_predictions_df['yhat'].tail(len(dates)).values
+
+        future_predictions = forecast['yhat'].tail(prediction_periods).values
+
+        return idx, list(train_predictions) + list(future_predictions)
+
+    @staticmethod
     def holt_holtwinters_ema(idx, row, test_periods, prediction_periods, model_name, seasonal_periods):
         time_series = pd.Series(row).astype(dtype='float')
 
