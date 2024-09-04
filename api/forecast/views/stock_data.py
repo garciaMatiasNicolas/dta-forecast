@@ -297,32 +297,45 @@ class StockDataView(APIView):
                 
 
                 if days_of_coverage == 9999:
+
                     stock_status = "Obsoleto"
                     if available_stock != 0:
                         characterization = "0-Con stock sin ventas"
                     else:
                         characterization = "Sin stock"
+
                 elif days_of_coverage > 360:
                     stock_status = 'Alto sobrestock'
                     characterization = "1-Más de 360 días"
+
                 elif days_of_coverage > 180:
                     stock_status = 'Sobrestock'
                     characterization = "2-Entre 180 y 360"
+                    
                 elif days_of_coverage > 30:
+
                     stock_status = 'Normal'
                     if days_of_coverage > 90:
                         characterization = "3-Entre 90 y 180"
                     else:
                         characterization = "4-Entre 30 y 90"
+
                 elif days_of_coverage > 15:
                     stock_status = 'Riesgo quiebre'
                     characterization = "5-Entre 15 y 30"
+
                 elif days_of_coverage >= 0:
                     stock_status = "Quiebre"
                     characterization = "6-Menos de 15"
+                
                 else:
                     stock_status = 'Stock negativo'
-                    characterization = "Sin stock"
+                    
+                    if available_stock != 0:
+                        characterization = "0-Con stock sin ventas"
+                    else:
+                        characterization = "Sin stock"
+
     
                 next_buy = next_buy.strftime('%Y-%m-%d') if isinstance(next_buy, datetime) else next_buy
                 final_buy = ('Si' if available_stock - sales_order + purchase_order < 0 else 'No') if make_to_order == 'MTO' else buy

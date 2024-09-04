@@ -86,9 +86,17 @@ class RunModelsViews(APIView):
                         return Response(data={'error': 'not_exog_data'}, status=status.HTTP_400_BAD_REQUEST)
 
                     df_exog_data = self.get_historical_data(table_name=exog.file_name)
+                    max_date_exog = df_exog_data.columns[-1]
 
                     if exog_projected is not None:
-                        df_exog_data_projected = self.get_historical_data(table_name=exog_projected.file_name)
+                        df_exog_data_projected = self.get_historical_data(table_name=exog_projected.file_name) 
+                        
+                        df_exog_data = pd.merge(df_exog_data, df_exog_data_projected, 
+                            on=['Variable', 'Family', 'Region', 'Salesman', 'Client', 
+                                'Category', 'Subcategory', 'SKU', 'Description'], how='outer')
+                        
+                        df_exog_data.iloc[:, 9:] = df_exog_data.iloc[:, 9:].fillna(0)
+
 
                 # Extract required scenario data
                 test_p = scenario.test_p
@@ -117,7 +125,7 @@ class RunModelsViews(APIView):
                 if 'arimax' in models or 'sarimax' in models or 'prophet_exog' in models:
                     forecast = Forecast(df=df_historical, prediction_periods=pred_p, error_periods=error_periods,
                                         test_periods=test_p, error_method=error_method, seasonal_periods=seasonal_periods, models=models,
-                                        additional_params=additional_params, detect_outliers=detect_outliers, explosive_variable=explosive_variable, df_exog=df_exog_data)
+                                        additional_params=additional_params, detect_outliers=detect_outliers, explosive_variable=explosive_variable, df_exog=df_exog_data, max_date=max_date_exog)
                 
                 else:
                     forecast = Forecast(df=df_historical, prediction_periods=pred_p, error_periods=error_periods,

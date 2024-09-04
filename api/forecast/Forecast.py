@@ -11,13 +11,14 @@ warnings.filterwarnings("ignore")
 class Forecast(object):
 
     def __init__(self, df: pd.DataFrame, prediction_periods: int, test_periods: int, error_periods: int, error_method: str, seasonal_periods: int, 
-                models: list = None, additional_params=None, explosive_variable=None, detect_outliers=True, df_exog: pd.DataFrame = None):
+                models: list = None, additional_params=None, explosive_variable=None, detect_outliers=True, df_exog: pd.DataFrame = None, max_date = None):
 
         self.initial_data = df
         self.initial_dates = []
         self.result_data = pd.DataFrame()
         self.prediction_periods = prediction_periods
         self.df_exog = df_exog
+        self.max_date = max_date
         
         if test_periods == 1:
             self.test_periods = 2
@@ -96,19 +97,19 @@ class Forecast(object):
         elif model_name == "arimax":
             data_list_for_exog = [row.tolist() for idx, row in data.iterrows()] 
             results = Parallel(n_jobs=round(num_cores))(
-                delayed(ForecastModels.arimax)(idx=idx, row=row, exog_data=exog_data, test_periods=self.test_periods, prediction_periods=self.prediction_periods, additional_params=self.additional_params)
+                delayed(ForecastModels.arimax)(idx=idx, row=row, exog_data=exog_data, test_periods=self.test_periods, prediction_periods=self.prediction_periods, additional_params=self.additional_params, max_date=self.max_date)
                 for idx, row in enumerate(data_list_for_exog, 1))
         
         elif model_name == "sarimax":
             data_list_for_exog = [row.tolist() for idx, row in data.iterrows()] 
             results = Parallel(n_jobs=round(num_cores))(
-                delayed(ForecastModels.sarimax)(idx=idx, row=row, exog_data=exog_data, test_periods=self.test_periods, prediction_periods=self.prediction_periods, additional_params=self.additional_params)
+                delayed(ForecastModels.sarimax)(idx=idx, row=row, exog_data=exog_data, test_periods=self.test_periods, prediction_periods=self.prediction_periods, additional_params=self.additional_params, max_date=self.max_date)
                 for idx, row in enumerate(data_list_for_exog, 1))
         
         elif model_name == "prophet_exog":
             data_list_for_exog = [row.tolist() for idx, row in data.iterrows()]
             results = Parallel(n_jobs=round(num_cores))(
-                delayed(ForecastModels.prophet_exog)(idx=idx, row=row, exog_data=exog_data, prediction_periods=self.prediction_periods, dates=self.initial_dates)
+                delayed(ForecastModels.prophet_exog)(idx=idx, row=row, exog_data=exog_data, prediction_periods=self.prediction_periods, dates=self.initial_dates, max_date=self.max_date)
                 for idx, row in enumerate(data_list_for_exog, 1)) 
 
         elif model_name == "sarima":

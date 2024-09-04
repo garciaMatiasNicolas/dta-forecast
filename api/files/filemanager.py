@@ -77,6 +77,7 @@ def save_dataframe(route_file: str, file_name: str, model_type: str, wasSaved: b
                 dataframe[col] = dataframe[col].astype('str')
 
             endog_table = FileRefModel.objects.filter(project_id=project_pk, model_type_id=1).first()
+            exog_table = FileRefModel.objects.filter(project_id=project_pk, model_type_id=1).first()
 
             if endog_table is not None and model_type == 'historical_exogenous_variables':
 
@@ -87,7 +88,7 @@ def save_dataframe(route_file: str, file_name: str, model_type: str, wasSaved: b
                     print("Longitud historica: ",len(date_columns_endog_table))
                     print("Longitud exogena: ", len(date_columns))
                     raise ValueError("cols_exog_endog_not_match")
-
+                
         elif model_type == "stock_data":
 
             stock_cols = base_cols + cols_stock_data

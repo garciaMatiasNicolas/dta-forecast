@@ -13,36 +13,75 @@ import numpy as np
 class ForecastModels:
 
     @staticmethod
-    def arimax(idx, row, test_periods, prediction_periods, additional_params, exog_data):
+    def arimax(idx, row, test_periods, prediction_periods, additional_params, exog_data, max_date):
         def get_exog_data(df, row):
             for _, fila in df.iterrows():
                 if fila['Family'] == 'all_data':
-                    return fila[df.columns[9:]].values.tolist()
+                    index = df.columns.get_loc(max_date)
+                    historical_values = fila[df.columns[9:index + 1]].values.flatten().tolist()
+                    projected_values = fila[df.columns[index + 1:]].values.flatten().tolist()
 
+                    # Ajustar los valores proyectados según los periodos de predicción
+                    if len(projected_values) > prediction_periods:
+                        projected_values = projected_values[:prediction_periods]
+                    elif len(projected_values) < prediction_periods:
+                        projected_values.extend([0] * (prediction_periods - len(projected_values)))
+
+                    return {
+                        "historical": historical_values,
+                        "future": projected_values
+                    }
+
+                # Verificación de coincidencias
                 match = True
-                if  (fila['Region'] != row[1]) or \
-                    (fila['Salesman'] != row[2]) or \
-                    (fila['Client'] != row[3]) or \
-                    (fila['Category'] != row[4]) or \
-                    (fila['Subcategory'] != row[5]) or \
-                    (fila["SKU"] != row[6]) or \
-                    (fila["Description"] != row[7]):
+                if (fila['Region'] != row[1]) or \
+                (fila['Salesman'] != row[2]) or \
+                (fila['Client'] != row[3]) or \
+                (fila['Category'] != row[4]) or \
+                (fila['Subcategory'] != row[5]) or \
+                (fila["SKU"] != row[6]) or \
+                (fila["Description"] != row[7]):
                     match = False
 
                 if match:
-                    return fila[df.columns[9:]].values.tolist()
+                    index = df.columns.get_loc(max_date)
+                    historical_values = fila[df.columns[9:index + 1]].values.flatten().tolist()
+                    projected_values = fila[df.columns[index + 1:]].values.flatten().tolist()
 
-            return []
+                    # Ajustar los valores proyectados según los periodos de predicción
+                    if len(projected_values) > prediction_periods:
+                        projected_values = projected_values[:prediction_periods]
+                    elif len(projected_values) < prediction_periods:
+                        projected_values.extend([0] * (prediction_periods - len(projected_values)))
+
+                    return {
+                        "historical": historical_values,
+                        "future": projected_values
+                    }
+
+            return {"historical": [], "future": []}
+
         
         exog_data = get_exog_data(df=exog_data, row=row)
 
-        if len(exog_data) > 0:
-            exog_series = pd.Series(exog_data).astype(dtype='float')
-            train_exog = exog_series[:-test_periods].values.reshape(-1, 1)
-            test_exog = exog_series[-test_periods:].values.reshape(-1, 1)
+        if len(exog_data["historical"]) > 0:
+            exog_series_historical = pd.Series(exog_data["historical"]).astype(dtype='float')
+            
+            if len(exog_data["future"]) > 0:
+                exog_series_projected = pd.Series(exog_data["future"]).astype(dtype='float')
+            else:
+                exog_series_projected = [0] * prediction_periods
+
+            train_exog_historical = exog_series_historical[:-test_periods].values.reshape(-1, 1)
+            test_exog_historical = exog_series_historical[-test_periods:].values.reshape(-1, 1)
+
+            exog_series_projected = exog_series_projected.values.reshape(-1, 1)
+
         else:
-            train_exog = None
-            test_exog = None
+            train_exog_historical = None
+            test_exog_historical = None
+            train_exog_projected = None
+            test_exog_projected = None
 
         # Parámetros ARIMA
         arima_order = (1, 1, 0)
@@ -53,23 +92,15 @@ class ForecastModels:
         train_sales = sales_series[:-test_periods]
         test_sales = sales_series[-test_periods:]
 
-        # Verificación de formas antes de pasar al modelo
-        print(f"Train sales shape: {train_sales.shape}, Train exog shape: {train_exog.shape if train_exog is not None else None}")
-        print(f"Test sales shape: {test_sales.shape}, Test exog shape: {test_exog.shape if test_exog is not None else None}")
-
         # Crear y ajustar el modelo ARIMA con exógenos si existen
-        model = ARIMA(train_sales, order=arima_order, exog=train_exog)
+        model = ARIMA(train_sales, order=arima_order, exog=train_exog_historical)
         model.initialize_approximate_diffuse()
         model_fit = model.fit()
 
         # Predicciones
-        train_predictions = model_fit.predict(start=0, end=len(train_sales) - 1, exog=train_exog)
-        test_predictions = model_fit.predict(start=len(train_sales), end=len(sales_series) - 1, exog=test_exog)
-
-        # Ajustar `prediction_periods` si necesario
-        model_no_exog = ARIMA(sales_series, order=arima_order)
-        model_no_exog_fit = model_no_exog.fit()
-        future_predictions = model_no_exog_fit.forecast(steps=prediction_periods)
+        train_predictions = model_fit.predict(start=0, end=len(train_sales) - 1, exog=train_exog_historical)
+        test_predictions = model_fit.predict(start=len(train_sales), end=len(sales_series) - 1, exog=test_exog_historical)
+        future_predictions = model_fit.forecast(steps=prediction_periods, exog=exog_series_projected)
 
         # Combinar todas las predicciones
         total_predictions = list(train_predictions) + list(test_predictions) + list(future_predictions)
@@ -77,7 +108,7 @@ class ForecastModels:
         return idx, total_predictions
 
     @staticmethod
-    def sarimax(idx, row, test_periods, prediction_periods, additional_params, exog_data):
+    def sarimax(idx, row, test_periods, prediction_periods, additional_params, exog_data, max_date):
         filtered_exog = exog_data[
             (exog_data['Family'] == "all_data") &
             (exog_data['Family'] == row[0]) &
@@ -131,35 +162,50 @@ class ForecastModels:
         return idx, results
 
     @staticmethod
-    def prophet_exog(idx, row, prediction_periods, exog_data, dates):
+    def prophet_exog(idx, row, prediction_periods, exog_data, dates, max_date):
         seasonality_mode = "additive"
         seasonality_prior_scale = 10.0
         uncertainty_samples = 1000
         changepoint_prior_scale = 0.05
-
+        
         def get_exog_data(df, row):
-            for _, fila in df.iterrows():
-                if fila['Family'] == 'all_data':
-                    return fila[df.columns[9:]].values.tolist()
+            historical_data = []
+            future_data = []
 
+            for _, fila in df.iterrows():
                 match = True
-                if  (fila['Region'] != row[1]) or \
-                    (fila['Salesman'] != row[2]) or \
-                    (fila['Client'] != row[3]) or \
-                    (fila['Category'] != row[4]) or \
-                    (fila['Subcategory'] != row[5]) or \
-                    (fila["SKU"] != row[6]) or \
-                    (fila["Description"] != row[7]):
+                if (fila['Region'] != row[1]) or \
+                (fila['Salesman'] != row[2]) or \
+                (fila['Client'] != row[3]) or \
+                (fila['Category'] != row[4]) or \
+                (fila['Subcategory'] != row[5]) or \
+                (fila["SKU"] != row[6]) or \
+                (fila["Description"] != row[7]):
                     match = False
 
-                if match:
-                    return fila[df.columns[9:]].values.tolist()
+                if match or fila['Family'] == 'all_data':
+                    variable_name = fila['Variable']
+                    index = df.columns.get_loc(max_date)
+                    historical_values = [variable_name] + fila[df.columns[9:index + 1]].values.flatten().tolist()
 
-            return []
+                    # Obtener los valores proyectados y ajustarlos según los periodos de predicción
+                    projected_values = [variable_name] + fila[df.columns[index + 1:]].values.flatten().tolist()
+
+                    if len(projected_values) - 1 > prediction_periods:
+                        # Si hay más valores de los necesarios, recortar la lista
+                        projected_values = projected_values[:prediction_periods + 1]
+                    elif len(projected_values) - 1 < prediction_periods:
+                        # Si faltan valores, agregar ceros
+                        projected_values.extend([0] * (prediction_periods - (len(projected_values) - 1)))
+
+                    historical_data.append(historical_values)
+                    future_data.append(projected_values)
+
+            return {"historical": historical_data, "future": future_data}
         
         exog_data = get_exog_data(df=exog_data, row=row)
 
-        df = pd.DataFrame({'ds': pd.to_datetime(dates), 'y': row[12:]}) 
+        df = pd.DataFrame({'ds': pd.to_datetime(dates), 'y': row[12:]})
         model = Prophet(weekly_seasonality=False,
                         yearly_seasonality=12,
                         seasonality_mode=seasonality_mode,
@@ -170,17 +216,33 @@ class ForecastModels:
         
         model.add_seasonality(name='monthly', period=30.5, fourier_order=5)
 
-        if len(exog_data) > 0:
-            df["var"] = exog_data
+        if len(exog_data["historical"]) > 0:
+            for historical in exog_data["historical"]:
+                df[historical[0]] = historical[1:]
+                model.add_regressor(historical[0])
 
-            model.add_regressor("var")
             model.fit(df)
 
             future = model.make_future_dataframe(periods=prediction_periods, freq="MS")
-            future['var'] = df['var'].tolist() + [df['var'].iloc[-1]] * prediction_periods
-            forecast = model.predict(future)
+
+            if len(exog_data["future"]) > 0:
+                for future_values in exog_data["future"]:
+                    total_exog_var = df[future_values[0]].tolist() + future_values[1:]
+                    future[future_values[0]] = total_exog_var
+                
+                forecast = model.predict(future)
+                data = forecast['yhat'].to_list()
+                return idx, data
         
-        train_predictions_df = model.predict(df)
+        # Si no se encuentran regresores, ajusta el modelo sin ellos
+        model.fit(df)
+        future = model.make_future_dataframe(periods=prediction_periods, freq="MS")
+        forecast = model.predict(future)
+        data = forecast['yhat'].to_list()
+        
+        return idx, data
+        
+        """ train_predictions_df = model.predict(df)
         train_predictions = train_predictions_df[['ds', 'yhat']].tail(len(dates)).values
 
         train_predictions_df = model.predict(df)
@@ -188,7 +250,7 @@ class ForecastModels:
 
         future_predictions = forecast['yhat'].tail(prediction_periods).values
 
-        return idx, list(train_predictions) + list(future_predictions)
+        return idx, list(train_predictions) + list(future_predictions) """
 
     @staticmethod
     def holt_holtwinters_ema(idx, row, test_periods, prediction_periods, model_name, seasonal_periods):
