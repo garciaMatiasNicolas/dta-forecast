@@ -106,6 +106,7 @@ class Error:
             'RMSE': Error.calculate_rmse,
             'MAE': Error.calculate_mae
         }
+        
 
         last_period_column = prediction_periods + 2
         last_period = df.iloc[:, -last_period_column]

@@ -32,12 +32,12 @@ class StockDataView(APIView):
             if scenario:
                 forecast_data = ForecastScenario.objects.get(pk=scenario)
                 max_historical_date = forecast_data.max_historical_date.strftime('%Y-%m-%d')
-                
+
                 if forecast_data is None:
                     table_forecast = None
-            
+
                 else:
-                    query = f"SELECT * FROM {forecast_data.predictions_table_name} WHERE model != 'actual'"
+                    query = f"SELECT * FROM {forecast_data.predictions_table_name} WHERE model != 'actual' AND best_model = 1"
                     if only_traffic_light and filter_name and filter_value:
                         query += f" AND {filter_name} = '{filter_value}'"
                     

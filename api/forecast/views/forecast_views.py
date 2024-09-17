@@ -20,6 +20,7 @@ import threading
 import numpy as np
 import traceback
 from sqlalchemy.exc import NoSuchTableError
+from django.db import connection
 
 
 class RunModelsViews(APIView):
@@ -133,40 +134,37 @@ class RunModelsViews(APIView):
                                         additional_params=additional_params, detect_outliers=detect_outliers, explosive_variable=explosive_variable)
 
                 all_predictions = forecast.run_forecast()
-                all_predictions.to_excel(path_all_models, index=False)
+                all_predictions.sort_values(by="SKU")
+                # all_predictions.to_excel(path_all_models, index=False)
 
                 best_scenario = Forecast.select_best_model(df=all_predictions, error_method=error_method, models=models)
+                best_scenario = best_scenario[(best_scenario['model'] == 'actual') | (best_scenario['best_model'] == 1)]
+                best_scenario.sort_values(by="SKU")
                 best_scenario.to_excel(path, index=False)
+
+                error_avg = best_scenario[best_scenario['model'] != 'actual'][error_method].mean()
+                last_error = best_scenario[best_scenario['model'] != 'actual']["LAST ERROR"].mean()
 
                 file_path = os.path.join(settings.MEDIA_ROOT, 'excel_files/predictions',
                                          f'{project.project_name}_scenario_{scenario_name}_u{user}.xlsx')
 
-                graphic = Graphic(
-                    file_path=file_path,
-                    max_date=max_historical_data_date,
-                    error_method=error_method,
-                    pred_p=pred_p
-                )
-
-                final_data, data_per_year, error = graphic.graphic_predictions()
 
                 # Save the predictions in the scenario
-                scenario.final_data_pred = final_data
-                scenario.data_year_pred = data_per_year
                 scenario.predictions_table_name = f'{project.project_name}_scenario_{scenario_name}_u{user}'
-                scenario.error_last_twelve_periods = error
+                scenario.error_last_twelve_periods = round(error_avg, 1)
                 scenario.url_predictions = path
                 scenario.additional_params = additional_params
-                # error = Error(error_method=error_method,error_periods=error_periods, actual="", predicted="")
+                scenario.error_last_period = round(last_error, 1)
                 # scenario.error_abs = error.calculate_error_last_period(prediction_periods=pred_p, df=best_scenario)
                 scenario.save()
 
                 # Save the predicted data as a table
-                save_dataframe(route_file=path,
+                save_dataframe(route_file="",
                                file_name=f'{project.project_name}_scenario_{scenario_name}_u{user}',
                                model_type="historical_data",
                                wasSaved=True,
-                               project_pk=project)
+                               project_pk=project,
+                               df=all_predictions)
 
                 return Response({'message': 'succeed'}, status=status.HTTP_200_OK)
 
@@ -180,3 +178,26 @@ class RunModelsViews(APIView):
                 return Response({'error': str(e)}, status=status.HTTP_400_BAD_REQUEST)
 
 
+class GraphicDataView(APIView):
+    @authentication_classes([TokenAuthentication])
+    @permission_classes([IsAuthenticated])
+    def get(self, request):
+        sc_id = request.GET.get('scenario')
+
+        try:
+            scenario = ForecastScenario.objects.get(pk=sc_id)
+        except:
+            return Response(data={"error": "scenario_not_found"}, status=status.HTTP_400_BAD_REQUEST)
+        
+        table = pd.read_sql_table(scenario.predictions_table_name, con=engine)
+
+        graph = Graphic(
+            max_date=scenario.max_historical_date,
+            pred_p=scenario.pred_p,
+            dataframe=table,
+            error_method=scenario.error_type
+        )
+        data, data_year = graph.graphic_predictions()
+
+        return Response(data={"final_data_pred": data, "data_year_pred": data_year}, status=status.HTTP_200_OK)
+    

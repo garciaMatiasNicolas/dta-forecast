@@ -29,14 +29,20 @@ class ConversionForecast(APIView):
         
         try:
             scenario = ForecastScenario.objects.get(pk=scenario_id)
-            
+
             stock_data = FileRefModel.objects.filter(project_id=scenario.project, model_type_id=4).first()
             stock_table = stock_data.file_name
             
             predictions_table = scenario.predictions_table_name
             max_historical_date = scenario.max_historical_date
+            base_query = f'''
+                WITH FilteredTable AS (
+                    SELECT * FROM {predictions_table} 
+                        WHERE Model = 'actual' OR Best_Model = 1
+                )
+            '''
             
-            query_predictions = f"SELECT * FROM {predictions_table} WHERE model != 'actual'"
+            query_predictions = base_query + f"SELECT * FROM {predictions_table} WHERE model != 'actual'"
             predictions = pd.read_sql_query(sql=query_predictions, con=engine)
 
             # Identificar las columnas de fecha desde max_historical_date hasta la última fecha
@@ -46,7 +52,7 @@ class ConversionForecast(APIView):
             date_columns_sql = ", ".join([f"ROUND(A.`{col}` * B.`Cost Price`, 2) AS `{col}`" for col in selected_date_columns])
             
             if group_by_category is None or group_by_category == "SKU":
-                query_predictions = f"""
+                query_predictions = base_query + f"""
                     SELECT 
                         A.Family AS Familia,
                         A.Region AS Region,

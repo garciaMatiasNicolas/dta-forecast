@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { MDBTable, MDBTableHead, MDBTableBody, MDBIcon, MDBModal, MDBModalDialog, MDBModalContent, MDBModalBody, MDBModalHeader, MDBModalTitle, MDBBtn } from 'mdb-react-ui-kit';
+import { MDBTable, MDBTableHead, MDBTableBody, MDBCheckbox, MDBIcon, MDBModal, MDBModalDialog, MDBModalContent, MDBModalBody, MDBModalHeader, MDBModalTitle, MDBBtn } from 'mdb-react-ui-kit';
 import ReactPaginate from 'react-paginate';
 import DropdownFilters from './DropdownFilters';
 import AnalyticsProduct from './AnalyticsProduct';
@@ -14,6 +14,10 @@ const Table = ({ data, setData, scenario }) => {
   const [basicModal, setBasicModal] = useState(false);
   const [selectedSKU, setSelectedSKU] = useState(null);
   const [analyticsData, setAnalyticsData] = useState({});
+  const [visibleColumns, setVisibleColumns] = useState(Object.keys(data[0]));
+  const [columnModal, setColumnModal] = useState(false);
+  const [columnFilter, setColumnFilter] = useState(''); // Para el buscador de columnas
+  const [selectAll, setSelectAll] = useState(true); // Checkbox seleccionar todas
 
   // AUTHORIZATION HEADERS //
   const token = localStorage.getItem("userToken");
@@ -25,6 +29,10 @@ const Table = ({ data, setData, scenario }) => {
   const toggleOpen = () => {
     setBasicModal(!basicModal);
   };
+
+  const toggleColumnModal = () => {
+    setColumnModal(!columnModal); // Toggle del modal de columnas
+  };
   
   const handlePageChange = ({ selected }) => {
     setCurrentPage(selected);
@@ -32,6 +40,27 @@ const Table = ({ data, setData, scenario }) => {
 
   if (!data || data.length === 0) {
     return <div></div>;
+  };
+
+  const handleColumnToggle = (column) => {
+    if (visibleColumns.includes(column)) {
+      setVisibleColumns(visibleColumns.filter(col => col !== column));
+    } else {
+      setVisibleColumns([...visibleColumns, column]);
+    }
+  };
+
+  const handleSelectAll = () => {
+    if (selectAll) {
+      setVisibleColumns([]); // Ocultar todas las columnas
+    } else {
+      setVisibleColumns(Object.keys(data[0])); // Mostrar todas las columnas
+    }
+    setSelectAll(!selectAll); // Cambiar el estado de selección
+  };
+
+  const handleSearch = (e) => {
+    setColumnFilter(e.target.value.toLowerCase());
   };
 
   const getStyleClass = (key, value) => {
@@ -101,13 +130,15 @@ const Table = ({ data, setData, scenario }) => {
     return slicedData.map((item, index) => (
       <tr key={index}>
         {Object.entries(item).map(([key, value]) => (
-          <td
-            className={`border text-center ${getStyleClass(key, value)}`}
-            key={key}
-            onClick={() => handleClick(item)} // Pasar el objeto completo
-          >
-            {value}
-          </td>
+          visibleColumns.includes(key) && (  // Solo renderizar columnas visibles
+            <td
+              className={`border text-center ${getStyleClass(key, value)}`}
+              key={key}
+              onClick={() => handleClick(item)} // Pasar el objeto completo
+            >
+              {value}
+            </td>
+          )
         ))}
       </tr>
     ));
@@ -138,24 +169,30 @@ const Table = ({ data, setData, scenario }) => {
   
       toggleOpen();
     }
-  }
+  };
+
+  const filteredColumns = Object.keys(data[0]).filter((column) =>
+    column.toLowerCase().includes(columnFilter)
+  );
 
   const keys = ["Familia", 'Categoria', 'Vendedor', 'Subcategoria', 'Cliente', 'Región', '¿Compro?', 'MTO', 'OB', 'ABC', 'XYZ', 'Estado', 'Caracterización', '¿Repongo?', 'ABC en $ Total', 'ABC Cliente', 'ABC en $ por Categoria']
 
   return (
     <>
-    
+      <MDBBtn className='d-flex align-items-center justify-content-center gap-2' onClick={toggleColumnModal}>
+        <MDBIcon fas icon="eye" />
+        <span>Visualizar</span>
+      </MDBBtn>
       <div style={{ overflowX: 'auto', whiteSpace: 'nowrap' }} className='d-flex justify-content-start align-items-start flex-column w-100'>
         <MDBTable hover className='w-auto'>
           <MDBTableHead className='bg-primary'>
             <tr className='w-auto h-auto border'>
               {Object.keys(data[0]).map((key, index) => (
-                <th className='text-white border text-center' key={index}>
-                  {keys.includes(key) ? 
-                    <DropdownFilters key={index} name={key} data={data} setFilterData={setData} isOrderBy={key === "Valorizado" || key === "Sobrante valorizado" || key === "Sobrante (unidades)"}/> : 
-                    <p>{key}</p>
-                  }
-                </th>
+                visibleColumns.includes(key) && (
+                  <th className='text-white border text-center' key={index}>
+                    <DropdownFilters key={index} name={key} data={data} setFilterData={setData} isOrderBy={key === "Valorizado" || key === "Sobrante valorizado" || key === "Sobrante (unidades)"}/> 
+                  </th>
+                )
               ))}
             </tr>
           </MDBTableHead>
@@ -177,7 +214,33 @@ const Table = ({ data, setData, scenario }) => {
             </MDBModalContent>
           </MDBModalDialog>
         </MDBModal>
-      </div> 
+      </div>
+
+      <MDBModal show={columnModal} setShow={setColumnModal}> {/* Modal de columnas */}
+        <MDBModalDialog>
+          <MDBModalContent style={{ maxHeight: '500px', overflowY: 'auto' }}>
+            <MDBModalHeader>
+              <MDBModalTitle>Seleccionar Columnas</MDBModalTitle>
+              <MDBBtn className='btn-close' color='none' onClick={toggleColumnModal}></MDBBtn>
+            </MDBModalHeader>
+            <MDBModalBody>
+                <div className="d-flex justify-content-between mb-3">
+                  <strong>Seleccionar todas</strong>
+                  <MDBCheckbox checked={selectAll} onChange={handleSelectAll}/>
+                </div>
+                {Object.keys(data[0]).map((key, index) => (
+                  <div key={index} className="d-flex justify-content-between">
+                    <p>{key}</p>
+                    <MDBCheckbox 
+                      checked={visibleColumns.includes(key)}
+                      onChange={() => handleColumnToggle(key)} // Manejar la selección de columnas
+                    />
+                  </div>
+                ))}
+            </MDBModalBody>
+          </MDBModalContent>
+        </MDBModalDialog>
+      </MDBModal> 
 
       { data.length > itemsPerPage && <ReactPaginate
         previousLabel={<MDBIcon fas icon="angle-double-left" />}

@@ -348,7 +348,6 @@ class ForecastModels:
 
         return idx, results
 
-    @staticmethod
     def prophet(idx, row, prediction_periods, additional_params, seasonal_periods, dates, detect_outliers):
 
         try:
@@ -362,13 +361,13 @@ class ForecastModels:
             std_dev = series.std()
             z_scores = (series - mean) / std_dev
             return z_scores.abs() > threshold
-    
+
         df = pd.DataFrame({'ds': pd.to_datetime(dates), 'y': row})
         df['floor'] = 0
-        # avg_historical = df['y'].mean()
-        # max_cap = avg_historical * 2
+        avg_historical = df['y'].mean()
+        max_cap = avg_historical * 2
 
-        #df['cap'] = max_cap
+        df['cap'] = max_cap
 
         if additional_params is not None:
             seasonality_mode = additional_params[0]
@@ -381,7 +380,7 @@ class ForecastModels:
             seasonality_prior_scale = 10.0
             uncertainty_samples = 1000
             changepoint_prior_scale = 0.05
-        
+
         if detect_outliers:
             outliers = detect_outliers_func(df['y'])
             df['outliers'] = outliers
@@ -398,26 +397,19 @@ class ForecastModels:
 
         if detect_outliers:
             model.fit(df[~df['outliers']])
-        
+
         else:
             model.fit(df)
 
         future = model.make_future_dataframe(periods=prediction_periods, freq='MS')
-        # future['floor'] = 0
-        #future['cap'] = max_cap
+        future['cap'] = max_cap
 
         forecast = model.predict(future)
-
+        
         train_predictions_df = model.predict(df)
-        train_predictions = train_predictions_df[['ds', 'yhat']].tail(len(dates)).values
-
-        train_predictions_df = model.predict(df)
-        train_predictions = train_predictions_df['yhat'].tail(len(dates)).values
+        train_predictions = train_predictions_df[['ds', 'yhat']].tail(len(dates))['yhat'].values
 
         future_predictions = forecast['yhat'].tail(prediction_periods).values
-
-        future_predictions = [max(pred, 0) for pred in future_predictions]
-        # future_predictions = [min(pred, max_cap) for pred in future_predictions]
 
         return idx, list(train_predictions) + list(future_predictions)
 

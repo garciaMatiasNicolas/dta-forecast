@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from "react";
-import GraphModels from "./GraphModels";
+import Swal from "sweetalert2";
 import axios from "axios";
 import ReactPaginate from 'react-paginate';
 import {
@@ -29,7 +29,6 @@ const GraphicBySku = () => {
 
     const [basicModal, setBasicModal] = useState(false);
     const [scenarios, setScenarios] = useState([]);
-    const [dataModelGraph, setDataModelGraph] = useState({"models": 0, "avg": 0});
     const [scenarioId, setScenarioId] = useState(0);
     const [products, setProducts] = useState([]);
     const [selectedProduct, setSelectedProduct] = useState(null); // Estado para almacenar el producto seleccionado
@@ -41,6 +40,7 @@ const GraphicBySku = () => {
     const [errorType, setErrorType] = useState(null);
     const [errors, setErrors] = useState([]);
     const [searchTerm, setSearchTerm] = useState(""); 
+    const [bestModel, setBestModel] = useState("");
 
     useEffect(() => {
         axios.get(`${apiUrl}/scenarios/`, {
@@ -53,16 +53,6 @@ const GraphicBySku = () => {
         })
         .catch(err => {console.log(err);})
     }, []);
-
-    const handleGraphicDataModels = (scId) => { 
-        const data = {
-            "scenario_id": scId,
-        }
-
-        axios.post(`${apiUrl}/forecast/graphic-model`, data, {headers})
-        .then(res => setDataModelGraph(res.data))
-        .catch(err => console.log(err)); 
-    };
     
     const handlePageChange = ({ selected }) => {
         setCurrentPage(selected);
@@ -102,13 +92,13 @@ const GraphicBySku = () => {
             
             const data = response.data;
     
-            if (data && data.models && data.dates && data.error && data.error_type) {
+            if (data && data.models && data.dates && data.error && data.error_type && data.best_model) {
                 const labels = data.dates;
                 const datasets = data.models.map((model, index) => ({
                     label: model.name,
                     data: model.values,
-                    borderColor: `rgba(${index * 90}, 99, 132, 0.5)`,
-                    backgroundColor: `rgba(${index * 60}, 99, 132, 0.5)`,
+                    borderColor: `rgba(${index * 100}, 99, 132, 0.5)`,
+                    backgroundColor: `rgba(${index * 100}, 99, 132, 0.5)`,
                     fill: false,
                 }));
     
@@ -116,9 +106,10 @@ const GraphicBySku = () => {
                     labels: labels,
                     datasets: datasets,
                 });
-
+                setBestModel(data.best_model)
                 setErrorType(data.error_type);
                 setErrors(data.error);
+
             }
 
         } catch (err) {
@@ -132,7 +123,6 @@ const GraphicBySku = () => {
         let id = e.target.value;
         setScenarioId(id);
         setDisabledModal(false);
-        handleGraphicDataModels(id);
         getProducts(id);
     };
 
@@ -146,21 +136,56 @@ const GraphicBySku = () => {
         product.SKU.toLowerCase().includes(searchTerm.toLowerCase())
     );
 
+    const handleModelChange = (newModel) => {
+        // Mostrar alerta de confirmación
+        Swal.fire({
+            title: 'Confirmar cambio',
+            text: `¿Estás seguro de cambiar el modelo ganador a "${newModel}"?`,
+            icon: 'warning',
+            showCancelButton: true,
+            confirmButtonText: 'Sí, cambiar',
+            cancelButtonText: 'Cancelar'
+        }).then(async (result) => {
+            if (result.isConfirmed) {
+                // Preparar datos
+                const payload = {
+                    new_model: newModel,
+                    old_model: bestModel,
+                    scenario_id: scenarioId,
+                    product: selectedProduct
+                };
+
+                try {
+                    // Hacer petición POST para cambiar el modelo
+                    await axios.post(`${apiUrl}/forecast/set-best-model`, payload, { headers });
+
+                    // Actualizar el modelo ganador localmente
+                    setBestModel(newModel);
+
+                    // Mostrar alerta de éxito
+                    Swal.fire('Éxito', 'El modelo ganador ha sido cambiado.', 'success');
+                } catch (error) {
+                    console.error('Error al cambiar el modelo ganador:', error);
+                    Swal.fire('Error', 'Ocurrió un error al cambiar el modelo ganador.', 'error');
+                }
+            }
+        });
+    };
+
     const startIndex = currentPage * itemsPerPage;
     const endIndex = startIndex + itemsPerPage;
     const currentItems = filteredProducts.slice(startIndex, endIndex);
     const columns = ["Family", 'Category', 'Salesman', 'Subcategory', 'Client', 'Region', 'SKU', 'Description'];
 
-
     return(
-        <div className="w-100 px-3 gap-5 d-flex justify-content-start flex-column align-items-start">
-            <div className="d-flex w-auto justify-content-center align-items-center gap-5">
+        <div className="w-100 px-3 gap-2 d-flex justify-content-start flex-column align-items-start mt-5">
+            <div className="d-flex w-auto justify-content-center align-items-center gap-5 px-5">
                 <div className="w-auto d-flex flex-column justify-content-center align-items-start gap-1 mb-3">
                     <p className="text-primary w-auto m-0 p-0">Seleccionar Escenario</p>
                     <select className="form-select w-100 mt-2" style={{"maxWidth": "250px", "minWidth":"200px"}} onChange={handleChangeScenario}>
                         <option value={0}>-----</option>
                         {scenarios.map(item => (
-                        <option key={item.id} value={item.id}>{item.scenario_name}</option>
+                            <option key={item.id} value={item.id}>{item.scenario_name}</option>
                         ))}
                     </select>
                 </div>
@@ -171,7 +196,7 @@ const GraphicBySku = () => {
                 </MDBBtn>
             </div>
 
-            <div>
+            <div className="px-5">
                 <p className="text-primary">Producto: </p>
                 {selectedProduct && (
                     <p>
@@ -182,25 +207,47 @@ const GraphicBySku = () => {
                 )}
             </div>
 
-            <div className="d-flex justify-content-end align-items-end w-100">
-                <div className="w-auto" style={{ minWidth: "265px" }}>
-                    <div className="w-100 border rounded d-flex flex-column justify-content-start align-items-start">
-                        <div className="p-1 w-100" style={{ backgroundColor: "#626266" }}>
-                            <h6 className="text-center text-white">{errorType === '' ? 'Error' : errorType}</h6>
-                        </div>
-
-                        {errors.map((item, index) => (
-                            <div key={index} className="p-1 w-100" style={{ backgroundColor: "rgba(43, 127, 214, 0.08)" }}>
-                                {item.name !== 'actual' && (
-                                    <p className="text-center text-black">
-                                        <strong>{item.name}</strong> {Math.round(parseFloat(item.value) * 100) / 100}%
-                                    </p>
-                                )}
+            {selectedProduct !== null &&
+                <div className="d-flex justify-content-between align-items-center w-100 px-5">
+                    <div className="w-auto d-flex justify-content-center align-items-center gap-4 mb-3">
+                        <p className="text-primary w-auto m-0 p-0">Cambiar modelo ganador</p>
+                        <select 
+                            className="form-select w-100 mt-2" 
+                            style={{"maxWidth": "250px", "minWidth":"200px"}}
+                            onChange={(e) => handleModelChange(e.target.value)}
+                        >
+                            <option value={null}>--------</option>
+                            {errors.map((item, index) => (
+                                (item.name !== 'actual' && (
+                                    
+                                    <option className={bestModel === item.name && "fw-bold text-success"} key={index} value={item.name}>
+                                        {item.name}
+                                        {bestModel === item.name && <MDBIcon fas icon="check" color="success"/> }
+                                    </option>
+                                ))
+                            ))}
+                        </select>
+                    </div>
+                    
+                    <div className="w-auto" style={{ minWidth: "265px" }}>
+                        <div className="w-100 border rounded d-flex flex-column justify-content-start align-items-start">
+                            <div className="p-1 w-100" style={{ backgroundColor: "#626266" }}>
+                                <h6 className="text-center text-white">{errorType === '' ? 'Error' : errorType}</h6>
                             </div>
-                        ))}
+
+                            {errors.map((item, index) => (
+                                <div key={index} className="p-1 w-100" style={{ backgroundColor: "rgba(43, 127, 214, 0.08)" }}>
+                                    {item.name !== 'actual' && (
+                                        <p className="text-center text-black">
+                                            <strong>{item.name}</strong> {Math.round(parseFloat(item.value) * 100) / 100}%
+                                        </p>
+                                    )}
+                                </div>
+                            ))}
+                        </div>
                     </div>
                 </div>
-            </div>
+            }
 
             <MDBModal show={basicModal} setShow={setBasicModal} tabIndex='-1'>           
                 <MDBModalDialog size="xl">
@@ -259,12 +306,8 @@ const GraphicBySku = () => {
                 </MDBModalDialog>
             </MDBModal>
 
-            <div className="w-100 d-flex justify-content-end align-items-end">
-                
-            </div>
+            <div className="d-flex justify-content-start align-items-center flex-column mt-3 w-100">
 
-            <div className="w-100 d-flex justify-content-start align-items-center gap-5">
-                <GraphModels scenario={scenarioId} graphicData={dataModelGraph}/>
                 { selectedProduct !== null && <ModelsGraphicByProduct data={chartData} productChanged={productChanged} /> }
             </div>
 

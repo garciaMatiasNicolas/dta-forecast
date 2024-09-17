@@ -34,7 +34,15 @@ class AllProductView(APIView):
                 for key, value in cleaned_product.items()
             ])
             table = ForecastScenario.objects.get(pk=scenario_pk)
-            query = f"SELECT * FROM {table.predictions_table_name} WHERE {adjusted_conditions};"
+            
+            query = f'''
+                WITH FilteredTable AS (
+                    SELECT * FROM {table.predictions_table_name} 
+                        WHERE Model = 'actual' OR Best_Model = 1
+                )
+                SELECT * FROM FilteredTable WHERE {adjusted_conditions};
+                
+            '''
         
         data = pd.read_sql_query(query, engine)
 
@@ -113,7 +121,6 @@ class AllProductView(APIView):
                     dates_report = ReportDataViews.join_dates(list_dates=date_range, for_report=True)
                     reports_data[date_name] = dates_report
                 
-
                 actual_dates = f'''
                     SELECT
                         SKU || " " || DESCRIPTION,
@@ -141,7 +148,7 @@ class AllProductView(APIView):
                         ROUND({reports_data["full_actual_year"]}),
                         ROUND({reports_data["full_past_year"]})
                     FROM {predictions_table_name}
-                    WHERE model != 'actual' AND SKU = "{product}"
+                    WHERE model != 'actual' AND SKU = "{product}" AND best_model = 1
                     GROUP BY SKU, DESCRIPTION;
                 '''
 

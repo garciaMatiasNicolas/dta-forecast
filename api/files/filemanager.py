@@ -19,7 +19,7 @@ def validate_columns(dataframe: pd.DataFrame, required_columns: list) -> bool:
         return False, f"Faltan las siguientes columnas requeridas: {', '.join(missing_columns)}"
     return True, ""
 
-def save_dataframe(route_file: str, file_name: str, model_type: str, wasSaved: bool, project_pk: int) -> str:
+def save_dataframe(route_file: str, file_name: str, model_type: str, wasSaved: bool, project_pk: int, df: pd.DataFrame = None) -> str:
     models_allowed = ["historical_data", "historical_exogenous_variables", "projected_exogenous_variables", "stock_data"]
     
     cols_stock_data = ["Stock", "Sales Order Pending Deliverys", "Safety Lead Time (days)", "Safety stock (days)", 
@@ -137,8 +137,8 @@ def save_dataframe(route_file: str, file_name: str, model_type: str, wasSaved: b
             return "succeed"
 
     else:
-        new_route = obtain_file_route(route=route_file)
-        dataframe = pd.read_excel(new_route)
+
+        dataframe = df
         dataframe.astype('str')
         dataframe = dataframe.applymap(lambda x: x.strip() if isinstance(x, str) else x)
         table_name = file_name

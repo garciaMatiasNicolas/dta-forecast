@@ -35,10 +35,17 @@ class FilterDataViews(APIView):
                    query_conditions = " AND ".join([f"{key} = '{value}'" for condition in conditions for key, value in condition.items()])
 
                 with connection.cursor() as cursor:
+                    base_query = f'''
+                        WITH FilteredTable AS (
+                            SELECT * FROM {table_name} 
+                            WHERE Model = 'actual' OR best_model = 1
+                        )
+                    '''
+
                     if filter_name == 'SKU':
-                        query = f'SELECT * FROM {table_name} WHERE SKU = "{filter_value}"'
+                        query = base_query + f'SELECT * FROM FilteredTable WHERE SKU = "{filter_value}"'
                     else:
-                        query = f"SELECT * FROM {table_name} WHERE {query_conditions}"
+                        query = base_query + f'SELECT * FROM FilteredTable WHERE {query_conditions}'
 
                     cursor.execute(query)
                     data_rows = cursor.fetchall()
@@ -57,11 +64,11 @@ class FilterDataViews(APIView):
                     actual_rows = df_pred[df_pred[('model',)] == 'actual']
                     other_rows = df_pred[df_pred[('model',)] != 'actual']
 
-                    date_columns = [str(col[0]) for col in df_pred.columns[9:]]
+                    date_columns = [str(col[0]) for col in df_pred.columns[9:-2]]
 
-                    actual_sum = actual_rows[df_pred.columns[9:]].sum()
+                    actual_sum = actual_rows[df_pred.columns[9:-2]].sum()
 
-                    other_sum = other_rows[df_pred.columns[9:]].sum()
+                    other_sum = other_rows[df_pred.columns[9:-2]].sum()
 
                     actual_data = {'x': date_columns, 'y': actual_sum.tolist()}
                     other_data = {'x': date_columns, 'y': other_sum.tolist()}
@@ -177,11 +184,18 @@ class FiltersByGroup(APIView):
                 columns_date = columns_date[:-pred_p] if actual_or_predicted == "actual" else columns_date
                 sum_columns = ', '.join([f'SUM(`{date}`)' for date in columns_date])
 
+                base_query = f'''
+                    WITH FilteredTable AS (
+                        SELECT * FROM {table} 
+                        WHERE Model = 'actual' OR Best_Model = 1
+                    )
+                '''
+
                 if actual_or_predicted == 'both':
                     pass
 
                 else:
-                    query = f'''SELECT {group}, {sum_columns} FROM {table}
+                    query = base_query + f'''SELECT {group}, {sum_columns} FROM FilteredTable
                                     WHERE model {'=' if actual_or_predicted == 'actual' else '!='} "actual" 
                                     GROUP BY {group} '''
                 
@@ -195,11 +209,12 @@ class FiltersByGroup(APIView):
 
                     for item in data:
                         category_name = item[0]
-                        sales_values = item[1:-1]
+                        if actual_or_predicted == "predicted":
+                            sales_values = item[1:-3]
+                        else:
+                            sales_values = item[1:-1]
                         final_data['y'][category_name] = sales_values
                     
-                    print(final_data)
-
             return Response(data=final_data, status=status.HTTP_200_OK)
 
         except Exception as err:
@@ -260,7 +275,13 @@ class GetPredictionsTableAPIView(APIView):
             table = scenario_data.predictions_table_name
 
             with connection.cursor() as cursor:
-                query = f'SELECT Family, Region, Salesman, Client, Category, Subcategory, SKU, Description FROM {table} WHERE model = "actual"'
+                base_query = f'''
+                    WITH FilteredTable AS (
+                        SELECT * FROM {table} 
+                        WHERE Model = 'actual' OR Best_Model = 1
+                    )
+                '''
+                query = base_query + f'SELECT Family, Region, Salesman, Client, Category, Subcategory, SKU, Description FROM {table} WHERE model = "actual"'
                 data = cursor.execute(sql=query)
                 data = cursor.fetchall()
 

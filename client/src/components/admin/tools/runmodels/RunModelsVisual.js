@@ -62,7 +62,7 @@ const RunModelsVisual = (props) => {
                                             />
                                         ))}
     
-                                        <p className="text-primary mt-5">Modelos Variables Enxógenas</p>
+                                        <p className="text-primary mt-5">Modelos Variables Exógenas</p>
                                         {exogModels.map(item => (
                                             <MDBCheckbox 
                                                 name='modelSelection' 

@@ -172,7 +172,7 @@ class ReportDataViews(APIView):
                         ROUND({reports_data["full_actual_year"]}),
                         ROUND({reports_data["full_past_year"]})
                     FROM {predictions_table_name}
-                    WHERE model != 'actual'
+                    WHERE model != 'actual' AND best_model = 1
                     GROUP BY {filter_name} WITH ROLLUP;
 
                     SELECT 'TOTAL',
@@ -182,7 +182,7 @@ class ReportDataViews(APIView):
                         ROUND({reports_data["full_actual_year"]}),
                         ROUND({reports_data["full_past_year"]})
                     FROM {predictions_table_name}
-                    WHERE model != 'actual';
+                    WHERE model != 'actual' AND best_model = 1;
                 '''
 
                 cursor.execute(sql=actual_dates)
@@ -267,6 +267,7 @@ class ReportDataViews(APIView):
                 past_cols = self.join_dates(list_dates=past_dates, for_report=False)
                 future_cols = self.join_dates(list_dates=future_dates, for_report=False)
                 data = {}
+                
 
                 query_for_past_dates = f'''
                     SELECT {filter_name},
@@ -303,7 +304,7 @@ class ReportDataViews(APIView):
                             SELECT {filter_name},
                             {future_cols}
                                 FROM {predictions_table_name}
-                                WHERE model != 'actual'
+                                WHERE model != 'actual' AND best_model = 1
                                 {'AND SKU = ' + f"'{str(product)}'" if product else ''}
                             GROUP BY {filter_name}
                         ) b ON a.{filter_name} = b.{filter_name};
@@ -347,17 +348,21 @@ class ModelsGraphicAPIView(APIView):
             table_name = scenario.predictions_table_name
 
             with connection.cursor() as cursor:
-                cursor.execute(f'SELECT COUNT(*) FROM {table_name}')
+                query = f'SELECT COUNT(*) FROM {table_name} WHERE Model = "actual" OR Best_Model = 1'
+                cursor.execute(query)
                 rows = cursor.fetchall()
                 total = rows[0][0] / 2
 
-                cursor.execute(f'''
+                query = f'''
                     SELECT  
                     MODEL, 
                     COUNT(*) 
                     FROM {table_name}
-                    WHERE MODEL != 'actual' GROUP BY MODEL;''')
-
+                    WHERE (MODEL != 'actual')
+                    AND (Model = 'actual' OR Best_Model = 1)
+                    GROUP BY MODEL;'''
+                
+                cursor.execute(query)
                 data_rows = cursor.fetchall()
 
                 models = []

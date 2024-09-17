@@ -6,8 +6,10 @@ from rest_framework.response import Response
 from rest_framework import status
 from ..serializer import ForecastScenarioSerializer
 from ..models import ForecastScenario
-from django.db import connection, OperationalError
+from django.db import transaction, connection, OperationalError
 import os
+from rest_framework.views import APIView
+from django.shortcuts import get_object_or_404
 
 
 @authentication_classes([TokenAuthentication])
@@ -62,23 +64,82 @@ class ForecastScenarioViewSet(ModelViewSet):
             excel_with_predictions = scenario_to_destroy.url_predictions if scenario_to_destroy.url_predictions is not None else ""
 
             try:
-                if os.path.exists(excel_with_predictions):
-                    os.remove(excel_with_predictions)
+                with transaction.atomic():
 
-                try:
-                    with connection.cursor() as cursor:
-                        cursor.execute(f'DROP TABLE {table_name}')
+                    # Intentar eliminar la tabla de predicciones
+                    if table_name:
+                        with connection.cursor() as cursor:
+                            try:
+                                cursor.execute(f'DROP TABLE IF EXISTS `{table_name}`;')  
+                            except OperationalError as dbError:
+                                print("ERROR AL ELIMINAR TABLA: ", dbError)
+                                raise
 
-                except OperationalError as dbError:
-                    pass
+                    if excel_with_predictions and os.path.exists(excel_with_predictions):
+                        try:
+                            os.remove(excel_with_predictions)
+                        except Exception as fileError:
+                            print("ERROR AL ELIMINAR ARCHIVO: ", fileError)
+                            raise
 
-                scenario_to_destroy.delete()
-                return Response({'message': 'scenario_deleted'}, status=status.HTTP_200_OK)
+                    scenario_to_destroy.delete()
+
+                    return Response({'message': 'scenario_deleted'}, status=status.HTTP_200_OK)
+
+            except OperationalError as dbError:
+                print("ERROR CON LA BASE DE DATOS: ", dbError)
+                return Response({'error': 'table_not_deleted'}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
 
             except Exception as error:
-                print(error)
-                return Response({'error': 'server_error'}, status=status.HTTP_400_BAD_REQUEST)
+                print("ERROR GENERAL: ", error)
+                return Response({'error': 'server_error'}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
 
         else:
-            return Response({'error': 'scenario_not_found'},
-                            status=status.HTTP_400_BAD_REQUEST)
+            return Response({'error': 'scenario_not_found'}, status=status.HTTP_404_NOT_FOUND)
+
+
+class SetBestModel(APIView):
+    @authentication_classes([TokenAuthentication])
+    @permission_classes([IsAuthenticated])
+    def post(self, request):
+        try:
+            data = request.data
+            
+            new_model = data["new_model"]
+            old_model = data["old_model"]
+            sc_id = data["scenario_id"]
+            product = data["product"]
+
+            # Obtén el escenario a partir del id
+            scenario = get_object_or_404(ForecastScenario, pk=sc_id)
+            
+            # Nombre de la tabla de predicciones
+            table = scenario.predictions_table_name
+
+            # Construcción de las condiciones para la query
+            conditions = " AND ".join([f"{key} = '{value}'" for key, value in product.items()])
+
+            with connection.cursor() as cursor:
+                # Query para actualizar `best_model` a 1 para el `new_model`
+                update_new_model_query = f"""
+                    UPDATE {table}
+                    SET best_model = 1
+                    WHERE {conditions}
+                    AND model = '{new_model}'
+                """
+                cursor.execute(update_new_model_query)
+
+                # Query para actualizar `best_model` a 0 para el `old_model`
+                update_old_model_query = f"""
+                    UPDATE {table}
+                    SET best_model = 0
+                    WHERE {conditions}
+                    AND model = '{old_model}'
+                """
+                cursor.execute(update_old_model_query)
+
+            return Response({"message": "Modelo actualizado correctamente"}, status=200)
+        
+        except Exception as e:
+            print(f"Error actualizando el modelo ganador: {e}")
+            return Response({"error": str(e)}, status=500)

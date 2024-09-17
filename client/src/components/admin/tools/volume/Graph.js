@@ -219,21 +219,23 @@ const Graph = () => {
   }
 
   const getFirstGraphs = (scenarioId) => {
-    axios.get(`${apiUrl}/scenarios/${scenarioId}`, { headers })
-    .then(res => {
-      let graphicLineData =  res.data.final_data_pred;
-      let graphicBarData = res.data.data_year_pred;
-      
-      setDataInGraphs(graphicBarData.other_data.x, graphicLineData.other_data.x, graphicBarData.other_data.y, graphicLineData.other_data.y, graphicBarData.actual_data.y, graphicLineData.actual_data.y);
-      setError(res.data.error_last_twelve_periods);
-      setErrorLastPeriod(res.data.error_last_period);
-      setErrorAbs(res.data.error_abs);
-      setErrorType(res.data.error_type)
-    })
-    .catch(err => {
-      if (err.response.status === 401) { showErrorAlert("Su sesion ha expirado, debe iniciar sesion nuevamente"); }
-      if (err.response.status === 404) { setData(false) }
-    })
+    if (scenarioId == "Mostrar grafico de escenario..."){
+      setData(false)
+      setDataInGraphs(false)
+    } 
+    else {
+      axios.get(`${apiUrl}/forecast/graphic-forecast?scenario=${scenarioId}`, { headers })
+      .then(res => {
+        let graphicLineData =  res.data.final_data_pred;
+        let graphicBarData = res.data.data_year_pred;
+        
+        setDataInGraphs(graphicBarData.other_data.x, graphicLineData.other_data.x, graphicBarData.other_data.y, graphicLineData.other_data.y, graphicBarData.actual_data.y, graphicLineData.actual_data.y);
+      })
+      .catch(err => {
+        if (err.response.status === 401) { showErrorAlert("Su sesion ha expirado, debe iniciar sesion nuevamente"); }
+        if (err.response.status === 400) { setData(false) }
+      })
+    }
   }
 
   const fetchConversionData = async (id, category) => {
@@ -253,11 +255,31 @@ const Graph = () => {
     setCurrentPage(0); // Restablece la página actual a 0 cuando se cambia la categoría
   }
 
+  const getErrors = (id) => {
+    axios.get(`${apiUrl}/scenarios/${id}/`, {
+      headers: headers
+    })
+    .then(res => {
+      setErrorType(res.data.error_type);
+      setError(res.data.error_last_twelve_periods);
+      setErrorAbs(res.data.error_abs);
+      setErrorLastPeriod(res.data.error_last_period);
+    })
+    .catch(res => {
+      res.response.status === 404 && showErrorAlert("Escenario no encontrado");
+      setError("");
+      setErrorType("");
+      setErrorAbs("");
+      setErrorLastPeriod("");
+    })
+  };
+
   // Function for set graphic data by scenario on select 
   const handleOnChangeScenario = (e) => {
     let scenarioId = e.target.value;
     setScenarioId(scenarioId);
     getFirstGraphs(scenarioId);
+    getErrors(scenarioId);
     setConditions([]);
     fetchConversionData(scenarioId, "SKU");
     setCurrentPage(0); // Restablece la página actual a 0 cuando se cambia el escenario

@@ -1,6 +1,6 @@
 from django.urls import path
 from .views.stock_data import StockDataView, StockByProduct
-from .views.forecast_views import RunModelsViews
+from .views.forecast_views import RunModelsViews, GraphicDataView
 from .views.filter_data import FilterDataViews, GetFiltersView, FiltersByGroup, FiltersNested, GetPredictionsTableAPIView
 from .views.report_data_view import ReportDataViews, ModelsGraphicAPIView
 from .views.mape_report_view import ErrorReportAPIView, ErrorGraphicView, ForecastModelsSelctedGraphAPIView
@@ -9,6 +9,7 @@ from .views.exploration_variables_view import (AllocationMatrixView, HistoricalD
 from .views.outliers_graphic import GraphicOutliersView, FiltersHistoricalData
 from .views.product_all import AllProductView
 from .views.conversion_forecast import ConversionForecast
+from .views.scenarios_views import SetBestModel
 
 test_model = RunModelsViews.as_view()
 filter_data = FilterDataViews.as_view()
@@ -33,9 +34,12 @@ product_all = AllProductView.as_view()
 conversion = ConversionForecast.as_view()
 all_models_graph = ForecastModelsSelctedGraphAPIView.as_view()
 forecast_table = GetPredictionsTableAPIView.as_view()
+forecast_graphic = GraphicDataView.as_view()
+set_best_model = SetBestModel.as_view()
 
 urlpatterns = [
     path('test-model', test_model, name='test_model'),
+    path('graphic-forecast', forecast_graphic, name="forecast_graphic"),
     path('filter-group', filter_by_group, name='filter_by_group'),
     path('filter-data', filter_data, name='filter_data'),
     path('filters-nested', filters_nested, name='filter_nested'),
@@ -58,4 +62,5 @@ urlpatterns = [
     path('conversion-forecast/', conversion, name="conversion"),
     path('all-models-graph', all_models_graph, name="all_models_graph"),
     path('predictions-table/', forecast_table, name="forecast_table"),
+    path('set-best-model', set_best_model, name="set_best_model")
 ]

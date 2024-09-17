@@ -8,7 +8,7 @@ from .serializers import ProjectSerializer
 from .models import ProjectsModel
 from files.file_model import FileRefModel
 from forecast.models import ForecastScenario
-from django.db import connection, OperationalError
+from django.db import transaction, connection, OperationalError
 from django.core.files.storage import default_storage
 import os
 
@@ -64,6 +64,7 @@ class ProjectsViewSet(ModelViewSet):
         files = FileRefModel.objects.filter(project_id=pk)
         scenarios = ForecastScenario.objects.filter(project_id=pk)
 
+        # Listas con tablas y archivos asociados al proyecto
         data_tables = [file.file_name for file in files]
         excel_data_uploaded = [file.file.name for file in files]
 
@@ -73,39 +74,68 @@ class ProjectsViewSet(ModelViewSet):
         if project_to_delete:
 
             if type_of_delete == 'status':
+                # Cambiar el estado del proyecto en lugar de eliminarlo
                 project_to_delete.status = False
                 project_to_delete.save()
-                return Response({'message': 'status_project_changed'},
-                                status=status.HTTP_200_OK)
+                return Response({'message': 'status_project_changed'}, status=status.HTTP_200_OK)
 
             else:
+                try:
+                    # Iniciar una transacción atómica
+                    with transaction.atomic():
+                        # Eliminar las tablas de datos
+                        with connection.cursor() as cursor:
+                            # Intentar eliminar las tablas de datos subidos
+                            for table in data_tables:
+                                if table:
+                                    try:
+                                        cursor.execute(f'DROP TABLE IF EXISTS `{table}`;')  # Usar IF EXISTS evita errores si la tabla no existe
+                                    except OperationalError as dbError:
+                                        print(f"Error al eliminar la tabla {table}: {dbError}")
+                                        raise
 
-                with connection.cursor() as cursor:
-                    try:
-                        for table in data_tables:
-                            cursor.execute(f'DROP TABLE {table}')
+                            # Intentar eliminar las tablas de predicciones
+                            for table_pred in predicted_data_tables:
+                                if table_pred:
+                                    try:
+                                        cursor.execute(f'DROP TABLE IF EXISTS `{table_pred}`;')
+                                    except OperationalError as dbError:
+                                        print(f"Error al eliminar la tabla de predicciones {table_pred}: {dbError}")
+                                        raise
 
-                    except OperationalError:
-                        pass
+                        # Eliminar archivos de datos subidos
+                        for excel in excel_data_uploaded:
+                            if excel and default_storage.exists(excel):
+                                try:
+                                    default_storage.delete(excel)
+                                except Exception as fileError:
+                                    print(f"Error al eliminar el archivo {excel}: {fileError}")
+                                    raise
 
-                    try:
-                        for table_pred in predicted_data_tables:
-                            cursor.execute(F'DROP TABLE {table_pred}')
+                        # Eliminar archivos de predicciones
+                        for excel_pred in excel_predictions:
+                            if excel_pred and default_storage.exists(excel_pred):
+                                try:
+                                    default_storage.delete(excel_pred)
+                                except Exception as fileError:
+                                    print(f"Error al eliminar el archivo de predicciones {excel_pred}: {fileError}")
+                                    raise
 
-                    except OperationalError:
-                        pass
+                        # Finalmente, eliminar el proyecto
+                        project_to_delete.delete()
 
-                for excel in excel_data_uploaded:
-                    if default_storage.exists(excel):
-                        default_storage.delete(excel)
+                        return Response({'message': 'project_deleted'}, status=status.HTTP_200_OK)
 
-                project_to_delete.delete()
-                return Response({'message': 'project_deleted'},
-                                status=status.HTTP_200_OK)
+                except OperationalError as dbError:
+                    print(f"Error en la base de datos: {dbError}")
+                    return Response({'error': 'database_error'}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
+
+                except Exception as error:
+                    print(f"Error general: {error}")
+                    return Response({'error': 'server_error'}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
 
         else:
-            return Response({'error': 'project_not_found'},
-                            status=status.HTTP_400_BAD_REQUEST)
+            return Response({'error': 'project_not_found'}, status=status.HTTP_404_NOT_FOUND)
 
 
 class SearchProject:

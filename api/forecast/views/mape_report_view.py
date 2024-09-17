@@ -23,48 +23,43 @@ class ForecastModelsSelctedGraphAPIView(APIView):
         product = request.data.get('product')
 
         scenario = get_object_or_404(ForecastScenario, pk=sc_id)
-        excel_name = f'{scenario.project.project_name}_scenario_{scenario.scenario_name}_u{scenario.user.id}.xlsx_all.xlsx'
-        excel_path = os.path.join('media', 'excel_files', 'predictions', excel_name)
-
-        # Verificar si el archivo existe
-        if not os.path.exists(excel_path):
-            return Response({"error": "El archivo de Excel no existe."}, status=404)
+        table = scenario.predictions_table_name
 
         # Leer el archivo de Excel en un DataFrame de pandas
         try:
-            df = pd.read_excel(excel_path)
-            df.fillna('null', inplace=True)
+            with connection.cursor() as cursor:
+                conditions = " AND ".join([f"{key} = '{value}'" for key, value in product.items()])
+                query = f'SELECT * FROM {table} WHERE {conditions}'
+                query_for_best_model = f'SELECT model FROM {table} WHERE {conditions} AND best_model = 1'
 
-            # Filtrar dataframe
-            product_data = df[
-                (df["Family"] == product["Family"]) &
-                (df["Region"] == product["Region"]) &
-                (df["Category"] == product["Category"]) &
-                (df["Client"] == product["Client"]) &
-                (df["Subcategory"] == product["Subcategory"]) &
-                (df["Salesman"] == product["Salesman"]) &
-                (df["SKU"] == product["SKU"]) &
-                (df["Description"] == product["Description"]) 
-            ]
+                cursor.execute(query)
+                result = cursor.fetchall()
 
-            product_data = product_data.drop(columns=["Family", "Region", "Client", "Subcategory", "Category", "SKU", "Description", "Salesman"])
-            winner_model = product_data[['model', scenario.error_type]].copy()
-            model_columns = ['model'] + [col for col in product_data.columns if col.startswith('202')]
-            product_data_filtered = product_data[model_columns]
-            
+                columns = [col[0] for col in cursor.description]
+                product_data = pd.DataFrame(result, columns=columns)
+
+                cursor.execute(query_for_best_model)
+                best_model = cursor.fetchall()
+                for model in best_model:
+                    best_model = model[0]
+
+            product_data = product_data.drop(columns=["Family", "Region", "Client", "Subcategory", "Category", "SKU", "Description", "Salesman","LAST ERROR", "best_model"])
+
+            dates = [col for col in product_data.columns if col.startswith('20')]
 
             # Convertir los datos a un formato adecuado para JSON
             data_for_chart = {
-                "dates": product_data_filtered.columns[1:].tolist(),  # Las fechas
+                "dates": dates,  # Las fechas
                 "models": [], 
                 "error": [],
-                "error_type": scenario.error_type
+                "error_type": scenario.error_type,
+                "best_model": best_model
             }
 
             errors = []
 
             # Iterar sobre las filas del DataFrame winner_model
-            for index, row in winner_model.iterrows():
+            for index, row in product_data.iterrows():
                 model_name = row['model']
                 error_value = row[scenario.error_type]
                 
@@ -78,7 +73,7 @@ class ForecastModelsSelctedGraphAPIView(APIView):
             data_for_chart['error'] = errors
 
             # Iterar sobre cada modelo para agregar sus datos
-            for _, row in product_data_filtered.iterrows():
+            for _, row in product_data.iterrows():
                 model_data = {
                     "name": row['model'],
                     "values": row[1:].tolist()  # Los valores de ventas para ese modelo
@@ -90,6 +85,7 @@ class ForecastModelsSelctedGraphAPIView(APIView):
             return Response(data=data_for_chart, status=200)
             
         except Exception as e:
+            print(e)
             return Response({"error": str(e)}, status=500)
 
 
@@ -109,12 +105,12 @@ class ErrorReportAPIView(APIView):
             table_name = scenario.predictions_table_name
 
             if product:
-                query = f'''
+                query =  f'''
                 SELECT
                 CONCAT(SKU, " ", DESCRIPTION) AS product, 
                 ROUND(MAX(CASE WHEN MODEL = 'actual' THEN `{filter_value}` END),2) AS actual, 
                 ROUND(MAX(CASE WHEN MODEL != 'actual' THEN `{filter_value}` END),2) AS fit 
-                FROM {table_name} WHERE SKU = "{product}"
+                FROM {table_name} WHERE SKU = "{product}" AND (model = "actual" OR best_model = 1)
                 GROUP BY SKU, DESCRIPTION;
                 '''
 
@@ -124,7 +120,7 @@ class ErrorReportAPIView(APIView):
                 CONCAT(SKU, " ", DESCRIPTION) AS product, 
                 ROUND(MAX(CASE WHEN MODEL = 'actual' THEN `{filter_value}` END),2) AS actual, 
                 ROUND(MAX(CASE WHEN MODEL != 'actual' THEN `{filter_value}` END),2) AS fit 
-                FROM {table_name} GROUP BY SKU, DESCRIPTION;
+                FROM {table_name} WHERE model = "actual" OR best_model = 1 GROUP BY SKU, DESCRIPTION;
                 '''
 
             methods = {
@@ -202,20 +198,18 @@ class ErrorGraphicView(APIView):
                 max_date = scenario.max_historical_date
                 pred_periods = scenario.pred_p
 
-                print(type(max_date))
-
                 last_year_months = self.obtain_last_year_months(max_date, pred_periods)
                 error_values = []
 
                 if filter_name == "date":
                     for date in last_year_months[-12:]:
                         with connection.cursor() as cursor:
-
+                            
                             query = f'''
                             SELECT
-                            ROUND(MAX(CASE WHEN MODEL = 'actual' THEN {date} END),2) AS actual, 
-                            ROUND(MAX(CASE WHEN MODEL != 'actual' THEN {date} END),2) AS fit 
-                            FROM {table_name} GROUP BY SKU, DESCRIPTION;
+                                ROUND(MAX(CASE WHEN MODEL = 'actual' THEN `{date}` END),2) AS actual, 
+                                ROUND(MAX(CASE WHEN MODEL != 'actual' THEN `{date}` END),2) AS fit 
+                                FROM {table_name} WHERE model = "actual" OR best_model = 1 GROUP BY SKU, DESCRIPTION;
                             '''
 
                             cursor.execute(query)
@@ -240,18 +234,18 @@ class ErrorGraphicView(APIView):
                             if filter_name == 'sku':
                                 query = f'''
                                     SELECT
-                                    ROUND(MAX(CASE WHEN MODEL = 'actual' THEN `{date}` END),2) AS actual, 
-                                    ROUND(MAX(CASE WHEN MODEL != 'actual' THEN `{date}` END),2) AS fit 
-                                    FROM {table_name} WHERE {filter_name} = {filter_value}
-                                    GROUP BY SKU, DESCRIPTION;
+                                        ROUND(MAX(CASE WHEN MODEL = 'actual' THEN `{date}` END),2) AS actual, 
+                                        ROUND(MAX(CASE WHEN MODEL != 'actual' THEN `{date}` END),2) AS fit 
+                                        FROM {table_name} WHERE {filter_name} = {filter_value} AND (model = "actual" OR best_model = 1)
+                                        GROUP BY SKU, DESCRIPTION;
                                 '''
 
                             else:
-                                query = f'''
+                                query =  f'''
                                     SELECT
                                     ROUND(MAX(CASE WHEN MODEL = 'actual' THEN `{date}` END),2) AS actual, 
                                     ROUND(MAX(CASE WHEN MODEL != 'actual' THEN `{date}` END),2) AS fit 
-                                    FROM {table_name} WHERE {filter_name} = '{filter_value}'
+                                    FROM {table_name} WHERE {filter_name} = '{filter_value}' AND (model = "actual" OR best_model = 1)
                                     GROUP BY SKU, DESCRIPTION;
                                 '''
                             
@@ -278,7 +272,6 @@ class ErrorGraphicView(APIView):
                     formatted_date = date_obj.strftime("%Y-%m-%d")
                     dates.append(formatted_date)
 
-                print({'x': dates, 'y': error_values})
                 return Response({'x': dates, 'y': error_values}, status=status.HTTP_200_OK)
 
             else:

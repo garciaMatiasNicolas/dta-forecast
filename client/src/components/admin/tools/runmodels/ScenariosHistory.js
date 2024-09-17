@@ -45,7 +45,11 @@ const ScenariosHistory = ({scenarioList}) => {
                 showSuccessAlert("El escenario y sus predicciones fueron eliminados satisfactoriamente", "Escenario eliminado");
                 updateScenarioList();
               })
-              .catch(()=>{showErrorAlert("Ocurrio un error inesperado, intente mas tarde");});
+              .catch((err)=>{
+                err.response.data.error == "scenario_not_found" && showErrorAlert("El escenario no existe. Intente mas tarde. Si persiste, contactar a soporte");
+                err.response.data.error == "table_not_deleted" && showErrorAlert("Ocurrio un error al eliminar la tabla. Intente mas tarde. Si persiste, contactar a soporte");
+                err.response.data.error == "server_error" && showErrorAlert("Error en el servidor")
+              });
             }
         });
     };

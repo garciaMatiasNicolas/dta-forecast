@@ -71,9 +71,10 @@ class Forecast(object):
         actual_dataframe.insert(loc=sku_index + 1, column="model", value="actual")
         actual_dataframe[self.future_dates] = 0.0
         actual_dataframe[self.error_method] = ""
+        actual_dataframe["LAST ERROR"] = ""
 
         actual_dataframe.columns = ['Family', 'Region', 'Salesman', 'Client', 'Category', 'Subcategory',
-                                    'SKU', 'Description', 'model'] + self.date_columns + [self.error_method]
+                                    'SKU', 'Description', 'model'] + self.date_columns + [self.error_method] + ["LAST ERROR"]
 
         predicted_dataframe = pd.concat([actual_dataframe, forecast_df], ignore_index=True)
         predicted_dataframe.fillna({f'{self.error_method}': 0}, inplace=True)
@@ -149,7 +150,6 @@ class Forecast(object):
                 for idx, row in enumerate(data_list, 1))
 
         predicted = {}
-        last_period_errors = []
 
         for product_idx, result in results:
             actual_sales = actual[f"Producto {product_idx}"]
@@ -160,8 +160,8 @@ class Forecast(object):
 
             error, last_period_error = error.calculate_error_periods_selected()
 
-            last_period_errors.append(last_period_error)
             result.append(error)
+            result.append(last_period_error)
             predicted_sales_with_mape = result
 
             predicted[f"Producto {product_idx}"] = predicted_sales_with_mape
@@ -186,7 +186,7 @@ class Forecast(object):
         for model_name in self.models:
             forecast_results = self.parallel_process(data=data, model_name=model_name, actual=actual_dict, exog_data=exog_data)
             forecast_results_df = pd.DataFrame(forecast_results).T.reset_index()
-            forecast_results_df.columns = ["Producto"] + self.date_columns + [self.error_method]
+            forecast_results_df.columns = ["Producto"] + self.date_columns + [self.error_method] + ["LAST ERROR"]
 
             predicted_dataframe = actual_dataframe.iloc[:, :8].copy()
             predicted_dataframe["model"] = model_name
@@ -195,7 +195,7 @@ class Forecast(object):
                 predicted_dataframe[col] = forecast_results_df[col]
 
             predicted_dataframe[self.error_method] = forecast_results_df[self.error_method]
-            # predicted_dataframe["LAST"] = forecast_results_df["LAST"]
+            predicted_dataframe["LAST ERROR"] = forecast_results_df["LAST ERROR"]
 
             model_results[model_name] = predicted_dataframe
 
@@ -208,18 +208,24 @@ class Forecast(object):
     def select_best_model(df: pd.DataFrame, error_method: str, models: list):
         key_columns = ['Family', 'Region', 'Salesman', 'Client', 'Category', 'Subcategory', 'SKU', 'Description']
 
-        selected_rows = []
+        # Inicializamos la columna 'best_model' con 0
+        df['best_model'] = 0
 
+        # Iteramos sobre cada grupo de filas basados en las key_columns
         for _, group in df.groupby(key_columns):
+            # Fila con el valor actual
             actual_row = group[group['model'] == 'actual']
-            if not actual_row.empty:
-                selected_rows.append(actual_row.iloc[0])
 
+            # Filas de los modelos seleccionados
             model_rows = group[group['model'].isin(models)]
+
+            # Si hay modelos en el grupo
             if not model_rows.empty:
-                best_model_row = model_rows.loc[model_rows[error_method].astype(float).idxmin()]
-                selected_rows.append(best_model_row)
+                # Encontramos la fila con el menor valor de error según el método de error
+                best_model_idx = model_rows[error_method].astype(float).idxmin()
 
-        result_df = pd.DataFrame(selected_rows)
+                # Asignamos 1 en la columna 'best_model' para el mejor modelo
+                df.loc[best_model_idx, 'best_model'] = 1
 
-        return result_df
+        # Retornamos el dataframe con la nueva columna
+        return df

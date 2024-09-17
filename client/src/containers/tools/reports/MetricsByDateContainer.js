@@ -4,6 +4,7 @@ import { useEffect, useRef, useState } from "react";
 import axios from "axios";
 import GraphMape from "./GraphMape";
 import { showErrorAlert } from "../../../components/other/Alerts";
+import GraphModels from "./GraphModels";
 
 const apiUrl = process.env.REACT_APP_API_URL;
 
@@ -25,6 +26,7 @@ const MetricsByDateContainer = () => {
   const [optionsFilter, setOptionsFilter] = useState([]);
   const [errorType, setErrorType] = useState("");
   const inputRef = useRef(null);
+  const [dataModelGraph, setDataModelGraph] = useState({"models": 0, "avg": 0});
 
   // Function to get scenarios
   const handleOnChangeScenario = (e) =>{
@@ -49,11 +51,22 @@ const MetricsByDateContainer = () => {
     .catch((err) => {setDates([])} );
 
     handleGraphicData(id);
+    handleGraphicDataModels(id)
 
     if (id == "-----" || id == 0) {
       setOptionsFilter([]); 
       setDataGraph({"x": 0, "y": 0}); 
     };
+  };
+
+  const handleGraphicDataModels = (scId) => { 
+    const data = {
+      "scenario_id": scId,
+    }
+
+    axios.post(`${apiUrl}/forecast/graphic-model`, data, {headers})
+    .then(res => setDataModelGraph(res.data))
+    .catch(err => console.log(err)); 
   };
 
   // Function to get graphic data 
@@ -232,6 +245,7 @@ const MetricsByDateContainer = () => {
 
       <MDBRow className="w-auto d-flex justify-content-between align-items-center" >
         <GraphMape errorName={errorType} scenario={scenarioId} graphicData={dataGraph}/>
+        <GraphModels scenario={scenarioId} graphicData={dataModelGraph}/>
       </MDBRow>
 
       <MDBRow className="mt-5">

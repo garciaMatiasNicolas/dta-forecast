@@ -48,10 +48,10 @@ const DeleteProjectBtn = ({projectData, deleteProject, updateProject}) => {
                     showErrorAlert("Su sesión ha expirado");
                     navigate("/login");
                     localStorage.clear();
-                } else if (err.status === 404) {
-                    showErrorAlert("Proyecto no encontrado");
                 } else {
-                    console.log("Error desconocido:", err);
+                    err.response.data.error == "scenario_not_found" && showErrorAlert("El escenario no existe. Intente mas tarde. Si persiste, contactar a soporte");
+                    err.response.data.error == "database_error" && showErrorAlert("Ocurrio un error al eliminar la tabla. Intente mas tarde. Si persiste, contactar a soporte");
+                    err.response.data.error == "server_error" && showErrorAlert("Error en el servidor")
                 }
             })
             .finally(() => {
