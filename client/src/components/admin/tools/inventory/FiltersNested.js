@@ -17,7 +17,8 @@ const FiltersNested = ({data, trafficLight, stockParams, scenario, is_drp, reset
     const [orderedData, setOrderedData] = useState(data);
     const {optionsFilterTable, setOptionsFilterTable} = useContext(AppContext);
     const [viewTrafficLight, setViewTrafficLight] = useState(false);
-
+    const [initialData] = useState(data);
+    
     // Function for download excel
     const handleDownload = (urlPath) => {
         const link = document.createElement("a");
@@ -29,13 +30,16 @@ const FiltersNested = ({data, trafficLight, stockParams, scenario, is_drp, reset
     };
 
     const handleExport = () => {
+        const columns = Object.keys(initialData[0]);
+        const rows = initialData.map(obj => columns.map(col => obj[col]));
+
         const dataToSend = {
-            "columns": Object.keys(data[0]),
-            "rows": orderedData.map(obj => Object.values(obj)),
+            "columns": columns,
+            "rows": rows,
             "file_name": is_drp ? `DRP` : "Reapro" ,
             "project_pk": parseInt(localStorage.getItem("projectId"))
         };
-          
+
         axios.post(`${apiUrl}/export_excel`, dataToSend, {
             headers: {
                 'Authorization': `Token ${localStorage.getItem("userToken")}`, 
@@ -49,7 +53,7 @@ const FiltersNested = ({data, trafficLight, stockParams, scenario, is_drp, reset
         .catch(err => {
             showErrorAlert(err.response.data); 
             console.log(err);
-        });  
+        });   
     };
 
     const handleSearchProduct = (event) => {
@@ -86,7 +90,7 @@ const FiltersNested = ({data, trafficLight, stockParams, scenario, is_drp, reset
                 <TrafficLightContainer data={trafficLight} params={stockParams}/> 
             ) : (
                 <>
-                    <MDBBtn 
+                    {<MDBBtn 
                         className="w-auto" 
                         style={{ backgroundColor: '#25d366' }} 
                         onClick={handleExport}
@@ -94,7 +98,7 @@ const FiltersNested = ({data, trafficLight, stockParams, scenario, is_drp, reset
                     > 
                         Exportar como Excel
                         <MDBIcon className="ms-2" fas icon="file-export" />
-                    </MDBBtn> 
+                    </MDBBtn> }
         
                     <div className="w-100 d-flex justify-content-between align-items-center">
                         <div className="w-auto d-flex justify-content-between align-items-center gap-2">

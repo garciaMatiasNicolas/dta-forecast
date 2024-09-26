@@ -182,7 +182,7 @@ class ReportDataViews(APIView):
                         ROUND({reports_data["full_actual_year"]}),
                         ROUND({reports_data["full_past_year"]})
                     FROM {predictions_table_name}
-                    WHERE model != 'actual' AND best_model = 1;
+                    WHERE model = "actual" AND best_model = 1;
                 '''
 
                 cursor.execute(sql=actual_dates)
@@ -304,7 +304,7 @@ class ReportDataViews(APIView):
                             SELECT {filter_name},
                             {future_cols}
                                 FROM {predictions_table_name}
-                                WHERE model != 'actual' AND best_model = 1
+                                WHERE model = "actual" OR best_model = 1
                                 {'AND SKU = ' + f"'{str(product)}'" if product else ''}
                             GROUP BY {filter_name}
                         ) b ON a.{filter_name} = b.{filter_name};

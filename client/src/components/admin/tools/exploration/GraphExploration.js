@@ -1,11 +1,15 @@
-import React, { useState, useEffect } from 'react';
-import { Line } from 'react-chartjs-2';
+import React, { useState, useEffect, useRef } from 'react';
+import Highcharts from 'highcharts';
+import HighchartsReact from 'highcharts-react-official';
 import axios from 'axios';
 import { filters } from '../../../../data/filters';
 import { MDBIcon } from 'mdb-react-ui-kit';
 
 const apiUrl = process.env.REACT_APP_API_URL;
 const GraphExploration = () => {
+
+    const [allSeriesVisible, setAllSeriesVisible] = useState(true); // Estado para la visibilidad de las series
+    const chartRef = useRef(null); // Referencia para el gráfico
     
     // AUTHORIZATION HEADERS //
     const token = localStorage.getItem("userToken");
@@ -37,7 +41,17 @@ const GraphExploration = () => {
         .catch(err => {
             console.log(err);
         })
-    }
+    };
+
+    // Función para alternar la visibilidad de todas las series
+    const toggleAllSeries = () => {
+        const chart = chartRef.current.chart;
+        chart.series.forEach((series) => {
+            series.setVisible(!allSeriesVisible, false); // Cambia la visibilidad sin redibujar
+        });
+        chart.redraw(); // Redibuja el gráfico
+        setAllSeriesVisible(!allSeriesVisible); // Actualiza el estado
+    };
     
     // Manejar el evento de inicio de arrastre
     const handleDragStart = (event, filterName) => {
@@ -72,39 +86,74 @@ const GraphExploration = () => {
     };
 
     const getRandomColor = () => {
-        return '#' + Math.floor(Math.random() * 16777215).toString(16);
+        // Colores vividos y contrastantes
+        const vividColors = [
+            '#e6194b', '#3cb44b', '#ffe119', '#4363d8', '#f58231', 
+            '#911eb4', '#46f0f0', '#f032e6', '#bcf60c', '#fabebe', 
+            '#008080', '#e6beff', '#9a6324', '#fffac8', '#800000', 
+            '#aaffc3', '#808000', '#ffd8b1', '#000075', '#808080'
+        ];
+        return vividColors[Math.floor(Math.random() * vividColors.length)];
     };
-    
-    let combinedData = {};
-    
-    if (dataGraph.y && typeof dataGraph.y === 'object') {
-        if (Array.isArray(dataGraph.y)) {
-            combinedData = {
-                labels: dataGraph.x,
-                datasets: [
-                    {
-                        label: 'Actual',
-                        data: dataGraph.y,
-                        borderColor: 'rgba(53, 162, 235, 1)', 
-                        backgroundColor: 'rgba(255, 206, 86, 0.2)',
-                    },
-                ],
-            };
-        } else {
-            combinedData = {
-                labels: dataGraph.x,
-                datasets: [
-                    ...Object.keys(dataGraph.y).map((category) => ({
-                        label: category,
-                        data: dataGraph.y[category],
-                        borderColor: getRandomColor(),
-                        backgroundColor: 'rgba(255, 206, 86, 0.2)',
-                        fill: false
-                    })),
-                ],
-            };
-        }
-    }
+
+    // Configuración del gráfico para Highcharts
+    const highchartOptions = {
+        chart: {
+            type: 'line',
+            height: 450
+        },
+        title: {
+            text: null // Elimina el título
+        },
+        xAxis: {
+            categories: dataGraph.x,
+            title: {
+                text: 'Fechas históricas'
+            }
+        },
+        yAxis: {
+            title: {
+                text: 'Venta real'
+            },
+            min: 0
+        },
+        legend: {
+            layout: 'vertical',
+            align: 'right',
+            verticalAlign: 'top',
+            x: 0,
+            y: 0
+        },
+        series: Array.isArray(dataGraph.y) ? [
+            {
+                name: 'Venta real',
+                data: dataGraph.y,
+                color: '#042bb2'
+            }
+        ] : Object.keys(dataGraph.y || {}).map((category) => ({
+            name: category,
+            data: dataGraph.y[category],
+            color: getRandomColor(),
+            marker: {
+                enabled: false // Elimina las formas en los puntos
+            }
+        })),
+        plotOptions: {
+            line: {
+                dataLabels: {
+                    enabled: false
+                },
+                enableMouseTracking: true,
+                marker: {
+                    enabled: false // Deshabilitar puntos en las líneas
+                }
+            }
+        },
+        tooltip: {
+            shared: true,
+            crosshairs: true
+        },
+    };
     
     return (
         <div className="d-flex flex-column justify-content-start align-items-start gap-3 mt-5 w-100">
@@ -129,49 +178,15 @@ const GraphExploration = () => {
             </div>
 
   
+            <button onClick={toggleAllSeries} className='btn btn-light'>
+                <MDBIcon icon={allSeriesVisible ? 'eye-slash' : 'eye'} />
+                {allSeriesVisible ? ' Ocultar todo' : ' Mostrar todo'}
+            </button>
             <div className="w-100" onDrop={handleDrop} onDragOver={handleDragOver} style={{ cursor: 'pointer' }}>
-                <Line style={{"maxHeight": "450px"}}
-                    data={combinedData}
-                    options={{
-                        responsive: true,
-                        plugins: {
-                            legend: {
-                                position: 'right',
-                                labels: {
-                                    display: false,
-                                    boxHeight:0.5,
-                                }
-                            },
-                        },
-                        scales: {
-                            x: {
-                                title: {
-                                    display: true,
-                                    text: 'Fechas históricas',
-                                    color: 'black',
-                                },
-                                ticks: {
-                                    color: 'black',
-                                },
-                            },
-                            y: {
-                                title: {
-                                    display: true,
-                                    text: 'Venta real',
-                                    color: 'black',
-                                },
-                                ticks: {
-                                    color: 'black',
-                                },
-                                suggestedMin: 0,
-                            },
-                        },
-                        elements: {
-                            point: {
-                                radius: 2.5, // Set the point radius to 0 to hide points
-                            }
-                        }
-                    }}
+                <HighchartsReact
+                    highcharts={Highcharts}
+                    options={highchartOptions}
+                    ref={chartRef}
                 />
             </div>
         </div>

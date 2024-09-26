@@ -1,7 +1,5 @@
-import { Chart as ChartJS, CategoryScale, LinearScale, PointElement, LineElement, Title, Tooltip, Legend, BarElement } from 'chart.js';
 import { MDBContainer, MDBRow, MDBCol, MDBIcon, MDBInput, MDBBtn } from 'mdb-react-ui-kit';
 import { useEffect, useRef, useState } from 'react';
-import { Line, Bar } from 'react-chartjs-2';
 import { showErrorAlert } from '../../../other/Alerts';
 import axios from 'axios';
 import EmptyLineChart from './EmptyChartLine';
@@ -10,20 +8,10 @@ import Filters from '../Filters';
 import { filters } from '../../../../data/filters';
 import SkuSearch from './SkuSearch';
 import ForecastValuedTable from './ForecastValuedTable';
+import Highcharts from "highcharts"
+import HighchartsReact from 'highcharts-react-official';
 
 const apiUrl = process.env.REACT_APP_API_URL;
-
-
-ChartJS.register(
-  CategoryScale,
-  LinearScale,
-  PointElement,
-  LineElement,
-  Title,
-  Tooltip,
-  Legend,
-  BarElement, 
-);
 
 const Graph = () => {
 
@@ -35,6 +23,8 @@ const Graph = () => {
   };
   
   // STATES //
+  const [allSeriesVisible, setAllSeriesVisible] = useState(true); // Estado para la visibilidad de las series
+  const chartRef = useRef(null); // Referencia para el gráfico
 
   // State for data graph all
   const [data, setData] = useState(false);
@@ -80,76 +70,104 @@ const Graph = () => {
     })
   }, []);
 
-  // Graph Line options
-  const options = {
-    responsive: true,
-    plugins: {
-      legend: {
-        position: 'top',
-      },
-    },
+  // Función para alternar la visibilidad de todas las series
+  const toggleAllSeries = () => {
+    const chart = chartRef.current.chart;
+    chart.series.forEach((series) => {
+        series.setVisible(!allSeriesVisible, false); // Cambia la visibilidad sin redibujar
+    });
+    chart.redraw(); // Redibuja el gráfico
+    setAllSeriesVisible(!allSeriesVisible); // Actualiza el estado
   };
-
-  // Graph Bar options
-  const optionsBar = {
-    scales: {
-      x: { stacked: true },
-      y: { stacked: true },
-    },
-    plugins: {
-      legend: {
-        position: 'top',
-      },
-      tooltip: {
-        callbacks: {
-          label: function (context) {
-            const data = context.dataset.data[context.dataIndex];
-            return `Valor: ${data}`; 
-          },
-        },
-      },
-    },
-  }
   
   const setDataInGraphs = (labelsYear, labelsAll, dataYearPred, dataAllPred, dataYearActual, dataAllActual) => {
     
-    const dataLine = {
-      labels: labelsAll,
-      datasets: [
+    // Para el gráfico de líneas (series de 'Actual' y 'Predecido')
+    const lineOptions = {
+      legend: {
+        enabled: true,
+        layout: 'horizontal',
+        align: 'center',
+        verticalAlign: 'bottom',
+      },
+      chart: {
+        type: 'line',
+        height: 600
+      },
+      title: {
+        text: 'Actual vs Predecido - Todo el año',
+      },
+      xAxis: {
+        categories: labelsAll, // Etiquetas en el eje X
+      },
+      yAxis: {
+        title: {
+          text: 'Valores',
+        },
+      },
+      series: [
         {
-          label: 'Actual',
-          data: dataAllActual,
-          borderColor: 'rgb(255, 99, 132)',
-          backgroundColor: 'rgba(255, 99, 132, 0.5)',
+          name: 'Actual',
+          data: dataAllActual, // Valores de 'Actual'
+          color: 'rgb(255, 99, 132)',
+          lineWidth: 3
         },
         {
-          label: 'Predecido',
-          data: dataAllPred,
-          borderColor: 'rgb(53, 162, 235)',
-          backgroundColor: 'rgba(53, 162, 235, 0.5)',
+          name: 'Predecido',
+          data: dataAllPred, // Valores de 'Predecido'
+          color: 'rgb(53, 162, 235)',
+          lineWidth: 3
         }
-      ]
-    }; 
-
-    const dataBar = {
-      labels: labelsYear,
-      datasets: [
-      {
-        label: 'Actual',
-        data: dataYearActual,
-        backgroundColor: 'rgba(255, 99, 132, 0.5)'
-      },
-      {
-        label: 'Predecido',
-        data: dataYearPred,
-        backgroundColor: 'rgba(53, 162, 235, 0.5)',
-      },
       ],
+      plotOptions: {
+        line: {
+          marker: {
+            radius: 1.5 // Tamaño de los puntos en las líneas
+          }
+        }
+      }
     };
-      
-    setData(dataLine);
-    setDataYear(dataBar);
-  }
+
+    // Para el gráfico de barras (series de 'Actual' y 'Predecido')
+    const barOptions = {
+      chart: {
+        type: 'column',
+      },
+      title: {
+        text: 'Actual vs Predecido - Año',
+      },
+      xAxis: {
+        categories: labelsYear, // Etiquetas en el eje X
+      },
+      yAxis: {
+        title: {
+          text: 'Valores',
+        },
+      },
+      series: [
+        {
+          name: 'Predecido',
+          data: dataYearPred, // Datos de 'Predecido'
+          color: 'rgba(53, 162, 235, 0.5)', // Color para la serie 'Predecido'
+        },
+        {
+          name: 'Actual',
+          data: dataYearActual, // Datos de 'Actual'
+          color: 'rgba(255, 99, 132, 0.5)', // Color para la serie 'Actual'
+        },
+      ],
+      plotOptions: {
+        column: {
+          stacking: 'normal', // Estilo de apilamiento (opcional)
+        },
+      },
+    };
+
+    // Setear los datos usando los hooks correspondientes (o método de actualización)
+    setData(lineOptions);  // Para el gráfico de líneas
+    setDataYear(barOptions);  // Para el gráfico de barras
+  };
+
 
   const resetFilters = () => {
     getFirstGraphs(scenarioId);
@@ -305,7 +323,7 @@ const Graph = () => {
   const handleDrop = (event) => {
     event.preventDefault();
     const filterName = event.dataTransfer.getData('text/plain');
-
+  
     // Verificar si el elemento soltado coincide con los filtros disponibles
     if (draggedFilter === filterName) {
       // Realizar la lógica de filtrado basada en el elemento soltado
@@ -314,37 +332,67 @@ const Graph = () => {
         group: filterName,
         actual_or_predicted: actualOrPredicted
       };
-
-      axios.post(`${apiUrl}/forecast/filter-group`, data,{ headers: headers })
+  
+      axios.post(`${apiUrl}/forecast/filter-group`, data, { headers: headers })
       .then(res => {
         const getRandomColor = () => {
           return '#' + Math.floor(Math.random() * 16777215).toString(16);
         };
-      
-        let combinedData = {};
-      
+        
+        let highchartsOptions = {};
+        
         if (res.data.y && typeof res.data.y === 'object') {
-          combinedData = {
-            labels: res.data.x,
-            datasets: [
-              ...Object.keys(res.data.y).map((category) => ({
-                label: category,
-                data: res.data.y[category],
-                borderColor: getRandomColor(),
-                backgroundColor: 'rgba(255, 206, 86, 0.2)',
-                fill: false
-              })),
-            ],
+          highchartsOptions = {
+            chart: {
+              type: 'line',  // Tipo de gráfico
+              height: 650,  // Altura del gráfico
+            },
+            title: {
+              text: `Gráfico Filtrado: ${filterName}`,
+            },
+            xAxis: {
+              categories: res.data.x,  // Los valores de X se colocan en las categorías
+            },
+            yAxis: {
+              title: {
+                text: 'Valores',  // Cambia esto si necesitas un título diferente
+              },
+            },
+            legend: {
+              layout: 'vertical',
+              align: 'right',
+              verticalAlign: 'top',
+              x: 0,
+              y: 0
+            },
+            series: Object.keys(res.data.y).map((category) => ({
+              name: category,  // Cada categoría es una serie diferente
+              data: res.data.y[category],  // Los datos correspondientes a esa categoría
+              color: getRandomColor(),  // Asignar color aleatorio
+            })),
+            plotOptions: {
+              series: {
+                lineWidth: 3,  // Grosor de la línea
+                marker: {
+                  enabled: false  // Desactivar marcadores (puntos) en la línea
+                },
+                dataLabels: {
+                  enabled: false,  // No mostrar etiquetas en los puntos
+                },
+                enableMouseTracking: true,  // Mantener el rastreo del mouse
+              },
+            },
           };
         }
-        
-        setGraphGroupBy(combinedData);
+  
+        setGraphGroupBy(highchartsOptions);
       })
-      .catch(err => showErrorAlert(err.response.data.error))
+      .catch(err => showErrorAlert(err.response.data.error));
     }
-
+  
     setDraggedFilter(null);
   };
+  
 
   return(
     <div className='d-flex justify-content-center align-items-center gap-5 mb-5 flex-column w-100'>
@@ -384,10 +432,14 @@ const Graph = () => {
           </MDBCol>
           <MDBCol size='9' className='d-flex justify-content-center align-items-center gap-5 flex-column'>
           
-            <div className='w-75 '>
-              { !data ? <EmptyLineChart/> : <Bar options={optionsBar} data={dataYear} />}
+            <div className='w-100 h-100'>
+              { !data ? <EmptyLineChart/> : <HighchartsReact options={dataYear} highcharts={Highcharts}/>}
             </div>
-            { !data ? <EmptyLineChart/> : <Line options={options} data={data} conditions={conditions}/> }
+
+            <div className='w-100'>
+              { !data ? <EmptyLineChart/> : <HighchartsReact highcharts={Highcharts} options={data} /> }
+            </div>
+
             <div className='d-flex justify-content-start align-items-center w-auto gap-3 mt-5'>
               <p className="text-primary">Filtros anidados:</p>
               {conditions.map((item, index) => (
@@ -399,28 +451,8 @@ const Graph = () => {
         </MDBRow>
       </MDBContainer>
 
-      <MDBContainer className='mt-5 mb-5 w-100 d-flex justify-content-start align-items-start flex-column'>
-        <h5 className='text-primary mb-5'>Forecast Valorizado</h5>
-        <div className='d-flex justify-content-center align-items-center gap-3 w-auto mb-3'>
-          <p className='text-primary w-100 mt-2'>Agrupar por</p>
-          <select className="form-select" style={{"maxWidth": "250px", "minWidth":"200px"}} onChange={handleGroupByForecastValued}>
-            <option value="SKU">SKU</option>
-            <option value="Family">Familia</option>
-            <option value="Region">Región</option>
-            <option value="Category">Categoria</option>
-            <option value="Subcategory">Subcategoria</option>
-            <option value="Client">Cliente</option>
-            <option value="Salesman">Vendedor</option>
-          </select>
-        </div>
-        <ForecastValuedTable 
-          data={dataConversion}
-          currentPage={currentPage} 
-          setCurrentPage={setCurrentPage}
-        />
-      </MDBContainer>
 
-      <MDBContainer className='mt-5 mb-5 w-100 d-flex justify-content-start align-items-start flex-column'>
+      <MDBContainer className='mb-5 w-100 d-flex justify-content-start align-items-start flex-column'>
         <h5 className='text-primary'>Grafico agrupado</h5>      
         <div className='w-auto d-flex justify-content-start alignt-items-center gap-4 flex-wrap'>
           {filters.map((item) => (
@@ -445,9 +477,33 @@ const Graph = () => {
         </div>
         
         <div className="w-100 mt-5" onDrop={handleDrop} onDragOver={handleDragOver} style={{ cursor: 'pointer' }}>
-          {!graphGroupBy ? <EmptyLineChart/> : <Line options={options} data={graphGroupBy}/>}
+          <button onClick={toggleAllSeries} className='btn btn-light'>
+            <MDBIcon icon={allSeriesVisible ? 'eye-slash' : 'eye'} />
+            {allSeriesVisible ? ' Ocultar todo' : ' Mostrar todo'}
+          </button>
+          {!graphGroupBy ? <EmptyLineChart/> : <HighchartsReact ref={chartRef} highcharts={Highcharts} options={graphGroupBy}/>}
         </div>
 
+      </MDBContainer>
+      <MDBContainer className='mt-5 mb-5 w-100 d-flex justify-content-start align-items-start flex-column'>
+        <h5 className='text-primary mb-5'>Forecast Valorizado</h5>
+        <div className='d-flex justify-content-center align-items-center gap-3 w-auto mb-3'>
+          <p className='text-primary w-100 mt-2'>Agrupar por</p>
+          <select className="form-select" style={{"maxWidth": "250px", "minWidth":"200px"}} onChange={handleGroupByForecastValued}>
+            <option value="SKU">SKU</option>
+            <option value="Family">Familia</option>
+            <option value="Region">Región</option>
+            <option value="Category">Categoria</option>
+            <option value="Subcategory">Subcategoria</option>
+            <option value="Client">Cliente</option>
+            <option value="Salesman">Vendedor</option>
+          </select>
+        </div>
+        <ForecastValuedTable 
+          data={dataConversion}
+          currentPage={currentPage} 
+          setCurrentPage={setCurrentPage}
+        />
       </MDBContainer>
     </div>
   )

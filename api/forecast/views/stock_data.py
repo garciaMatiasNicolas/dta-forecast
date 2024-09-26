@@ -37,7 +37,7 @@ class StockDataView(APIView):
                     table_forecast = None
 
                 else:
-                    query = f"SELECT * FROM {forecast_data.predictions_table_name} WHERE model != 'actual' AND best_model = 1"
+                    query = f"SELECT * FROM {forecast_data.predictions_table_name} WHERE model != 'actual' OR best_model = 1"
                     if only_traffic_light and filter_name and filter_value:
                         query += f" AND {filter_name} = '{filter_value}'"
                     
@@ -102,7 +102,7 @@ class StockDataView(APIView):
 
                 total_sales = historical_data.sum()
                 avg_row = np.average(historical_data)
-                avg_sales = round(avg_row / 30, 2)
+                avg_sales = round(avg_row / 30, 3)
                 desv = round(historical_data.std(), 2)
                 coefficient_of_variation = round(desv / avg_sales, 2) if avg_sales != 0 else 0
                 stock_or_request = 'stock' if coefficient_of_variation > 0.7 else 'request'
@@ -135,7 +135,7 @@ class StockDataView(APIView):
 
                     total_sales_forecast = forecast_data.sum()
                     avg_row_forecast = np.average(forecast_data)
-                    avg_sales_forecast = round(avg_row_forecast / 30, 2)
+                    avg_sales_forecast = round(avg_row_forecast / 30, 3)
                     desv_forecast = round(forecast_data.std(), 2)
                     coefficient_of_variation_forecast = round(desv_forecast / avg_sales_forecast, 2) if avg_sales_forecast != 0 else 0
                     stock_or_request_forecast = 'stock' if coefficient_of_variation_forecast > 0.7 else 'request'
@@ -602,7 +602,7 @@ class StockDataView(APIView):
 
             coverage_by_sku_region = {}
         
-            # Llenar el diccionario con los datos de cobertura
+            # Llenar el diccionario con los datos de cobertura y stock disponible
             for product in products:
                 sku = product['SKU']
                 available_stock += float(product["Stock disponible"])
@@ -613,7 +613,10 @@ class StockDataView(APIView):
                 if sku not in coverage_by_sku_region:
                     coverage_by_sku_region[sku] = {}
 
-                coverage_by_sku_region[sku][region] = coverage
+                coverage_by_sku_region[sku][region] = {
+                    "cobertura": coverage,
+                    "stock_disponible": float(product["Stock disponible"])
+                }
             
             # Transformar la lista de productos
             transformed_products = []
@@ -624,7 +627,8 @@ class StockDataView(APIView):
                 # Crear un nuevo producto con la cobertura disponible en otras regiones
                 new_product = product.copy()
                 for reg in coverage_by_sku_region[sku]:
-                    new_product[f"Cobertura en {reg}"] = coverage_by_sku_region[sku][reg]
+                    new_product[f"Cobertura en {reg}"] = coverage_by_sku_region[sku][reg]["cobertura"]
+                    new_product[f"Stock disponible en {reg}"] = coverage_by_sku_region[sku][reg]["stock_disponible"]
                 
                 transformed_products.append(new_product)
             
@@ -637,11 +641,32 @@ class StockDataView(APIView):
                 product["Punto de reorden (DRP)"] = reorder_point_drp
                 product["¿Repongo?"] = replenish
                 product["¿Cuanto repongo?"] = 0 if replenish == "No" else round_up(how_much_drp, product["Lote de compra (DRP)"]) 
+                
+                if replenish == "Si":
+                    # Regiones con cobertura mayor al punto de reorden
+                    regions_with_sufficient_coverage = {reg: coverage_by_sku_region[product['SKU']][reg]['cobertura']
+                                                        for reg in coverage_by_sku_region[product['SKU']]
+                                                        if coverage_by_sku_region[product['SKU']][reg]['cobertura'] >= reorder_point_drp}
+                    
+                    if len(regions_with_sufficient_coverage) == 0:
+                        # Ninguna región tiene suficiente cobertura, hay que comprar
+                        product["Distribuir desde"] = "Comprar"
+                    elif len(regions_with_sufficient_coverage) == 1:
+                        # Solo una región tiene suficiente cobertura
+                        product["Distribuir desde"] = next(iter(regions_with_sufficient_coverage))  # Obtener la única región
+                    else:
+                        # Varias regiones tienen suficiente cobertura, elegir la región con mayor cobertura
+                        product["Distribuir desde"] = max(regions_with_sufficient_coverage, key=regions_with_sufficient_coverage.get)
+                    
+                else:
+                    product["Distribuir desde"] = "No repone"
             
             return transformed_products
-    
-        except Exception as err:
-            print("ERROR EN DRP", err)
+        
+        except Exception as e:
+            print(f"Error en el cálculo del DRP: {e}")
+            return []
+
             
 
     @authentication_classes([TokenAuthentication])

@@ -348,6 +348,7 @@ class ForecastModels:
 
         return idx, results
 
+    @staticmethod 
     def prophet(idx, row, prediction_periods, additional_params, seasonal_periods, dates, detect_outliers):
 
         try:

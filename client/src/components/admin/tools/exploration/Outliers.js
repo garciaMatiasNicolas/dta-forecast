@@ -2,7 +2,8 @@ import axios from "axios";
 import { MDBBtn, MDBIcon, MDBInput, MDBTable, MDBTableHead, MDBTableBody } from "mdb-react-ui-kit";
 import { useEffect, useState } from "react";
 import { showErrorAlert } from "../../../other/Alerts";
-import Plot from 'react-plotly.js';
+import Highcharts from 'highcharts';
+import HighchartsReact from 'highcharts-react-official';
 import {ClipLoader} from 'react-spinners'
 import {  filters } from "../../../../data/filters";
 import ReactPaginate from "react-paginate";
@@ -71,15 +72,13 @@ const Outliers = () => {
         });
     }
 
-    // Verificar si dataGraph contiene valores antes de usar sus propiedades
     if (!dataGraph || Object.keys(dataGraph).length === 0) {
         return (
-            
             <div className="d-flex flex-column justify-content-start align-items-start gap-3 mt-5 w-100">
                 <h5 className='text-primary'>Gráfico de Valores Atípicos</h5>
                 <ClipLoader/>
             </div>
-        )
+        );
     }
 
     const handleClickSku = () => {
@@ -120,25 +119,17 @@ const Outliers = () => {
             responseType: 'blob'
         })
         .then(res => {
-            // Crear un blob a partir de la respuesta
             const file = new Blob([res.data], { type: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet' });
-            
-            // Crear una URL para el blob
             const fileURL = URL.createObjectURL(file);
-
-            // Crear un enlace y simular un clic para iniciar la descarga
             const a = document.createElement('a');
             a.href = fileURL;
-            a.download = 'Outliers.xlsx'; // Nombre del archivo que se descargará
+            a.download = 'Outliers.xlsx';
             document.body.appendChild(a);
             a.click();
-
-            // Limpiar el enlace y el blob después de la descarga
             window.URL.revokeObjectURL(fileURL);
             document.body.removeChild(a);
         })
-        .catch(err => console.log(err)) 
-        
+        .catch(err => console.log(err));
     }
 
     const handlePageChange = ({ selected }) => {
@@ -146,6 +137,61 @@ const Outliers = () => {
     };
     
     const offset = currentPage * itemsPerPage;
+
+     // Configuración del gráfico con Highcharts
+     const highchartOptions = {
+        chart: {
+            type: 'line',
+            height: 450
+        },
+        title: {
+            text: null // Elimina el título
+        },
+        xAxis: {
+            categories: dates,
+            title: {
+                text: 'Fechas históricas'
+            }
+        },
+        yAxis: {
+            title: {
+                text: 'Ventas'
+            },
+            min: 0
+        },
+        legend: {
+            layout: 'vertical',
+            align: 'right',
+            verticalAlign: 'top',
+            x: 0,
+            y: 0
+        },
+        series: [
+            {
+                name: 'Ventas',
+                data: sales,
+                color: '#4363d8', // Color para la serie de ventas
+                marker: {
+                    enabled: false // Sin formas en los puntos
+                }
+            },
+            {
+                name: 'Outliers',
+                data: dates.map((date, index) => (outliers.includes(date) ? sales[index] : null)),
+                type: 'scatter',
+                marker: {
+                    symbol: 'circle',
+                    radius: 6,
+                    fillColor: 'red' // Color para los outliers
+                },
+                color: 'red'
+            }
+        ],
+        tooltip: {
+            shared: true,
+            crosshairs: true
+        }
+    };
 
     return (
         <div className="d-flex flex-column justify-content-start align-items-start gap-3 mt-5 w-100">
@@ -187,23 +233,9 @@ const Outliers = () => {
             </div>
 
             <div className="w-100 position-relative">
-
-                <Plot className="w-100 position-relative"
-                    data={[
-                        {
-                            x: dates,
-                            y: sales,
-                            mode: 'lines',
-                            name: 'Sales'
-                        },
-                        {
-                            x: dates.filter((date, index) => outliers.includes(date)),
-                            y: sales.filter((_, index) => outliers.includes(dates[index])),
-                            mode: 'markers',
-                            marker: { size: 10, color: 'red' },
-                            name: 'Outliers'
-                        }
-                    ]}
+                <HighchartsReact
+                    highcharts={Highcharts}
+                    options={highchartOptions}
                 />
             </div>
 

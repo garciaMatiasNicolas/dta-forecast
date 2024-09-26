@@ -80,7 +80,7 @@ const GraphicBySku = () => {
             acc[column] = product[column];
             return acc;
         }, {});
-        setSelectedProduct(selectedProductData); 
+        setSelectedProduct(selectedProductData);
         setBasicModal(false);
         setProductChanged(true);
     
@@ -89,35 +89,48 @@ const GraphicBySku = () => {
                 "sc_id": scenarioId,
                 "product": selectedProductData
             });
-            
+    
             const data = response.data;
     
             if (data && data.models && data.dates && data.error && data.error_type && data.best_model) {
                 const labels = data.dates;
+    
+                // Colores vibrantes (rojo, verde, azul, amarillo, etc.)
+                const vibrantColors = [
+                    '#d21a0e',   // Rojo
+                    '#048746',   // Verde
+                    '#042bb2',   // Azul
+                    '#f5c61e', // Amarillo
+                    '#ffa19b', // Naranja
+                    '#4a72ff', // Púrpura
+                    'rgba(75, 0, 130, 1)'   // Índigo
+                ];
+    
                 const datasets = data.models.map((model, index) => ({
                     label: model.name,
                     data: model.values,
-                    borderColor: `rgba(${index * 100}, 99, 132, 0.5)`,
-                    backgroundColor: `rgba(${index * 100}, 99, 132, 0.5)`,
+                    borderColor: vibrantColors[index % vibrantColors.length], // Colores vivos
+                    backgroundColor: vibrantColors[index % vibrantColors.length],
                     fill: false,
+                    pointRadius: 0, // Sin puntos en las líneas
+                    borderWidth: 2  // Grosor de la línea
                 }));
     
                 setChartData({
                     labels: labels,
                     datasets: datasets,
                 });
-                setBestModel(data.best_model)
+                setBestModel(data.best_model);
                 setErrorType(data.error_type);
                 setErrors(data.error);
-
             }
-
+    
         } catch (err) {
             console.log(err);
-        } finally{
+        } finally {
             setProductChanged(false);
         }
-    };    
+    };
 
     const handleChangeScenario = (e) => {
         let id = e.target.value;

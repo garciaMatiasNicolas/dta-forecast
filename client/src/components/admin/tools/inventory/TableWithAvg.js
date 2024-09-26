@@ -190,7 +190,10 @@ const Table = ({ data, setData, scenario }) => {
               {Object.keys(data[0]).map((key, index) => (
                 visibleColumns.includes(key) && (
                   <th className='text-white border text-center' key={index}>
-                    <DropdownFilters key={index} name={key} data={data} setFilterData={setData} isOrderBy={key === "Valorizado" || key === "Sobrante valorizado" || key === "Sobrante (unidades)"}/> 
+                    {keys.includes(key) ? 
+                      <DropdownFilters key={index} name={key} data={data} setFilterData={setData} isOrderBy={key === "Valorizado" || key === "Sobrante valorizado" || key === "Sobrante (unidades)"}/> : 
+                      <p>{key}</p>
+                    }
                   </th>
                 )
               ))}

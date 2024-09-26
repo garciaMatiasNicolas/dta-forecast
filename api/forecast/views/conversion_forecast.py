@@ -74,7 +74,7 @@ class ConversionForecast(APIView):
                         A.Subcategory = B.Subcategory AND
                         A.SKU = B.SKU AND
                         A.Description = B.Description AND
-                        A.model != "actual";
+                        (A.model != "actual" OR A.best_model = 1);
                 """
 
                 predictions = pd.read_sql_query(sql=query_predictions, con=engine)

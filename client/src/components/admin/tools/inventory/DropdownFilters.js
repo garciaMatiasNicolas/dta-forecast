@@ -1,15 +1,16 @@
 import React, {useContext, useEffect, useState} from 'react';
 import {
-    MDBBtn,
-    MDBModal,
-    MDBModalDialog,
-    MDBModalContent,
-    MDBModalHeader,
-    MDBModalTitle,
-    MDBModalBody,
-    MDBModalFooter,
-    MDBIcon,
-    MDBInput,
+  MDBBtn,
+  MDBModal,
+  MDBModalDialog,
+  MDBModalContent,
+  MDBModalHeader,
+  MDBModalTitle,
+  MDBModalBody,
+  MDBModalFooter,
+  MDBIcon,
+  MDBInput,
+  MDBTooltip
 } from 'mdb-react-ui-kit';
 import { ClipLoader } from 'react-spinners';
 import { AppContext } from '../../../../context/Context';
@@ -124,7 +125,11 @@ const DropdownFilters = ({ name, data, setFilterData, isOrderBy }) => {
   return (
     <>
       <div style={{ cursor: 'pointer' }} onClick={() => { toggleOpen(name); }} className='w-auto d-flex justify-content-center align-items-center gap-2'>
-        <p>{name}</p>
+        <MDBTooltip title={name} tag="span" placement="top">
+          <span className="d-inline-block" style={{ maxWidth: '100px', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
+            {name.length > 10 ? `${name.slice(0, 10)}...` : name}
+          </span>
+        </MDBTooltip>
         <MDBIcon fas icon={
           isOrderBy && orderType === null ? 'sort' :
             isOrderBy && orderType === 'asc' ? 'sort-up' :

@@ -213,18 +213,27 @@ class AllProductView(APIView):
             date_columns = [col for col in data.columns if '-' in col and len(col.split('-')) == 3]
             index = date_columns.index(str(max_date))
             values = data[date_columns].values.tolist()
-            kpis = self.calculate_kpis(predictions_table_name=scenario_obj.predictions_table_name, last_date_index=index, list_date_columns=date_columns, product=product["SKU"], last_date=max_date.strftime('%Y-%m-%d'))
+            
+            # Intentar calcular los KPIs, manejar la excepción si ocurre un error
+            try:
+                kpis = self.calculate_kpis(
+                    predictions_table_name=scenario_obj.predictions_table_name, 
+                    last_date_index=index, 
+                    list_date_columns=date_columns, 
+                    product=product["SKU"], 
+                    last_date=max_date.strftime('%Y-%m-%d')
+                )
+            except Exception as e:
+                print(f"Error al calcular KPIs: {e}")  # Puedes registrar el error para su seguimiento
+                kpis = []  # Asignar una lista vacía si ocurre un error
             
             final_data = {
                 "product": f"{product['SKU']}",
                 "graphic_forecast": {"dates": date_columns, "values": values[1]},
                 "graphic_historical": {"dates": date_columns, "values": values[0]},
                 "error": str(max(error_val)),
-                "kpis": {"columns": ["YTD", "QTD", "MTD", "FYTD", "YTG", "QTG", "MTG", "FYTG"], "values": kpis[0]},
+                "kpis": {"columns": ["YTD", "QTD", "MTD", "FYTD", "YTG", "QTG", "MTG", "FYTG"], "values": kpis if kpis else []},
             }
 
             return Response(final_data, status=status.HTTP_200_OK)
- 
-                
-        # return Response({"error": "Scenario not found"}, status=status.HTTP_400_BAD_REQUEST)
 
