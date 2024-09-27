@@ -32,7 +32,7 @@ class FilterDataViews(APIView):
 
                 query_conditions = ""
                 if conditions:
-                   query_conditions = " AND ".join([f"{key} = '{value}'" for condition in conditions for key, value in condition.items()])
+                    query_conditions = " AND ".join([f"{key} = '{value}'" for condition in conditions for key, value in condition.items()])
 
                 with connection.cursor() as cursor:
                     base_query = f'''
@@ -49,7 +49,7 @@ class FilterDataViews(APIView):
 
                     cursor.execute(query)
                     data_rows = cursor.fetchall()
-    
+        
                     cursor.execute(f"SHOW COLUMNS FROM {table_name} FROM dtafio;")
                     columns = cursor.fetchall()
                     cols = []
@@ -70,9 +70,11 @@ class FilterDataViews(APIView):
 
                     other_sum = other_rows[df_pred.columns[9:-2]].sum()
 
-                    actual_data = {'x': date_columns, 'y': actual_sum.tolist()}
-                    other_data = {'x': date_columns, 'y': other_sum.tolist()}
+                    # Redondear los valores de actual_sum y other_sum a dos decimales
+                    actual_data = {'x': date_columns, 'y': [round(value, 2) for value in actual_sum.tolist()]}
+                    other_data = {'x': date_columns, 'y': [round(value, 2) for value in other_sum.tolist()]}
 
+                    # Ajustar las fechas y valores quitando los periodos predichos (pred_p)
                     dates = actual_data['x'][:-pred_p]
                     values = actual_data['y'][:-pred_p]
 
@@ -90,6 +92,7 @@ class FilterDataViews(APIView):
 
         else:
             return Response({'error': 'bad_request', 'logs': filters.errors}, status=status.HTTP_400_BAD_REQUEST)
+
 
 
 class GetFiltersView(APIView):

@@ -1,49 +1,63 @@
 import React from 'react';
-import { Line } from 'react-chartjs-2';
+import HighchartsReact from 'highcharts-react-official';
+import Highcharts from 'highcharts';
+import { ClipLoader } from 'react-spinners'; // Importa el spinner
 
-const EmptyLineChart = () => {
-  const data = {
-    labels: [], // Etiquetas para el eje X (vacías inicialmente)
-    datasets: [
+const EmptyLineChart = ({ loading }) => {
+  const options = {
+    title: {
+      text: 'No hay datos para mostrar', // Título para mostrar cuando no hay datos
+    },
+    xAxis: {
+      title: {
+        text: 'Eje X',
+      },
+      categories: [], // Categorías vacías inicialmente
+    },
+    yAxis: {
+      title: {
+        text: 'Eje Y',
+      },
+    },
+    series: [
       {
-        data: [], // Datos para el eje Y (vacíos inicialmente)
-        borderColor: 'rgba(75,192,192,1)',
-        backgroundColor: 'rgba(75,192,192,0.4)',
-        pointBorderColor: 'rgba(75,192,192,1)',
-        pointBackgroundColor: '#fff',
-        pointBorderWidth: 1,
-        pointHoverRadius: 5,
-        pointHoverBackgroundColor: 'rgba(75,192,192,1)',
-        pointHoverBorderColor: 'rgba(220,220,220,1)',
-        pointHoverBorderWidth: 2,
-        pointRadius: 1,
-        pointHitRadius: 10,
+        name: 'Datos',
+        data: [], // Datos vacíos inicialmente
       },
     ],
-  };
-
-  const options = {
-    scales: {
-      x: [
-        {
-          scaleLabel: {
-            display: true,
-            labelString: 'Eje X',
-          },
-        },
-      ],
-      y: [
-        {
-          scaleLabel: {
-            display: true,
-            labelString: 'Eje Y',
-          },
-        },
-      ],
+    lang: {
+      noData: 'No data to display', // Texto que aparece cuando no hay datos
+    },
+    noData: {
+      style: {
+        fontWeight: 'bold',
+        fontSize: '15px',
+        color: '#303030',
+      },
     },
   };
 
-  return <Line data={data} options={options} />;
+  return (
+    <div style={{ position: 'relative', minHeight: '400px' }}>
+      {loading && (
+        <div
+          style={{
+            position: 'absolute',
+            top: '50%',
+            left: '50%',
+            transform: 'translate(-50%, -50%)',
+            zIndex: 10,
+          }}
+        >
+          <ClipLoader size={50} color="#36d7b7" loading={loading} />
+        </div>
+      )}
+      <HighchartsReact
+        highcharts={Highcharts}
+        options={options}
+      />
+    </div>
+  );
 };
 
 export default EmptyLineChart;

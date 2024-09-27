@@ -49,27 +49,28 @@ class Graphic:
             dates = actual_data['x'][:-self.pred_p]
             values = actual_data['y'][:-self.pred_p]
 
+            # Redondear los valores a dos decimales
             actual_data['x'] = dates
-            actual_data['y'] = values
+            actual_data['y'] = [round(value, 2) for value in values]
 
             last_date = date_columns.tolist()
             last_best_model_sum = best_model_sum.tolist()
 
-            # Preparar los datos de 'best_model_rows' para graficar
-            other_data = {'x': last_date, 'y': last_best_model_sum}
+            # Preparar los datos de 'best_model_rows' para graficar y redondear
+            other_data = {'x': last_date, 'y': [round(value, 2) for value in last_best_model_sum]}
 
             # Estructura final de datos
             final_data = {'actual_data': actual_data, 'other_data': other_data}
         
-
             # Procesar los datos por año
             data_per_year = self.graphic_predictions_per_year(data=final_data, max_date=max_date)
 
             return final_data, data_per_year
-    
+
         except Exception as err:
             traceback.print_exc()
             print("Error en el grafico: ", err)
+
 
     @staticmethod
     def graphic_predictions_per_year(data: dict, max_date) -> dict:

@@ -1,7 +1,7 @@
 import { useRef, useState } from 'react';
 import { MDBBtn, MDBIcon, MDBModal, MDBModalBody, MDBModalContent, MDBModalDialog } from 'mdb-react-ui-kit';
 import axios from 'axios';
-import { showErrorAlert, showSuccessAlert } from '../../../other/Alerts';
+import { showAlertAfterExecutionScenario, showErrorAlert, showSuccessAlert } from '../../../other/Alerts';
 import { ClipLoader } from 'react-spinners';
 
 
@@ -21,25 +21,22 @@ const GroupButtonActions = ({ tableName, path, idFile }) => {
     const uploadFile = (data, headers) => {
         axios.post(`${apiUrl}/files/`, data, { headers })
             .then(() => {
-                showSuccessAlert("Archivo subido exitosamente! Data recibida");
+                showAlertAfterExecutionScenario("success", "Data subida", "Archivo subido exitosamente! Data recibida");
             })
             .catch(err => {
                 if (err.response.data.error === "bad_request") {
-                    showErrorAlert("El archivo no se subió correctamente, intente nuevamente");
+                    showAlertAfterExecutionScenario("error","Error","El archivo no se subió correctamente, intente nuevamente");
                 } else if (err.response.data.error === "columns_not_in_date_type") {
-                    showErrorAlert("El archivo debe contener sus columnas en formato fecha, verifique el formato de las columnas e intente nuevamente");
+                    showAlertAfterExecutionScenario("error","Error","El archivo debe contener sus columnas en formato fecha, verifique el formato de las columnas e intente nuevamente");
                 } else if (err.response.data.error === "dates_dont_match"){
-                    data.model_type === 2 && showErrorAlert("Las fechas de su data exógena no coinciden con las que ya subio de su data histórica");
-                    data.model_type === 1 && showErrorAlert("Las fechas de su data histórica no coinciden con las que ya subio de su data exógena");
+                    data.model_type === 2 && showAlertAfterExecutionScenario("error","Error","Las fechas de su data exógena no coinciden con las que ya subio de su data histórica");
+                    data.model_type === 1 && showAlertAfterExecutionScenario("error","Error","Las fechas de su data histórica no coinciden con las que ya subio de su data exógena");
                 } else {
-                    showErrorAlert(`Error en el servidor: ${err.response.data.log}`);
+                    showAlertAfterExecutionScenario("error","Error",`Error en el servidor: ${err.response.data.log}`);
                 }
             })
             .finally(() => {
                 setBasicModal(false);
-                setTimeout(() => {
-                    document.location.reload();
-                }, 3000);
             })
     };
 

@@ -25,6 +25,7 @@ const Graph = () => {
   // STATES //
   const [allSeriesVisible, setAllSeriesVisible] = useState(true); // Estado para la visibilidad de las series
   const chartRef = useRef(null); // Referencia para el gráfico
+  const [loading, setLoading] = useState(false);
 
   // State for data graph all
   const [data, setData] = useState(false);
@@ -176,6 +177,9 @@ const Graph = () => {
 
   // Function for graphic data using filters
   const handleOnChangeFilter = (e) => {
+
+    setLoading(true);
+
     setConditions((prevConditions) => {
       const updatedConditions = prevConditions.filter(
         (condition) => !condition.hasOwnProperty(e.target.name)
@@ -200,7 +204,9 @@ const Graph = () => {
       setDataInGraphs(graphicBarData.other_data.x, graphicLineData.other_data.x, graphicBarData.other_data.y, graphicLineData.other_data.y, graphicBarData.actual_data.y, graphicLineData.actual_data.y);
       
     })
-    .catch(err => {showErrorAlert(`Ocurrio un error inesperado: ${err.response.error}`); console.log(err)});
+    .catch(err => {showErrorAlert(`Ocurrio un error inesperado: ${err.response.error}`); console.log(err)})
+    .finally(()=>{setLoading(false)});
+    
   };
 
   // Function to get graph by SKU
@@ -232,11 +238,13 @@ const Graph = () => {
         };
         
       })
-      .catch(err => showErrorAlert(`SKU no encontrado`));
+      .catch(err => showErrorAlert(`SKU no encontrado`))
+      .finally(()=>{setLoading(false)})
     };
   }
 
   const getFirstGraphs = (scenarioId) => {
+    setLoading(true);
     if (scenarioId == "Mostrar grafico de escenario..."){
       setData(false)
       setDataInGraphs(false)
@@ -253,6 +261,7 @@ const Graph = () => {
         if (err.response.status === 401) { showErrorAlert("Su sesion ha expirado, debe iniciar sesion nuevamente"); }
         if (err.response.status === 400) { setData(false) }
       })
+      .finally(()=>{setLoading(false)})
     }
   }
 
@@ -433,11 +442,11 @@ const Graph = () => {
           <MDBCol size='9' className='d-flex justify-content-center align-items-center gap-5 flex-column'>
           
             <div className='w-100 h-100'>
-              { !data ? <EmptyLineChart/> : <HighchartsReact options={dataYear} highcharts={Highcharts}/>}
+              { !data ? <EmptyLineChart loading={loading}/> : <HighchartsReact options={dataYear} highcharts={Highcharts}/>}
             </div>
 
             <div className='w-100'>
-              { !data ? <EmptyLineChart/> : <HighchartsReact highcharts={Highcharts} options={data} /> }
+              { !data ? <EmptyLineChart loading={loading}/> : <HighchartsReact highcharts={Highcharts} options={data} /> }
             </div>
 
             <div className='d-flex justify-content-start align-items-center w-auto gap-3 mt-5'>
@@ -481,7 +490,7 @@ const Graph = () => {
             <MDBIcon icon={allSeriesVisible ? 'eye-slash' : 'eye'} />
             {allSeriesVisible ? ' Ocultar todo' : ' Mostrar todo'}
           </button>
-          {!graphGroupBy ? <EmptyLineChart/> : <HighchartsReact ref={chartRef} highcharts={Highcharts} options={graphGroupBy}/>}
+          {!graphGroupBy ? <EmptyLineChart loading={loading} /> : <HighchartsReact ref={chartRef} highcharts={Highcharts} options={graphGroupBy}/>}
         </div>
 
       </MDBContainer>
